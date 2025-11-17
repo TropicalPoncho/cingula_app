@@ -1,84 +1,48 @@
-import 'package:english_words/english_words.dart';
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-void main() {
-  runApp(MyApp());
+import 'core/app_initializer.dart';
+import 'core/di/service_locator.dart';
+import 'presentation/notifiers/permission_notifier.dart';
+import 'presentation/notifiers/playback_notifier.dart';
+import 'presentation/pages/intro_page.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final initializer = AppInitializer();
+  await initializer.init();
+  runApp(const CingulaApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class CingulaApp extends StatelessWidget {
+  const CingulaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => MyAppState(),
-      child: MaterialApp(
-        title: 'Namer App',
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.purple),
-        ),
-        home: MyHomePage(),
-      ),
-    );
-  }
-}
-
-class MyAppState extends ChangeNotifier {
-  var current = WordPair.random();
-
-  void getNext() {
-    current = WordPair.random();
-    notifyListeners();
-  }
-}
-
-class MyHomePage extends StatelessWidget {
-  const MyHomePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
-    var pair = appState.current;
-
-    return Scaffold(
-      body: Column(
-        children: [
-          Text('A random ideasss:'),
-          BigCart(pair: pair),
-
-          ElevatedButton(
-            onPressed: () {
-              appState.getNext();
-            },
-            child: Text('Next'),
+    return MultiProvider(
+      providers: [
+        // Verificamos permisos al arranque para informar al usuario.
+        ChangeNotifierProvider(
+          create: (_) => PermissionNotifier(
+            locationRepository: getIt(),
           ),
-        ],
+        ),
+        // Notifier que controla la reproducción según geolocalización.
+        ChangeNotifierProvider(
+          create: (_) => PlaybackNotifier(
+            monitorUseCase: getIt(),
+          ),
+        ),
+      ],
+      child: MaterialApp(
+        title: 'Cingula',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+          useMaterial3: true,
+        ),
+        home: const IntroPage(),
       ),
     );
   }
 }
 
-class BigCart extends StatelessWidget {
-  const BigCart({
-    super.key,
-    required this.pair,
-  });
-
-  final WordPair pair;
-
-  @override
-  Widget build(BuildContext context) {
-    var theme = Theme.of(context);
-
-
-    return Card(
-      color: theme.colorScheme.primary,
-      child: Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: Text(pair.asLowerCase),
-      ),
-    );
-  }
-}
