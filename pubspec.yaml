@@ -31,12 +31,17 @@ dependencies:
   path_provider: ^2.1.4
   # Persistencia sencilla para settings de depuración (LocationConfig)
   shared_preferences: ^2.1.0
+  # Selector de archivos para importar BD
+  file_picker: ^8.1.4
 
   # Iconos iOS opcionales; util si se crean vistas estilo Cupertino.
   cupertino_icons: ^1.0.8
   # Map rendering (lightweight, no native API keys required).
   flutter_map: ^8.2.2
   latlong2: ^0.9.1
+  google_maps_flutter: ^2.14.0
+  record: ^6.1.2
+  permission_handler: ^12.0.1
 
 dev_dependencies:
   flutter_test:

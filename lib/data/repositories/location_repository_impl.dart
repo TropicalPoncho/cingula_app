@@ -37,9 +37,12 @@ class LocationRepositoryImpl implements LocationRepository {
 
   @override
   Stream<Coordinate> positionStream({double distanceFilter = 25}) {
-    final settings = LocationSettings(
+    // Configuración Android optimizada para precisión
+    final settings = AndroidSettings(
       accuracy: LocationAccuracy.best,
       distanceFilter: distanceFilter.round(),
+      forceLocationManager: true,  // Fuerza GPS directo
+      intervalDuration: const Duration(seconds: 1),  // Actualización cada 1s cuando se mueve
     );
     return _geolocator
         .getPositionStream(locationSettings: settings)
@@ -53,9 +56,13 @@ class LocationRepositoryImpl implements LocationRepository {
 
   @override
   Future<Coordinate> currentPosition() async {
+    // Usar configuración específica de Android para forzar GPS de alta precisión
     final position = await _geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
+      locationSettings: AndroidSettings(
         accuracy: LocationAccuracy.best,
+        distanceFilter: 0,
+        forceLocationManager: true,  // Fuerza GPS en lugar de FusedLocationProvider (Android 12+)
+        timeLimit: const Duration(seconds: 10),  // Espera hasta 10s por lectura precisa
       ),
     );
     return Coordinate(

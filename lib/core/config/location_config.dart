@@ -10,6 +10,7 @@ class LocationConfig {
   static const _kAccuracyThreshold = 'loc_accuracyThresholdMeters';
   static const _kPathToleranceDefault = 'loc_pathToleranceDefaultMeters';
   static const _kMinDistanceFilter = 'loc_minDistanceFilterMeters';
+  static const _kActivationRadius = 'loc_activationRadiusMeters';
 
   /// Polling coarse (segundos) usado cuando no hay regiones activas.
   static int coarsePollingSeconds = 30;
@@ -32,6 +33,9 @@ class LocationConfig {
   /// Valor mínimo recomendado para distanceFilter; algunos dispositivos ignoran valores muy pequeños.
   static int minDistanceFilterMeters = 1;
 
+  /// Radio de activación visible en el mapa (metros) - para debugging/testing.
+  static double activationRadiusMeters = 15.0;
+
   /// Cargar valores persistidos (si los hay) desde SharedPreferences.
   static Future<void> loadFromPrefs() async {
     try {
@@ -43,6 +47,7 @@ class LocationConfig {
       accuracyThresholdMeters = prefs.getDouble(_kAccuracyThreshold) ?? accuracyThresholdMeters;
       pathToleranceDefaultMeters = prefs.getDouble(_kPathToleranceDefault) ?? pathToleranceDefaultMeters;
       minDistanceFilterMeters = prefs.getInt(_kMinDistanceFilter) ?? minDistanceFilterMeters;
+      activationRadiusMeters = prefs.getDouble(_kActivationRadius) ?? activationRadiusMeters;
     } catch (_) {
       // Silenciar errores de preferencias; usar valores por defecto.
     }
@@ -89,5 +94,11 @@ class LocationConfig {
   static Future<void> setPathToleranceDefaultMeters(double v) async {
     pathToleranceDefaultMeters = v;
     await saveToPrefs();
+  }
+
+  static Future<void> saveActivationRadius(double v) async {
+    activationRadiusMeters = v;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_kActivationRadius, v);
   }
 }

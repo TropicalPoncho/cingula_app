@@ -2,17 +2,22 @@
     <!-- Location permissions required for foreground playback triggers. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <!-- Background location to detect zones when the app is not visible. -->
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <!-- Background location removed: request only if the app actually requires background location. -->
     <!-- WorkManager needs this to resume tasks after reboot. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Allows the app to run a foreground service when needed for audio. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- Mic recording for path creation -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    
+    <!-- Requerir GPS físico para máxima precisión -->
+    <uses-feature android:name="android.hardware.location.gps" android:required="true" />
 
     <application
-        android:label="cingula_app"
+        android:label="Cingula"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -52,6 +52,8 @@
 	<string>Allow background location so we can keep playing the right audio while the app is closed.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>Background location keeps the audio experience reactive even when the app is not visible.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Necesitamos grabar audio ambiental para asociarlo a tus rutas.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>

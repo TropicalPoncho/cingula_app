@@ -20,4 +20,8 @@ class RegionLocalDataSource {
     }
     return null;
   }
+
+  Future<int> insertRegion(Map<String, Object?> values) async {
+    return await _database.insert('regions', values);
+  }
 }

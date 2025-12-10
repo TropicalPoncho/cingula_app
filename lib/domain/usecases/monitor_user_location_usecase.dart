@@ -12,6 +12,7 @@ import '../entities/region.dart';
 import '../../core/config/location_config.dart';
 import '../repositories/location_repository.dart';
 import '../value_objects/coordinate.dart';
+import '../../core/utils/gps_filter.dart';
 
 /// Caso de uso que observa la ubicación y dispara audios según la zona.
 class MonitorUserLocationUseCase {
@@ -45,6 +46,9 @@ class MonitorUserLocationUseCase {
   int _outsideCount = 0;
   int _regionOutsideCount = 0;
   Timer? _coarseTimer;
+  
+  // Filtro GPS para mejorar precisión
+  final WeightedMovingAverageFilter _gpsFilter = WeightedMovingAverageFilter(windowSize: 3);
 
   bool get isRunning => _positionSubscription != null;
 
@@ -69,10 +73,14 @@ class MonitorUserLocationUseCase {
     // Use configurable coarse interval; can be tuned in lib/core/config/location_config.dart
     final defaultCoarse = Duration(seconds: LocationConfig.coarsePollingSeconds);
     _coarseTimer?.cancel();
-  _coarseTimer = Timer.periodic(defaultCoarse, (_) async {
+    
+    // Define la función de polling para reutilizarla
+    Future<void> pollForRegions() async {
+      onLog?.call('⏰ Coarse polling tick (cada ${LocationConfig.coarsePollingSeconds}s)');
       try {
         await _locationRepository.ensureServiceAndPermissions();
         final coordinate = await _locationRepository.currentPosition();
+        onLog?.call('Coarse: posición lat=${coordinate.latitude.toStringAsFixed(6)} lon=${coordinate.longitude.toStringAsFixed(6)}');
         // First: check if coordinate is inside any region
         final region = await _regionRepository.findContaining(coordinate);
         onLog?.call('Coarse: found ${region != null ? 'a region' : 'no regions'} for coordinate');
@@ -90,18 +98,22 @@ class MonitorUserLocationUseCase {
       } catch (e) {
         onLog?.call('Coarse polling error: $e');
       }
-    });
-    // trigger an immediate tick
-    _coarseTimer?.tick;
+    }
+    
+    // Ejecutar inmediatamente el primer tick
+    pollForRegions();
+    
+    // Luego crear timer periódico
+    _coarseTimer = Timer.periodic(defaultCoarse, (_) => pollForRegions());
   }
 
   void _subscribeFine(Region region, {required void Function(AudioAsset? asset) onAudioChanged, void Function(String message)? onStatusUpdate, void Function(String log)? onLog, void Function(Object? activeRegion, String samplingMode)? onStateChanged}) {
     _fineSubscription?.cancel();
-    onLog?.call('Subscribing to fine-grained positionStream with distanceFilter=${region.fineDistanceFilterMeters}m and sampleFineSeconds=${region.sampleFineSeconds}s');
-    onLog?.call('Subscribing to fine-grained positionStream with distanceFilter=${region.fineDistanceFilterMeters}m and sampleFineSeconds=${region.sampleFineSeconds}s');
+    onLog?.call('🔍 Subscribing to fine-grained positionStream with distanceFilter=${region.fineDistanceFilterMeters}m and sampleFineSeconds=${region.sampleFineSeconds}s');
     onStateChanged?.call(region, 'fine');
   final fineFilter = region.fineDistanceFilterMeters > 0 ? region.fineDistanceFilterMeters : LocationConfig.fineDistanceFilterMeters;
   final distanceFilter = fineFilter.clamp(LocationConfig.minDistanceFilterMeters, 1000000);
+  onLog?.call('🎯 Modo FINE activado: buscando triggers en región id=${region.id}');
   _fineSubscription = _locationRepository.positionStream(distanceFilter: distanceFilter.toDouble()).listen((coordinate) async {
       await _handleCoordinate(
         coordinate,
@@ -112,15 +124,16 @@ class MonitorUserLocationUseCase {
       // also check if we left the region
       if (!region.contains(coordinate)) {
         _regionOutsideCount++;
+        onLog?.call('Fuera de región (count=$_regionOutsideCount/3)');
         if (_regionOutsideCount >= 3) {
-          onLog?.call('Salida de región id=${region.id} tras $_regionOutsideCount lecturas fuera');
+          onLog?.call('🚪 Salida de región id=${region.id} tras $_regionOutsideCount lecturas fuera');
           onStateChanged?.call(null, 'coarse');
           _activeRegion = null;
           _regionOutsideCount = 0;
           await _fineSubscription?.cancel();
           _fineSubscription = null;
           // resume coarse polling
-          _startCoarsePolling(onAudioChanged: onAudioChanged, onStatusUpdate: onStatusUpdate, onLog: onLog);
+          _startCoarsePolling(onAudioChanged: onAudioChanged, onStatusUpdate: onStatusUpdate, onLog: onLog, onStateChanged: onStateChanged);
         }
       } else {
         _regionOutsideCount = 0;
@@ -132,10 +145,26 @@ class MonitorUserLocationUseCase {
 
   /// Detiene la observación continua y apaga la reproducción.
   Future<void> stop() async {
+    // Cancelar todas las suscripciones y timers
     await _positionSubscription?.cancel();
     _positionSubscription = null;
+    await _fineSubscription?.cancel();
+    _fineSubscription = null;
+    _coarseTimer?.cancel();
+    _coarseTimer = null;
+    
+    // Resetear estados
     _activeTrigger = null;
     _activePath = null;
+    _activeRegion = null;
+    _outsideCount = 0;
+    _regionOutsideCount = 0;
+    _isProcessing = false;
+    
+    // Resetear filtro GPS
+    _gpsFilter.reset();
+    
+    // Detener reproducción
     await _playbackGateway.stop();
   }
 
@@ -160,11 +189,17 @@ class MonitorUserLocationUseCase {
     if (_isProcessing) return;
     _isProcessing = true;
     try {
-      // Emitir lectura detallada
-      onLog?.call('Lectura: lat=${coordinate.latitude.toStringAsFixed(6)}, lon=${coordinate.longitude.toStringAsFixed(6)}, accuracy=${coordinate.accuracyMeters?.toStringAsFixed(1)}m, time=${coordinate.timestamp}');
+      // Filtrar coordenada para reducir ruido GPS
+      final filteredCoordinate = _gpsFilter.filter(coordinate);
+      
+      // Emitir lectura detallada (mostrar original vs filtrada)
+      onLog?.call('Lectura: lat=${coordinate.latitude.toStringAsFixed(6)}, lon=${coordinate.longitude.toStringAsFixed(6)}, accuracy=${coordinate.accuracyMeters?.toStringAsFixed(1)}m');
+      if ((filteredCoordinate.latitude - coordinate.latitude).abs() > 0.00001 || (filteredCoordinate.longitude - coordinate.longitude).abs() > 0.00001) {
+        onLog?.call('Filtrada: lat=${filteredCoordinate.latitude.toStringAsFixed(6)}, lon=${filteredCoordinate.longitude.toStringAsFixed(6)}');
+      }
 
       // Ignorar lecturas con baja precisión (umbral configurable)
-      if ((coordinate.accuracyMeters ?? double.infinity) > LocationConfig.accuracyThresholdMeters) {
+      if ((filteredCoordinate.accuracyMeters ?? double.infinity) > LocationConfig.accuracyThresholdMeters) {
         onLog?.call('Lectura ignorada por baja precisión (accuracy > ${LocationConfig.accuracyThresholdMeters}m).');
         return;
       }
@@ -173,15 +208,18 @@ class MonitorUserLocationUseCase {
       // y guardar progreso; en caso contrario reproducir el audio directo del trigger.
       List<GeoTrigger> triggers = await _geoTriggerRepository.fetchAll();
       if (_activeRegion != null) {
-        triggers = triggers.where((t) => t.regionId == _activeRegion!.id).toList();
+        // Filtrar: triggers SIN región asignada (null) O triggers de esta región
+        triggers = triggers.where((t) => t.regionId == null || t.regionId == _activeRegion!.id).toList();
+        onLog?.call('Filtrando triggers: ${triggers.length} candidatos (region_id=null o =${_activeRegion!.id})');
       }
 
       GeoTrigger? bestTrigger;
       double bestTriggerNorm = double.infinity;
       double bestTriggerDist = double.infinity;
       for (final t in triggers) {
-        final d = t.distanceTo(coordinate);
+        final d = t.distanceTo(filteredCoordinate);
         final norm = t.radiusMeters > 0 ? (d / t.radiusMeters) : double.infinity;
+        onLog?.call('  Trigger id=${t.id} name=${t.name}: dist=${d.toStringAsFixed(1)}m radius=${t.radiusMeters}m norm=${norm.toStringAsFixed(2)}');
         if (norm < bestTriggerNorm) {
           bestTrigger = t;
           bestTriggerNorm = norm;
@@ -190,8 +228,15 @@ class MonitorUserLocationUseCase {
       }
 
       final triggerCandidate = (bestTrigger != null && bestTriggerNorm <= 1.0);
+      
+      if (bestTrigger != null) {
+        onLog?.call('Mejor trigger: id=${bestTrigger.id} norm=${bestTriggerNorm.toStringAsFixed(2)} dist=${bestTriggerDist.toStringAsFixed(1)}m ${triggerCandidate ? "\u2705 ACTIVADO" : "\u274c fuera de rango"}');
+      } else {
+        onLog?.call('No hay triggers en esta área');
+      }
 
       if (!triggerCandidate) {
+        onLog?.call('⛔ No hay trigger activo (norm > 1.0 o no hay triggers)');
         // No hay ningún trigger: mantener/pause/stop como antes
         if (_activePath != null) {
           _outsideCount++;
@@ -214,10 +259,16 @@ class MonitorUserLocationUseCase {
         return;
       }
 
-      // Tenemos un trigger a ejecutar
-  final match = bestTrigger;
+      // Tenemos un trigger a ejecutar - resetear contador de salida
+      _outsideCount = 0;
+      
+      final match = bestTrigger;
+      
       // Si el trigger ya estaba activo, no reiniciamos
-      if (_activeTrigger?.id == match.id) return;
+      if (_activeTrigger?.id == match.id) {
+        onLog?.call('Mismo trigger activo (id=${match.id}), manteniendo reproducción');
+        return;
+      }
 
       // Si el trigger está asociado a un path, intentamos obtenerlo y usarlo
       if (match.geoPathId != null) {
@@ -232,7 +283,10 @@ class MonitorUserLocationUseCase {
         onLog?.call('Trigger->Path match triggerId=${match.id} pathId=${path.id} (using saved offset ${path.savedOffsetMs}ms)');
 
         // Si ya estamos reproduciendo el mismo path, no hacer nada
-        if (_activePath?.id == path.id) return;
+        if (_activePath?.id == path.id) {
+          onLog?.call('Mismo path activo (id=${path.id}), manteniendo reproducción');
+          return;
+        }
 
   final asset = await _audioRepository.findById(path.audioAssetId);
         if (asset == null) {
@@ -246,6 +300,7 @@ class MonitorUserLocationUseCase {
     final startOffset = (triggerOffsetMs > 0)
       ? Duration(milliseconds: triggerOffsetMs)
       : (savedMs > 0 ? Duration(milliseconds: savedMs) : Duration.zero);
+    onLog?.call('Iniciando reproducción desde offset=${startOffset.inSeconds}s (triggerMs=$triggerOffsetMs savedMs=$savedMs)');
     await _playbackGateway.playFrom(asset, startOffset);
         _activePath = path;
         _activeTrigger = null;

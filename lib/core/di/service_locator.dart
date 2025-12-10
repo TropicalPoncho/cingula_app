@@ -89,6 +89,7 @@ Future<void> setupServiceLocator({bool reinitialize = false}) async {
   getIt.registerLazySingleton<AudioPlaybackGateway>(
     () => AudioPlaybackGatewayImpl(
       playerService: getIt<AudioPlayerService>(),
+      logService: getIt<LogService>(),
     ),
   );
 

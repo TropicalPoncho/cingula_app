@@ -5,4 +5,10 @@ import '../value_objects/coordinate.dart';
 abstract class RegionRepository {
   Future<List<Region>> fetchAll();
   Future<Region?> findContaining(Coordinate coordinate);
+  Future<int> createRegion({
+    required String name,
+    required double latitude,
+    required double longitude,
+    required double radiusMeters,
+  });
 }

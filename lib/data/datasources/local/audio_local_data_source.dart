@@ -23,5 +23,30 @@ class AudioLocalDataSource {
     if (rows.isEmpty) return null;
     return AudioAssetModel.fromMap(rows.first);
   }
+
+  Future<int> insertRecording({
+    required String title,
+    required String description,
+    required String localPath,
+    required Duration duration,
+  }) async {
+    return _database.insert('audio_assets', {
+      'title': title,
+      'artist': 'Field Recording',
+      'description': description,
+      'duration_seconds': duration.inSeconds,
+      'local_path': localPath,
+      'remote_url': null,
+    });
+  }
+
+  Future<void> updateDuration({required int id, required Duration duration}) async {
+    await _database.update(
+      'audio_assets',
+      {'duration_seconds': duration.inSeconds},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
 }
 

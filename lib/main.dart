@@ -9,8 +9,29 @@ import 'presentation/pages/intro_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final initializer = AppInitializer();
-  await initializer.init();
+  
+  // Wrap initialization in try-catch to prevent crashes during startup
+  try {
+    final initializer = AppInitializer();
+    await initializer.init();
+    
+    // TEMPORARILY DISABLED: Auto-start of poller to diagnose crash
+    // You can enable it manually from UI once app is stable
+    // final poller = BackgroundAdaptivePoller(
+    //   monitorUseCase: getIt<MonitorUserLocationUseCase>(),
+    //   triggerRepository: getIt<GeoTriggerRepository>(),
+    //   locationRepository: getIt<LocationRepository>(),
+    //   onLog: (m) => debugPrint('[poller] $m'),
+    // );
+    // if (!getIt.isRegistered<BackgroundAdaptivePoller>()) {
+    //   getIt.registerSingleton<BackgroundAdaptivePoller>(poller);
+    // }
+    // poller.start();
+  } catch (e, st) {
+    debugPrint('ERROR during app initialization: $e');
+    debugPrint('Stack trace: $st');
+  }
+  
   runApp(const CingulaApp());
 }
 
@@ -31,6 +52,7 @@ class CingulaApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => PlaybackNotifier(
             monitorUseCase: getIt(),
+            logService: getIt(),
           ),
         ),
       ],

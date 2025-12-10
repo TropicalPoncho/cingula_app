@@ -1,4 +1,4 @@
-package com.example.cingula_app
+package art.tropicalponcho.cingula
 
 import io.flutter.embedding.android.FlutterActivity
 

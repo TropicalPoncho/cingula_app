@@ -23,4 +23,25 @@ class RegionRepositoryImpl implements RegionRepository {
     }
     return null;
   }
+
+  @override
+  Future<int> createRegion({
+    required String name,
+    required double latitude,
+    required double longitude,
+    required double radiusMeters,
+  }) async {
+    final id = await _local.insertRegion({
+      'name': name,
+      'center_lat': latitude,
+      'center_lon': longitude,
+      'radius_meters': radiusMeters,
+      'sample_coarse_seconds': 30,
+      'sample_fine_seconds': 2,
+      'coarse_distance_filter_meters': 500,
+      'fine_distance_filter_meters': 5,
+    });
+    _cache = null; // invalidar cache
+    return id;
+  }
 }

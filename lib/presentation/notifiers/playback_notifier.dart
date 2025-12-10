@@ -2,13 +2,18 @@
 
 import '../../domain/entities/audio_asset.dart';
 import '../../domain/usecases/monitor_user_location_usecase.dart';
+import '../../core/services/log_service.dart';
 
 /// ChangeNotifier que expone estados de monitoreo y reproducción a la UI.
 class PlaybackNotifier extends ChangeNotifier {
-  PlaybackNotifier({required MonitorUserLocationUseCase monitorUseCase})
-      : _monitorUseCase = monitorUseCase;
+  PlaybackNotifier({
+    required MonitorUserLocationUseCase monitorUseCase,
+    required LogService logService,
+  })  : _monitorUseCase = monitorUseCase,
+        _logService = logService;
 
   final MonitorUserLocationUseCase _monitorUseCase;
+  final LogService _logService;
 
   AudioAsset? _currentAsset;
   bool _isMonitoring = false;
@@ -61,6 +66,8 @@ class PlaybackNotifier extends ChangeNotifier {
     _logs.insert(0, '${DateTime.now().toIso8601String()} - $log');
     // keep only recent 200 entries
     if (_logs.length > 200) _logs.removeRange(200, _logs.length);
+    // También enviar a LogService para que aparezca en la UI de diagnóstico
+    _logService.log(log);
     notifyListeners();
   }
 

@@ -14,5 +14,25 @@ class AudioRepositoryImpl implements AudioRepository {
 
   @override
   Future<AudioAsset?> findById(int id) => _localDataSource.getById(id);
+
+  @override
+  Future<int> insertLocalRecording({
+    required String title,
+    required String description,
+    required String localPath,
+    required Duration duration,
+  }) {
+    return _localDataSource.insertRecording(
+      title: title,
+      description: description,
+      localPath: localPath,
+      duration: duration,
+    );
+  }
+
+  @override
+  Future<void> updateDuration({required int id, required Duration duration}) {
+    return _localDataSource.updateDuration(id: id, duration: duration);
+  }
 }
 
