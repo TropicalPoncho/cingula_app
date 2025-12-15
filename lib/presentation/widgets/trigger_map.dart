@@ -16,8 +16,11 @@ class TriggerMapWidget extends StatefulWidget {
   final List<GeoPath> paths;
   final List<GeoTrigger> triggers;
   final List<Region> regions;
+  /// Radio global usado para pintar triggers (ignora el guardado en BD si se provee).
+  final double? triggerRadius;
+  /// Radio de activación del usuario (círculo morado).
   final double activationRadius;
-  const TriggerMapWidget({required this.paths, required this.triggers, this.regions = const [], this.activationRadius = 15.0, super.key});
+  const TriggerMapWidget({required this.paths, required this.triggers, this.regions = const [], this.triggerRadius, this.activationRadius = 15.0, super.key});
 
   @override
   State<TriggerMapWidget> createState() => _TriggerMapWidgetState();
@@ -30,10 +33,18 @@ class _TriggerMapWidgetState extends State<TriggerMapWidget> {
   StreamSubscription<Position>? _posSub;
   bool _hasLocationPermission = false;
   bool _permissionPermanentlyDenied = false;
+  ll.LatLng? _initialCenter;
+  final double _initialZoom = 15;
+  bool _userInteracted = false;
 
   @override
   void initState() {
     super.initState();
+    if (widget.triggers.isNotEmpty) {
+      final avgLat = widget.triggers.map((t) => t.latitude).reduce((a, b) => a + b) / widget.triggers.length;
+      final avgLon = widget.triggers.map((t) => t.longitude).reduce((a, b) => a + b) / widget.triggers.length;
+      _initialCenter = ll.LatLng(avgLat, avgLon);
+    }
     _initLocation();
   }
 
@@ -83,7 +94,11 @@ class _TriggerMapWidgetState extends State<TriggerMapWidget> {
         setState(() {
           _userPos = ll.LatLng(pos.latitude, pos.longitude);
           _userAccuracy = pos.accuracy;
+          _initialCenter ??= _userPos;
         });
+        if (!_userInteracted && _userPos != null) {
+          _mapController.move(_userPos!, _initialZoom);
+        }
       }
 
       _posSub = Geolocator.getPositionStream(
@@ -96,6 +111,9 @@ class _TriggerMapWidgetState extends State<TriggerMapWidget> {
           _userPos = ll.LatLng(p.latitude, p.longitude);
           _userAccuracy = p.accuracy;
         });
+        if (!_userInteracted && _userPos != null) {
+          _mapController.move(_userPos!, _initialZoom);
+        }
       }, onError: (_) {});
     } catch (_) {}
   }
@@ -157,14 +175,20 @@ class _TriggerMapWidgetState extends State<TriggerMapWidget> {
     // Polígonos para radios de triggers
     final polygons = <Polygon>[];
     for (final t in widget.triggers) {
-      final poly = _circlePolygon(t.latitude, t.longitude, t.radiusMeters, points: 32);
-  polygons.add(Polygon(points: poly, color: const Color.fromRGBO(33, 150, 243, 0.12), borderColor: const Color.fromRGBO(33, 150, 243, 0.6), borderStrokeWidth: 1.0));
+      final radius = widget.triggerRadius ?? t.radiusMeters;
+      final poly = _circlePolygon(t.latitude, t.longitude, radius, points: 32);
+      polygons.add(Polygon(points: poly, color: const Color.fromRGBO(33, 150, 243, 0.12), borderColor: const Color.fromRGBO(33, 150, 243, 0.6), borderStrokeWidth: 1.0));
     }
 
-    // Polígonos para regiones (más grandes, color diferente)
+    // Polígonos para regiones (área visible)
     for (final r in widget.regions) {
       final poly = _circlePolygon(r.center.latitude, r.center.longitude, r.radiusMeters, points: 48);
-      polygons.add(Polygon(points: poly, color: const Color.fromRGBO(255, 152, 0, 0.08), borderColor: const Color.fromRGBO(255, 152, 0, 0.5), borderStrokeWidth: 2.0));
+      polygons.add(Polygon(
+        points: poly,
+        color: const Color.fromRGBO(255, 152, 0, 0.08),
+        borderColor: const Color.fromRGBO(255, 152, 0, 0.5),
+        borderStrokeWidth: 2.0,
+      ));
     }
 
     // Marcadores de triggers
@@ -184,14 +208,7 @@ class _TriggerMapWidgetState extends State<TriggerMapWidget> {
         width: 48,
         height: 48,
         point: ll.LatLng(r.center.latitude, r.center.longitude),
-        child: Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: Colors.orange.withOpacity(0.8),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: const Icon(Icons.place, color: Colors.white, size: 24),
-        ),
+        child: const Icon(Icons.place, color: Colors.orange, size: 28),
       ));
     }
 
@@ -216,25 +233,8 @@ class _TriggerMapWidgetState extends State<TriggerMapWidget> {
   polygons.add(Polygon(points: accPoly, color: const Color.fromRGBO(76, 175, 80, 0.12), borderColor: const Color.fromRGBO(76, 175, 80, 0.5)));
     }
 
-    // Centro por defecto: primer trigger o usuario
-    ll.LatLng center;
-    if (widget.triggers.isNotEmpty) {
-      final avgLat = widget.triggers.map((t) => t.latitude).reduce((a, b) => a + b) / widget.triggers.length;
-      final avgLon = widget.triggers.map((t) => t.longitude).reduce((a, b) => a + b) / widget.triggers.length;
-      center = ll.LatLng(avgLat, avgLon);
-    } else if (_userPos != null) {
-      center = ll.LatLng(_userPos!.latitude, _userPos!.longitude);
-    } else {
-      center = const ll.LatLng(0, 0);
-    }
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      try {
-        if (mounted && (widget.triggers.isNotEmpty || _userPos != null)) {
-          _mapController.move(center, 14.0);
-        }
-      } catch (_) {}
-    });
+    // Centro inicial: usuario cuando esté disponible; si no, promedio de triggers o (0,0)
+    final ll.LatLng initialCenter = _initialCenter ?? _userPos ?? const ll.LatLng(0, 0);
 
     final permissionBanner = !_hasLocationPermission
         ? Container(
@@ -266,7 +266,17 @@ class _TriggerMapWidgetState extends State<TriggerMapWidget> {
           height: 180,
           child: FlutterMap(
             mapController: _mapController,
-            options: MapOptions(),
+            options: MapOptions(
+              initialCenter: initialCenter,
+              initialZoom: _initialZoom,
+              onMapEvent: (event) {
+                if (event.source == MapEventSource.onDrag || 
+                    event.source == MapEventSource.onMultiFinger ||
+                    event.source == MapEventSource.scrollWheel) {
+                  setState(() => _userInteracted = true);
+                }
+              },
+            ),
             children: [
               TileLayer(urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', subdomains: const ['a', 'b', 'c'], userAgentPackageName: 'com.tropicalponcho.cingula_app'),
               if (polygons.isNotEmpty) PolygonLayer(polygons: polygons),

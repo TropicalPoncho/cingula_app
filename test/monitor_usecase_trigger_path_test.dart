@@ -108,6 +108,13 @@ class FakeGeoPathRepository implements GeoPathRepository {
     _paths.removeWhere((p) => p.audioAssetId == audioAssetId);
     return removed.length;
   }
+
+  @override
+  Future<int> deleteById(int pathId) async {
+    final removed = _paths.where((p) => p.id == pathId).toList(growable: false);
+    _paths.removeWhere((p) => p.id == pathId);
+    return removed.length;
+  }
 }
 
 class FakeAudioRepository implements AudioRepository {
@@ -125,6 +132,42 @@ class FakeAudioRepository implements AudioRepository {
       return null;
     }
   }
+
+  @override
+  Future<int> insertLocalRecording({
+    required String title,
+    required String description,
+    required String localPath,
+    required Duration duration,
+  }) async {
+    final id = (_assets.isEmpty) ? 1 : (_assets.map((a) => a.id).reduce((a, b) => a > b ? a : b) + 1);
+    final asset = AudioAsset(
+      id: id,
+      title: title,
+      artist: 'Field Recording',
+      description: description,
+      duration: duration,
+      localPath: localPath,
+    );
+    _assets.add(asset);
+    return id;
+  }
+
+  @override
+  Future<void> updateDuration({required int id, required Duration duration}) async {
+    final idx = _assets.indexWhere((a) => a.id == id);
+    if (idx == -1) return;
+    final existing = _assets[idx];
+    _assets[idx] = AudioAsset(
+      id: existing.id,
+      title: existing.title,
+      artist: existing.artist,
+      description: existing.description,
+      duration: duration,
+      localPath: existing.localPath,
+      remoteUrl: existing.remoteUrl,
+    );
+  }
 }
 
 class FakeRegionRepository implements RegionRepository {
@@ -133,6 +176,9 @@ class FakeRegionRepository implements RegionRepository {
 
   @override
   Future<Region?> findContaining(Coordinate coordinate) async => null;
+
+  @override
+  Future<int> createRegion({required double latitude, required double longitude, required String name, required double radiusMeters}) async => 1;
 }
 
 class RecordingPlaybackGateway implements AudioPlaybackGateway {

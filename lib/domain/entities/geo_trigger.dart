@@ -15,10 +15,20 @@ class GeoTrigger {
     this.regionId,
     this.geoPathId,
     this.offsetMs = 0,
+    this.uuid,
+    this.updatedAt,
+    this.deletedAt,
+    this.logicalVersion,
   });
   /// Offset en milisegundos que indica desde dónde reproducir el audio para
   /// este trigger. Si es 0 significa inicio.
   final int offsetMs;
+
+  /// Metadatos de sincronización
+  final String? uuid;
+  final DateTime? updatedAt;
+  final DateTime? deletedAt;
+  final int? logicalVersion;
 
   final int id;
   final String name;

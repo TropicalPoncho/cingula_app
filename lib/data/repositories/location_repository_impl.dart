@@ -41,8 +41,15 @@ class LocationRepositoryImpl implements LocationRepository {
     final settings = AndroidSettings(
       accuracy: LocationAccuracy.best,
       distanceFilter: distanceFilter.round(),
-      forceLocationManager: true,  // Fuerza GPS directo
-      intervalDuration: const Duration(seconds: 1),  // Actualización cada 1s cuando se mueve
+      forceLocationManager: true, // Fuerza GPS directo
+      intervalDuration: const Duration(seconds: 1), // Actualización cada 1s cuando se mueve
+      // Mantén el stream vivo con pantalla apagada usando notificación foreground.
+      foregroundNotificationConfig: const ForegroundNotificationConfig(
+        notificationText: 'Cingula está monitoreando tu ubicación en segundo plano.',
+        notificationTitle: 'Cingula en ejecución',
+        enableWakeLock: true,
+        setOngoing: true,
+      ),
     );
     return _geolocator
         .getPositionStream(locationSettings: settings)
@@ -61,15 +68,21 @@ class LocationRepositoryImpl implements LocationRepository {
       locationSettings: AndroidSettings(
         accuracy: LocationAccuracy.best,
         distanceFilter: 0,
-        forceLocationManager: true,  // Fuerza GPS en lugar de FusedLocationProvider (Android 12+)
-        timeLimit: const Duration(seconds: 10),  // Espera hasta 10s por lectura precisa
+        forceLocationManager: true, // Fuerza GPS en lugar de FusedLocationProvider (Android 12+)
+        timeLimit: const Duration(seconds: 10), // Espera hasta 10s por lectura precisa
+        foregroundNotificationConfig: const ForegroundNotificationConfig(
+          notificationText: 'Cingula está obteniendo tu posición.',
+          notificationTitle: 'Cingula activa',
+          enableWakeLock: true,
+          setOngoing: true,
+        ),
       ),
     );
     return Coordinate(
       latitude: position.latitude,
       longitude: position.longitude,
-  accuracyMeters: position.accuracy,
-  timestamp: position.timestamp,
+      accuracyMeters: position.accuracy,
+      timestamp: position.timestamp,
     );
   }
 }

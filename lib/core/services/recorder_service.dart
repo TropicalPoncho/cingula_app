@@ -8,6 +8,7 @@ import 'package:record/record.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../domain/value_objects/coordinate.dart';
 import '../utils/gps_filter.dart';
@@ -64,6 +65,9 @@ class RecorderService {
     double triggerRadiusMeters = 12.0,
   }) async {
     if (isRecording) return _currentPathId;
+
+    // Mantener CPU despierta durante la grabación para evitar que el SO pause servicios con pantalla apagada.
+    await WakelockPlus.enable();
 
     final audio = await _audioRepo.findById(audioAssetId);
     if (audio == null) {

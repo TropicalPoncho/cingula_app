@@ -8,6 +8,10 @@ class AudioAsset {
     required this.duration,
     required this.localPath,
     this.remoteUrl,
+    this.uuid,
+    this.updatedAt,
+    this.deletedAt,
+    this.logicalVersion,
   });
 
   final int id;
@@ -17,5 +21,11 @@ class AudioAsset {
   final Duration duration;
   final String localPath;
   final Uri? remoteUrl;
+
+  /// Metadatos de sincronización
+  final String? uuid;
+  final DateTime? updatedAt;
+  final DateTime? deletedAt;
+  final int? logicalVersion;
 }
 

@@ -22,8 +22,8 @@ class AudioPlaybackGatewayImpl implements AudioPlaybackGateway {
   Future<void> play(AudioAsset asset) async {
     _logService.log('[Gateway] play() asset=${asset.id} title=${asset.title} currentAsset=${_currentAsset?.id}');
     if (_currentAsset?.id != asset.id) {
-      _logService.log('[Gateway] Loading new asset: ${asset.localPath}');
-      await _playerService.loadAsset(asset.localPath);
+      _logService.log('[Gateway] Loading new asset/path: ${asset.localPath}');
+      await _playerService.loadPath(asset.localPath);
       _currentAsset = asset;
     }
     _logService.log('[Gateway] Calling _playerService.play()');
@@ -42,8 +42,8 @@ class AudioPlaybackGatewayImpl implements AudioPlaybackGateway {
   Future<void> playFrom(AudioAsset asset, Duration offset) async {
     _logService.log('[Gateway] playFrom() asset=${asset.id} offset=${offset.inSeconds}s currentAsset=${_currentAsset?.id}');
     if (_currentAsset?.id != asset.id) {
-      _logService.log('[Gateway] Loading new asset: ${asset.localPath}');
-      await _playerService.loadAsset(asset.localPath);
+      _logService.log('[Gateway] Loading new asset/path: ${asset.localPath}');
+      await _playerService.loadPath(asset.localPath);
       _currentAsset = asset;
     }
     if (offset > Duration.zero) {

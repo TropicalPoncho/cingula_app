@@ -12,6 +12,10 @@ class Region {
     this.sampleFineSeconds = 2,
     this.coarseDistanceFilterMeters = 500,
     this.fineDistanceFilterMeters = 5,
+    this.uuid,
+    this.updatedAt,
+    this.deletedAt,
+    this.logicalVersion,
   });
 
   final int id;
@@ -22,6 +26,12 @@ class Region {
   final int sampleFineSeconds;
   final int coarseDistanceFilterMeters;
   final int fineDistanceFilterMeters;
+
+  /// Metadatos de sincronización
+  final String? uuid;
+  final DateTime? updatedAt;
+  final DateTime? deletedAt;
+  final int? logicalVersion;
 
   bool contains(Coordinate c) {
     return _distanceMeters(center.latitude, center.longitude, c.latitude, c.longitude) <= radiusMeters;

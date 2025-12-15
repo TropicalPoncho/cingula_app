@@ -16,4 +16,5 @@ abstract class GeoPathRepository {
     double toleranceMeters = 10.0,
   });
   Future<int> deleteByAudioAssetId(int audioAssetId);
+  Future<int> deleteById(int pathId);
 }

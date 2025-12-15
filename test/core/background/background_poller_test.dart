@@ -108,6 +108,9 @@ class _NoopGeoPathRepo implements GeoPathRepository {
   Future<int> deleteByAudioAssetId(int audioAssetId) async => 0;
 
   @override
+  Future<int> deleteById(int pathId) async => 0;
+
+  @override
   Future<List<GeoPath>> fetchAll() async => [];
 
   @override
@@ -123,6 +126,9 @@ class _NoopRegionRepo implements RegionRepository {
 
   @override
   Future<Region?> findContaining(Coordinate coordinate) async => null;
+
+  @override
+  Future<int> createRegion({required double latitude, required double longitude, required String name, required double radiusMeters}) async => 1;
 }
 
 class _NoopAudioRepo implements AudioRepository {
@@ -131,6 +137,17 @@ class _NoopAudioRepo implements AudioRepository {
 
   @override
   Future<AudioAsset?> findById(int id) async => null;
+
+  @override
+  Future<int> insertLocalRecording({
+    required String title,
+    required String description,
+    required String localPath,
+    required Duration duration,
+  }) async => 1;
+
+  @override
+  Future<void> updateDuration({required int id, required Duration duration}) async {}
 }
 
 class _NoopPlaybackGateway implements AudioPlaybackGateway {

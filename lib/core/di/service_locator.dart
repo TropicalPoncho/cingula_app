@@ -5,10 +5,14 @@ import '../../data/datasources/local/audio_local_data_source.dart';
 import '../../data/datasources/local/geo_trigger_local_data_source.dart';
 import '../../data/datasources/local/geo_path_local_data_source.dart';
 import '../../data/datasources/local/region_local_data_source.dart';
+import '../../data/datasources/local/sync_local_data_source.dart';
+import '../../data/sync/sync_client.dart';
+import '../../data/sync/sync_api_stub.dart';
 import '../../data/repositories/region_repository_impl.dart';
 import '../../domain/repositories/region_repository.dart';
 import '../../domain/repositories/geo_path_repository.dart';
 import '../services/log_service.dart';
+import '../services/geofence_background_service.dart';
 import '../../data/repositories/audio_playback_gateway_impl.dart';
 import '../../data/repositories/audio_repository_impl.dart';
 import '../../data/repositories/geo_trigger_repository_impl.dart';
@@ -40,18 +44,30 @@ Future<void> setupServiceLocator({bool reinitialize = false}) async {
   await database.init();
   getIt.registerSingleton<AppDatabase>(database);
 
+  // Utilidades de sincronización (uuid, timestamps, outbox).
+  getIt.registerLazySingleton<SyncLocalDataSource>(
+    () => SyncLocalDataSource(database.database),
+  );
+  getIt.registerLazySingleton<SyncClient>(
+    () => SyncClient(sync: getIt<SyncLocalDataSource>()),
+  );
+  // Capa de red ficticia para probar flujo de sync sin servidor real.
+  getIt.registerLazySingleton<SyncApiStub>(
+    () => SyncApiStub(getIt<SyncClient>()),
+  );
+
   // Data sources encapsulan el acceso crudo a SQLite.
   getIt.registerLazySingleton<AudioLocalDataSource>(
-    () => AudioLocalDataSource(database.database),
+    () => AudioLocalDataSource(database.database, getIt<SyncLocalDataSource>()),
   );
   getIt.registerLazySingleton<GeoTriggerLocalDataSource>(
-    () => GeoTriggerLocalDataSource(database.database),
+    () => GeoTriggerLocalDataSource(database.database, getIt<SyncLocalDataSource>()),
   );
   getIt.registerLazySingleton<GeoPathLocalDataSource>(
-    () => GeoPathLocalDataSource(database.database),
+    () => GeoPathLocalDataSource(database.database, getIt<SyncLocalDataSource>()),
   );
   getIt.registerLazySingleton<RegionLocalDataSource>(
-    () => RegionLocalDataSource(database.database),
+    () => RegionLocalDataSource(database.database, getIt<SyncLocalDataSource>()),
   );
 
   // Repositorios de lectura apoyados en los data sources preparados.
@@ -79,6 +95,11 @@ Future<void> setupServiceLocator({bool reinitialize = false}) async {
     () => LocationRepositoryImpl(),
   );
 
+  // Servicio de geocercas para mantener tracking en background.
+  getIt.registerLazySingleton<GeofenceBackgroundService>(
+    () => GeofenceBackgroundService(),
+  );
+
   // Simple in-memory log service for debug UI
   getIt.registerLazySingleton(() => LogService());
 
@@ -102,6 +123,7 @@ Future<void> setupServiceLocator({bool reinitialize = false}) async {
       regionRepository: getIt<RegionRepository>(),
       audioRepository: getIt<AudioRepository>(),
       playbackGateway: getIt<AudioPlaybackGateway>(),
+      geofenceBackgroundService: getIt<GeofenceBackgroundService>(),
     ),
   );
 

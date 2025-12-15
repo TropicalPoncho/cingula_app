@@ -1,18 +1,20 @@
 ﻿import 'dart:async';
 
+import '../../core/services/geofence_background_service.dart';
+import '../../core/utils/gps_filter.dart';
+import '../../core/config/location_config.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../entities/audio_asset.dart';
-import '../entities/geo_trigger.dart';
 import '../entities/geo_path.dart';
+import '../entities/geo_trigger.dart';
+import '../entities/region.dart';
 import '../repositories/audio_playback_gateway.dart';
 import '../repositories/audio_repository.dart';
-import '../repositories/geo_trigger_repository.dart';
 import '../repositories/geo_path_repository.dart';
-import '../repositories/region_repository.dart';
-import '../entities/region.dart';
-import '../../core/config/location_config.dart';
+import '../repositories/geo_trigger_repository.dart';
 import '../repositories/location_repository.dart';
+import '../repositories/region_repository.dart';
 import '../value_objects/coordinate.dart';
-import '../../core/utils/gps_filter.dart';
 
 /// Caso de uso que observa la ubicación y dispara audios según la zona.
 class MonitorUserLocationUseCase {
@@ -23,12 +25,14 @@ class MonitorUserLocationUseCase {
     required RegionRepository regionRepository,
     required AudioRepository audioRepository,
     required AudioPlaybackGateway playbackGateway,
+    GeofenceBackgroundService? geofenceBackgroundService,
   })  : _locationRepository = locationRepository,
         _geoTriggerRepository = geoTriggerRepository,
         _geoPathRepository = geoPathRepository,
         _regionRepository = regionRepository,
         _audioRepository = audioRepository,
-        _playbackGateway = playbackGateway;
+        _playbackGateway = playbackGateway,
+        _geofenceBackgroundService = geofenceBackgroundService ?? GeofenceBackgroundService();
 
   final LocationRepository _locationRepository;
   final GeoTriggerRepository _geoTriggerRepository;
@@ -36,21 +40,19 @@ class MonitorUserLocationUseCase {
   final RegionRepository _regionRepository;
   final AudioRepository _audioRepository;
   final AudioPlaybackGateway _playbackGateway;
+  final GeofenceBackgroundService _geofenceBackgroundService;
 
-  StreamSubscription<Coordinate>? _positionSubscription;
-  StreamSubscription<Coordinate>? _fineSubscription;
   GeoTrigger? _activeTrigger;
   GeoPath? _activePath;
   Region? _activeRegion;
   bool _isProcessing = false;
   int _outsideCount = 0;
-  int _regionOutsideCount = 0;
-  Timer? _coarseTimer;
+  bool _isRunning = false;
   
   // Filtro GPS para mejorar precisión
   final WeightedMovingAverageFilter _gpsFilter = WeightedMovingAverageFilter(windowSize: 3);
 
-  bool get isRunning => _positionSubscription != null;
+  bool get isRunning => _isRunning;
 
   /// Inicia el streaming de coordenadas y reacciona con audio.
   Future<void> start({
@@ -59,111 +61,72 @@ class MonitorUserLocationUseCase {
     void Function(String log)? onLog,
     void Function(Object? activeRegion, String samplingMode)? onStateChanged,
   }) async {
-    if (_positionSubscription != null) return;
+    if (_isRunning) return;
 
     onStatusUpdate?.call('Solicitando permisos de ubicación…');
     await _locationRepository.ensureServiceAndPermissions();
-    onStatusUpdate?.call('Monitoreando ubicación del usuario…');
 
-    // Start in coarse polling mode: poll currentPosition at region's coarse interval.
-    _startCoarsePolling(onAudioChanged: onAudioChanged, onStatusUpdate: onStatusUpdate, onLog: onLog, onStateChanged: onStateChanged);
-  }
+    // Mantener CPU despierta durante el monitoreo para evitar que el SO pause el servicio al apagar pantalla.
+    await WakelockPlus.enable();
 
-  void _startCoarsePolling({required void Function(AudioAsset? asset) onAudioChanged, void Function(String message)? onStatusUpdate, void Function(String log)? onLog, void Function(Object? activeRegion, String samplingMode)? onStateChanged}) {
-    // Use configurable coarse interval; can be tuned in lib/core/config/location_config.dart
-    final defaultCoarse = Duration(seconds: LocationConfig.coarsePollingSeconds);
-    _coarseTimer?.cancel();
-    
-    // Define la función de polling para reutilizarla
-    Future<void> pollForRegions() async {
-      onLog?.call('⏰ Coarse polling tick (cada ${LocationConfig.coarsePollingSeconds}s)');
-      try {
-        await _locationRepository.ensureServiceAndPermissions();
-        final coordinate = await _locationRepository.currentPosition();
-        onLog?.call('Coarse: posición lat=${coordinate.latitude.toStringAsFixed(6)} lon=${coordinate.longitude.toStringAsFixed(6)}');
-        // First: check if coordinate is inside any region
-        final region = await _regionRepository.findContaining(coordinate);
-        onLog?.call('Coarse: found ${region != null ? 'a region' : 'no regions'} for coordinate');
-        if (region == null) {
-          onLog?.call('Coarse: fuera de regiones');
-          onStateChanged?.call(null, 'coarse');
-          return;
-        }
-        onLog?.call('Entró/está en región id=${region.id} name=${region.name} dist=${region.distanceTo(coordinate).toStringAsFixed(1)}m');
-        onStateChanged?.call(region, 'coarse');
-        // Enter region: switch to fine subscription using region parameters
-        _activeRegion = region;
-        _coarseTimer?.cancel();
-        _subscribeFine(region, onAudioChanged: onAudioChanged, onStatusUpdate: onStatusUpdate, onLog: onLog, onStateChanged: onStateChanged);
-      } catch (e) {
-        onLog?.call('Coarse polling error: $e');
-      }
-    }
-    
-    // Ejecutar inmediatamente el primer tick
-    pollForRegions();
-    
-    // Luego crear timer periódico
-    _coarseTimer = Timer.periodic(defaultCoarse, (_) => pollForRegions());
-  }
+    // Pre-cargar geocercas desde repositorios
+    final triggers = await _geoTriggerRepository.fetchAll();
+    final regions = await _regionRepository.fetchAll();
 
-  void _subscribeFine(Region region, {required void Function(AudioAsset? asset) onAudioChanged, void Function(String message)? onStatusUpdate, void Function(String log)? onLog, void Function(Object? activeRegion, String samplingMode)? onStateChanged}) {
-    _fineSubscription?.cancel();
-    onLog?.call('🔍 Subscribing to fine-grained positionStream with distanceFilter=${region.fineDistanceFilterMeters}m and sampleFineSeconds=${region.sampleFineSeconds}s');
-    onStateChanged?.call(region, 'fine');
-  final fineFilter = region.fineDistanceFilterMeters > 0 ? region.fineDistanceFilterMeters : LocationConfig.fineDistanceFilterMeters;
-  final distanceFilter = fineFilter.clamp(LocationConfig.minDistanceFilterMeters, 1000000);
-  onLog?.call('🎯 Modo FINE activado: buscando triggers en región id=${region.id}');
-  _fineSubscription = _locationRepository.positionStream(distanceFilter: distanceFilter.toDouble()).listen((coordinate) async {
+    // Lectura inicial (sin esperar a eventos) para reaccionar rápido
+    try {
+      final coordinate = await _locationRepository.currentPosition();
       await _handleCoordinate(
         coordinate,
         onAudioChanged: onAudioChanged,
         onStatusUpdate: onStatusUpdate,
         onLog: onLog,
       );
-      // also check if we left the region
-      if (!region.contains(coordinate)) {
-        _regionOutsideCount++;
-        onLog?.call('Fuera de región (count=$_regionOutsideCount/3)');
-        if (_regionOutsideCount >= 3) {
-          onLog?.call('🚪 Salida de región id=${region.id} tras $_regionOutsideCount lecturas fuera');
-          onStateChanged?.call(null, 'coarse');
-          _activeRegion = null;
-          _regionOutsideCount = 0;
-          await _fineSubscription?.cancel();
-          _fineSubscription = null;
-          // resume coarse polling
-          _startCoarsePolling(onAudioChanged: onAudioChanged, onStatusUpdate: onStatusUpdate, onLog: onLog, onStateChanged: onStateChanged);
-        }
-      } else {
-        _regionOutsideCount = 0;
-      }
-    }, onError: (e) {
-      onLog?.call('Fine subscription error: $e');
-    });
+    } catch (_) {}
+
+    await _geofenceBackgroundService.start(
+      triggers: triggers,
+      regions: regions,
+      onLocation: (coordinate) async {
+        await _handleCoordinate(
+          coordinate,
+          onAudioChanged: onAudioChanged,
+          onStatusUpdate: onStatusUpdate,
+          onLog: onLog,
+        );
+      },
+      onRegionChange: (region) {
+        _activeRegion = region;
+        onStateChanged?.call(region, region != null ? 'geofence' : 'idle');
+      },
+      onLog: onLog,
+      overrideTriggerRadiusMeters: LocationConfig.activationRadiusMeters,
+    );
+
+    _isRunning = true;
+    onStatusUpdate?.call('Monitoreo geofence activo');
   }
 
   /// Detiene la observación continua y apaga la reproducción.
   Future<void> stop() async {
-    // Cancelar todas las suscripciones y timers
-    await _positionSubscription?.cancel();
-    _positionSubscription = null;
-    await _fineSubscription?.cancel();
-    _fineSubscription = null;
-    _coarseTimer?.cancel();
-    _coarseTimer = null;
-    
+    if (!_isRunning) return;
+
+    await _geofenceBackgroundService.stop();
+
+    // Liberar wake lock cuando se detiene el monitoreo.
+    await WakelockPlus.disable();
+
     // Resetear estados
     _activeTrigger = null;
     _activePath = null;
     _activeRegion = null;
     _outsideCount = 0;
-    _regionOutsideCount = 0;
     _isProcessing = false;
-    
+    _isRunning = false;
+
     // Resetear filtro GPS
     _gpsFilter.reset();
-    
+
     // Detener reproducción
     await _playbackGateway.stop();
   }
@@ -217,9 +180,10 @@ class MonitorUserLocationUseCase {
       double bestTriggerNorm = double.infinity;
       double bestTriggerDist = double.infinity;
       for (final t in triggers) {
+        final effectiveRadius = LocationConfig.activationRadiusMeters > 0 ? LocationConfig.activationRadiusMeters : t.radiusMeters;
         final d = t.distanceTo(filteredCoordinate);
-        final norm = t.radiusMeters > 0 ? (d / t.radiusMeters) : double.infinity;
-        onLog?.call('  Trigger id=${t.id} name=${t.name}: dist=${d.toStringAsFixed(1)}m radius=${t.radiusMeters}m norm=${norm.toStringAsFixed(2)}');
+        final norm = effectiveRadius > 0 ? (d / effectiveRadius) : double.infinity;
+        onLog?.call('  Trigger id=${t.id} name=${t.name}: dist=${d.toStringAsFixed(1)}m radius=${effectiveRadius.toStringAsFixed(1)}m norm=${norm.toStringAsFixed(2)}');
         if (norm < bestTriggerNorm) {
           bestTrigger = t;
           bestTriggerNorm = norm;
@@ -267,6 +231,10 @@ class MonitorUserLocationUseCase {
       // Si el trigger ya estaba activo, no reiniciamos
       if (_activeTrigger?.id == match.id) {
         onLog?.call('Mismo trigger activo (id=${match.id}), manteniendo reproducción');
+        final asset = await _audioRepository.findById(match.audioAssetId);
+        if (asset != null) {
+          onAudioChanged(asset); // Refresca UI con el nombre/obra aunque siga el mismo trigger
+        }
         return;
       }
 

@@ -13,6 +13,10 @@ class GeoTriggerModel extends GeoTrigger {
     super.regionId,
     super.geoPathId,
     super.offsetMs,
+    super.uuid,
+    super.updatedAt,
+    super.deletedAt,
+    super.logicalVersion,
   });
 
   factory GeoTriggerModel.fromMap(Map<String, Object?> map) {
@@ -27,6 +31,10 @@ class GeoTriggerModel extends GeoTrigger {
       regionId: (map['region_id'] as int?),
       geoPathId: (map['geo_path_id'] as int?),
       offsetMs: (map['offset_ms'] as int?) ?? 0,
+      uuid: map['uuid'] as String?,
+      updatedAt: (map['updated_at'] as int?) != null ? DateTime.fromMillisecondsSinceEpoch((map['updated_at'] as int) * 1000) : null,
+      deletedAt: (map['deleted_at'] as int?) != null ? DateTime.fromMillisecondsSinceEpoch((map['deleted_at'] as int) * 1000) : null,
+      logicalVersion: map['logical_version'] as int?,
     );
   }
 
@@ -41,6 +49,10 @@ class GeoTriggerModel extends GeoTrigger {
     'region_id': regionId,
     'geo_path_id': geoPathId,
     'offset_ms': offsetMs,
+        'uuid': uuid,
+        'updated_at': updatedAt != null ? updatedAt!.millisecondsSinceEpoch ~/ 1000 : null,
+        'deleted_at': deletedAt != null ? deletedAt!.millisecondsSinceEpoch ~/ 1000 : null,
+        'logical_version': logicalVersion,
       };
 }
 

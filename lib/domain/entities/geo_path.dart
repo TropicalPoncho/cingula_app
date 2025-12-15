@@ -10,6 +10,10 @@ class GeoPath {
     required this.audioAssetId,
     this.toleranceMeters = 10.0,
     this.savedOffsetMs = 0,
+    this.uuid,
+    this.updatedAt,
+    this.deletedAt,
+    this.logicalVersion,
   });
 
   final int id;
@@ -17,4 +21,10 @@ class GeoPath {
   final int audioAssetId;
   final double toleranceMeters;
   int savedOffsetMs;
+
+  /// Metadatos de sincronización
+  final String? uuid;
+  final DateTime? updatedAt;
+  final DateTime? deletedAt;
+  final int? logicalVersion;
 }

@@ -40,7 +40,8 @@ class SeedData {
       'artist': 'Equipo Cingula',
       'description': 'Sonido de olas suaves para acompañar paseos costeros.',
       'duration_seconds': 150,
-      'local_path': 'assets/audio/oleaje_marino.mp3',
+      // Reutilizamos el asset existente hasta que se agregue el mp3 final.
+      'local_path': 'assets/audio/mil_puertas.wav',
       'remote_url': 'https://example.com/audio/oleaje_marino.mp3',
     },
   ];

@@ -57,4 +57,11 @@ class GeoPathRepositoryImpl implements GeoPathRepository {
     _cache = null;
     return deleted;
   }
+
+  @override
+  Future<int> deleteById(int pathId) async {
+    final deleted = await _local.deleteById(pathId);
+    _cache = null;
+    return deleted;
+  }
 }

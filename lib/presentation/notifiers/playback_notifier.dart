@@ -34,6 +34,12 @@ class PlaybackNotifier extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   Future<void> startMonitoring() async {
+    if (_monitorUseCase.isRunning) {
+      _isMonitoring = true;
+      _statusMessage ??= 'Monitoreo activo';
+      notifyListeners();
+      return;
+    }
     if (_isMonitoring) return;
     _errorMessage = null;
     _statusMessage = 'Iniciando monitoreo…';
@@ -77,7 +83,7 @@ class PlaybackNotifier extends ChangeNotifier {
   }
 
   Future<void> stopMonitoring() async {
-    if (!_isMonitoring) return;
+    if (!_isMonitoring && !_monitorUseCase.isRunning) return;
     await _monitorUseCase.stop();
     _isMonitoring = false;
     _currentAsset = null;

@@ -1,12 +1,14 @@
 import 'package:sqflite/sqflite.dart';
 
+import 'sync_local_data_source.dart';
 import '../../models/region_model.dart';
 import '../../../domain/value_objects/coordinate.dart';
 
 class RegionLocalDataSource {
-  RegionLocalDataSource(this._database);
+  RegionLocalDataSource(this._database, this._sync);
 
   final Database _database;
+  final SyncLocalDataSource _sync;
 
   Future<List<RegionModel>> getAll() async {
     final rows = await _database.query('regions');
@@ -22,6 +24,17 @@ class RegionLocalDataSource {
   }
 
   Future<int> insertRegion(Map<String, Object?> values) async {
-    return await _database.insert('regions', values);
+    final stamped = _sync.withInsertMetadata(values);
+    final id = await _database.insert('regions', stamped);
+    await _sync.enqueueOutbox(
+      tableName: 'regions',
+      recordUuid: stamped['uuid'] as String,
+      op: 'insert',
+      payload: {
+        ...stamped,
+        'id': id,
+      },
+    );
+    return id;
   }
 }

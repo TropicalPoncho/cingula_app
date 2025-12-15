@@ -42,12 +42,22 @@ dependencies:
   google_maps_flutter: ^2.14.0
   record: ^6.1.2
   permission_handler: ^12.0.1
+  uuid: ^4.4.2
+  geofence_service: ^6.0.0+1
+  wakelock_plus: ^1.2.5
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   # Lints predeterminadas para mantener estilo consistente.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/app_icon.png"   # pon aquí tu imagen base 1024x1024
+  min_sdk_android: 21
 
 flutter:
   uses-material-design: true

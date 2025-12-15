@@ -4,13 +4,32 @@
 class AudioPlayerService {
   AudioPlayerService() : _player = AudioPlayer();
 
+  // Asset de respaldo para evitar fallos cuando falta el archivo configurado.
+  static const String _fallbackAsset = 'assets/audio/mil_puertas.wav';
+
   final AudioPlayer _player;
 
-  /// Prepara un asset local antes de iniciar reproducción.
-  Future<void> loadAsset(String assetPath) async {
-    await _player.setAudioSource(
-      AudioSource.asset(assetPath),
-    );
+  /// Prepara un asset o archivo local antes de iniciar reproducción.
+  Future<void> loadPath(String path) async {
+    final isAsset = _looksLikeAsset(path);
+    try {
+      if (isAsset) {
+        await _player.setAudioSource(AudioSource.asset(path));
+      } else {
+        await _player.setAudioSource(AudioSource.uri(Uri.file(path)));
+      }
+    } on PlayerException catch (e) {
+      // Si el asset no existe, intentamos un respaldo para no romper la sesión.
+      if (isAsset && path != _fallbackAsset) {
+        try {
+          await _player.setAudioSource(AudioSource.asset(_fallbackAsset));
+          return;
+        } on PlayerException {
+          // Si el fallback falla, re-lanzamos el error original con contexto.
+        }
+      }
+      throw PlayerException(e.code, 'Audio load failed for "$path": ${e.message}', e.index);
+    }
   }
 
   /// Reanuda o inicia la reproducción del asset cargado.
@@ -25,9 +44,9 @@ class AudioPlayerService {
   /// Devuelve la posición actual del reproductor si está disponible.
   Future<Duration?> currentPosition() async => _player.position;
 
-  /// Carga el asset y salta a `offset` si se indica, luego reproduce.
-  Future<void> playFromAsset(String assetPath, Duration? offset) async {
-    await loadAsset(assetPath);
+  /// Carga el path (asset o archivo) y salta a `offset` si se indica, luego reproduce.
+  Future<void> playFromPath(String path, Duration? offset) async {
+    await loadPath(path);
     if (offset != null && offset > Duration.zero) {
       await seek(offset);
     }
@@ -39,5 +58,10 @@ class AudioPlayerService {
 
   /// Libera el reproductor al cerrar la app.
   Future<void> dispose() => _player.dispose();
+
+  bool _looksLikeAsset(String path) {
+    // Heurística simple: assets se definen dentro de la carpeta de assets del proyecto.
+    return path.startsWith('assets/') || path.startsWith('packages/');
+  }
 }
 

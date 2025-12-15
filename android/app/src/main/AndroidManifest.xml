@@ -1,8 +1,17 @@
-﻿<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Location permissions required for foreground playback triggers. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Location permissions required for foreground/background playback triggers. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <!-- Background location removed: request only if the app actually requires background location. -->
+    <!-- Background location is needed to seguir monitoreando con pantalla apagada. -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <!-- Foreground service de ubicación (Android 14+ requiere este permiso dedicado). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <!-- Notificaciones para avisar al usuario al entrar en regiones/triggers. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Necesario para mantener el servicio despierto y detectar actividad (geofence_service). -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION" />
     <!-- WorkManager needs this to resume tasks after reboot. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Allows the app to run a foreground service when needed for audio. -->
