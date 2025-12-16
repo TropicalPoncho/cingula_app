@@ -48,7 +48,6 @@ class MonitorUserLocationUseCase {
   bool _isProcessing = false;
   int _outsideCount = 0;
   bool _isRunning = false;
-  Timer? _fallbackTimer;
   
   // Filtro GPS para mejorar precisión
   final WeightedMovingAverageFilter _gpsFilter = WeightedMovingAverageFilter(windowSize: 3);
@@ -105,28 +104,6 @@ class MonitorUserLocationUseCase {
       overrideTriggerRadiusMeters: null,
     );
 
-    // Fallback: algunos dispositivos no emiten callbacks de geofence en background;
-    // hacemos polling periódico para no perder eventos.
-    _fallbackTimer?.cancel();
-    _fallbackTimer = Timer.periodic(
-      Duration(seconds: LocationConfig.finePollingSeconds),
-      (_) async {
-        if (!_isRunning) return;
-        try {
-          final coord = await _locationRepository.currentPosition();
-          await _handleCoordinate(
-            coord,
-            onAudioChanged: onAudioChanged,
-            onStatusUpdate: onStatusUpdate,
-            onLog: onLog,
-          );
-          onLog?.call('Fallback polling (fine)');
-        } catch (e) {
-          onLog?.call('Fallback polling error: $e');
-        }
-      },
-    );
-
     _isRunning = true;
     onStatusUpdate?.call('Monitoreo geofence activo');
   }
@@ -136,8 +113,6 @@ class MonitorUserLocationUseCase {
     if (!_isRunning) return;
 
     await _geofenceBackgroundService.stop();
-    _fallbackTimer?.cancel();
-    _fallbackTimer = null;
 
     // Liberar wake lock cuando se detiene el monitoreo.
     await WakelockPlus.disable();
