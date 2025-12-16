@@ -202,13 +202,19 @@ class MonitorUserLocationUseCase {
 
       if (!triggerCandidate) {
         onLog?.call('⛔ No hay trigger activo (norm > 1.0 o no hay triggers)');
+        onLog?.call('Estado actual: activePath=${_activePath?.id} activeTrigger=${_activeTrigger?.id} outsideCount=$_outsideCount');
         // No hay ningún trigger: mantener/pause/stop como antes
         if (_activePath != null) {
           _outsideCount++;
           if (_outsideCount >= 3) {
             final position = await _playbackGateway.currentPosition();
             if (position != null) {
-              await _geoPathRepository.saveProgress(_activePath!.id, position.inMilliseconds);
+              // Limitar el offset al total del audio si se puede obtener.
+              var saveMs = position.inMilliseconds;
+              final asset = await _audioRepository.findById(_activePath!.audioAssetId);
+              final totalMs = asset?.duration.inMilliseconds;
+              if (totalMs != null && saveMs > totalMs) saveMs = totalMs;
+              await _geoPathRepository.saveProgress(_activePath!.id, saveMs);
             }
             await _playbackGateway.pause();
             _activePath = null;
@@ -262,11 +268,13 @@ class MonitorUserLocationUseCase {
           return;
         }
 
-  final asset = await _audioRepository.findById(path.audioAssetId);
+        final asset = await _audioRepository.findById(path.audioAssetId);
         if (asset == null) {
           onStatusUpdate?.call('Audio ${path.audioAssetId} no encontrado.');
           return;
         }
+
+    final totalMs = asset.duration.inMilliseconds;
 
     // Prefer the trigger-specific offset if present, otherwise fallback to path saved progress.
     final triggerOffsetMs = match.offsetMs;
@@ -274,9 +282,21 @@ class MonitorUserLocationUseCase {
     final startOffset = (triggerOffsetMs > 0)
       ? Duration(milliseconds: triggerOffsetMs)
       : (savedMs > 0 ? Duration(milliseconds: savedMs) : Duration.zero);
+
+    // Si el offset guardado quedó al final del audio, considerar el camino completado y no reproducir.
+    if (totalMs > 0 && startOffset.inMilliseconds >= totalMs - 500) {
+      onLog?.call('Camino completado (offset=${startOffset.inMilliseconds}ms >= total=${totalMs}ms), no se reproduce.');
+      await _geoPathRepository.saveProgress(path.id, totalMs);
+      _activePath = null;
+      _activeTrigger = null;
+      onAudioChanged(null);
+      onStatusUpdate?.call('Camino completado: ${path.name}');
+      return;
+    }
     onLog?.call('Iniciando reproducción desde offset=${startOffset.inSeconds}s (triggerMs=$triggerOffsetMs savedMs=$savedMs)');
     await _playbackGateway.playFrom(asset, startOffset);
-        _activePath = path;
+      _activePath = path;
+      onLog?.call('Path activado: id=${path.id} offset=${startOffset.inMilliseconds}ms');
         _activeTrigger = null;
         onAudioChanged(asset);
       onStatusUpdate?.call('Reproduciendo camino: ${path.name}');
