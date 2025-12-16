@@ -189,54 +189,73 @@ class RecorderService {
   }) async {
     if (!isRecording || _currentPathId == null) return <GeoTrigger>[];
 
-    await _sub?.cancel();
-    _sub = null;
-
-    // Finalizar grabación de micrófono (si está activa)
-    Duration? recordedDuration;
-    try {
-      final isRec = await _micRecorder.isRecording();
-      if (isRec) {
-        await _micRecorder.stop();
-        if (_recordingStart != null) {
-          recordedDuration = DateTime.now().difference(_recordingStart!);
-        }
-      }
-    } catch (e) {
-      if (_debugLogs) {
-        developer.log('Error al detener grabación de micrófono: $e', name: 'RecorderService');
-      }
-    }
-
     final pathId = _currentPathId!;
     final audioId = _currentAudioAssetId;
-    _currentPathId = null;
-    _currentAudioAssetId = null;
-    _totalDistance = 0.0;
-    _lastTriggerPosition = null;
-    _recordingPath = null;
-    _recordingStart = null;
+    Duration? recordedDuration;
+    List<GeoTrigger> created = const <GeoTrigger>[];
 
-    if (_debugLogs) {
-      developer.log('stopRecording: pathId=$pathId triggers creados=$_triggerCount', name: 'RecorderService');
-      GetIt.instance<LogService>().log('Grabación finalizada: $_triggerCount triggers creados');
-    }
+    try {
+      await _sub?.cancel();
+      _sub = null;
 
-    _triggerCount = 0;
-
-    // Actualizar duración del audio grabado una vez detenida la captura
-    if (recordedDuration != null && audioId != null) {
+      // Finalizar grabación de micrófono (si está activa)
       try {
-        await _audioRepo.updateDuration(id: audioId, duration: recordedDuration);
+        final isRec = await _micRecorder.isRecording();
+        if (isRec) {
+          await _micRecorder.stop();
+          if (_recordingStart != null) {
+            recordedDuration = DateTime.now().difference(_recordingStart!);
+          }
+        }
       } catch (e) {
         if (_debugLogs) {
-          developer.log('Error actualizando duración del audio grabado: $e', name: 'RecorderService');
+          developer.log('Error al detener grabación de micrófono: $e', name: 'RecorderService');
         }
       }
+
+      // Liberar wakelock al terminar la grabación para evitar dejar la app fija en pantalla encendida.
+      try {
+        await WakelockPlus.disable();
+      } catch (e) {
+        if (_debugLogs) {
+          developer.log('Error desactivando wakelock: $e', name: 'RecorderService');
+        }
+      }
+
+      if (_debugLogs) {
+        developer.log('stopRecording: pathId=$pathId triggers creados=$_triggerCount', name: 'RecorderService');
+        GetIt.instance<LogService>().log('Grabación finalizada: $_triggerCount triggers creados');
+      }
+
+      // Actualizar duración del audio grabado una vez detenida la captura
+      if (recordedDuration != null && audioId != null) {
+        try {
+          await _audioRepo.updateDuration(id: audioId, duration: recordedDuration);
+        } catch (e) {
+          if (_debugLogs) {
+            developer.log('Error actualizando duración del audio grabado: $e', name: 'RecorderService');
+          }
+        }
+      }
+
+      // Retornar todos los triggers del path
+      created = await _triggerRepo.fetchByPathId(pathId);
+    } catch (e, st) {
+      if (_debugLogs) {
+        developer.log('Error en stopRecording: $e', name: 'RecorderService', error: e, stackTrace: st);
+        GetIt.instance<LogService>().log('Error al frenar la grabación: $e');
+      }
+    } finally {
+      _currentPathId = null;
+      _currentAudioAssetId = null;
+      _totalDistance = 0.0;
+      _lastTriggerPosition = null;
+      _recordingPath = null;
+      _recordingStart = null;
+      _triggerCount = 0;
+      _gpsFilter.reset();
     }
 
-    // Retornar todos los triggers del path
-    final created = await _triggerRepo.fetchByPathId(pathId);
     return created;
   }
 

@@ -1,4 +1,6 @@
-﻿import 'package:just_audio/just_audio.dart';
+﻿import 'dart:io';
+
+import 'package:just_audio/just_audio.dart';
 
 /// Encapsula JustAudio para facilitar pruebas y cambios futuros.
 class AudioPlayerService {
@@ -16,7 +18,20 @@ class AudioPlayerService {
       if (isAsset) {
         await _player.setAudioSource(AudioSource.asset(path));
       } else {
-        await _player.setAudioSource(AudioSource.uri(Uri.file(path)));
+        // Asegura que el archivo exista antes de cargarlo.
+        if (!await File(path).exists()) {
+          // PlayerException espera un code numérico en versiones actuales de just_audio.
+          throw PlayerException(404, 'Audio file not found at $path', null);
+        }
+
+        // setFilePath maneja internamente rutas con espacios y UTF-8.
+        // Intentar cargar; si falla por condición temporal (archivo aún cerrándose), reintentar una vez.
+        try {
+          await _player.setFilePath(path);
+        } on PlayerException {
+          await Future<void>.delayed(const Duration(milliseconds: 200));
+          await _player.setFilePath(path);
+        }
       }
     } on PlayerException catch (e) {
       // Si el asset no existe, intentamos un respaldo para no romper la sesión.
@@ -58,6 +73,9 @@ class AudioPlayerService {
 
   /// Libera el reproductor al cerrar la app.
   Future<void> dispose() => _player.dispose();
+
+  /// Indica si el reproductor sigue marcando estado de reproducción activo.
+  bool get isPlaying => _player.playing;
 
   bool _looksLikeAsset(String path) {
     // Heurística simple: assets se definen dentro de la carpeta de assets del proyecto.

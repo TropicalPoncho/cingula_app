@@ -49,5 +49,12 @@ class GeoTriggerRepositoryImpl implements GeoTriggerRepository {
     _cache = null;
     return deleted;
   }
+
+  @override
+  Future<int> deleteOrphaned() async {
+    final deleted = await _localDataSource.deleteOrphaned();
+    _cache = null;
+    return deleted;
+  }
 }
 

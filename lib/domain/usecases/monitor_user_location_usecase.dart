@@ -48,6 +48,7 @@ class MonitorUserLocationUseCase {
   bool _isProcessing = false;
   int _outsideCount = 0;
   bool _isRunning = false;
+  Timer? _fallbackTimer;
   
   // Filtro GPS para mejorar precisión
   final WeightedMovingAverageFilter _gpsFilter = WeightedMovingAverageFilter(windowSize: 3);
@@ -100,7 +101,30 @@ class MonitorUserLocationUseCase {
         onStateChanged?.call(region, region != null ? 'geofence' : 'idle');
       },
       onLog: onLog,
-      overrideTriggerRadiusMeters: LocationConfig.activationRadiusMeters,
+      // Usar el radio específico de cada trigger; activarRadio solo para debug visual.
+      overrideTriggerRadiusMeters: null,
+    );
+
+    // Fallback: algunos dispositivos no emiten callbacks de geofence en background;
+    // hacemos polling periódico para no perder eventos.
+    _fallbackTimer?.cancel();
+    _fallbackTimer = Timer.periodic(
+      Duration(seconds: LocationConfig.finePollingSeconds),
+      (_) async {
+        if (!_isRunning) return;
+        try {
+          final coord = await _locationRepository.currentPosition();
+          await _handleCoordinate(
+            coord,
+            onAudioChanged: onAudioChanged,
+            onStatusUpdate: onStatusUpdate,
+            onLog: onLog,
+          );
+          onLog?.call('Fallback polling (fine)');
+        } catch (e) {
+          onLog?.call('Fallback polling error: $e');
+        }
+      },
     );
 
     _isRunning = true;
@@ -112,6 +136,8 @@ class MonitorUserLocationUseCase {
     if (!_isRunning) return;
 
     await _geofenceBackgroundService.stop();
+    _fallbackTimer?.cancel();
+    _fallbackTimer = null;
 
     // Liberar wake lock cuando se detiene el monitoreo.
     await WakelockPlus.disable();
@@ -180,7 +206,7 @@ class MonitorUserLocationUseCase {
       double bestTriggerNorm = double.infinity;
       double bestTriggerDist = double.infinity;
       for (final t in triggers) {
-        final effectiveRadius = LocationConfig.activationRadiusMeters > 0 ? LocationConfig.activationRadiusMeters : t.radiusMeters;
+        final effectiveRadius = t.radiusMeters;
         final d = t.distanceTo(filteredCoordinate);
         final norm = effectiveRadius > 0 ? (d / effectiveRadius) : double.infinity;
         onLog?.call('  Trigger id=${t.id} name=${t.name}: dist=${d.toStringAsFixed(1)}m radius=${effectiveRadius.toStringAsFixed(1)}m norm=${norm.toStringAsFixed(2)}');
@@ -213,6 +239,9 @@ class MonitorUserLocationUseCase {
             _activePath = null;
             onAudioChanged(null);
             onStatusUpdate?.call('Usuario salió del camino; reproducción pausada.');
+            // Resetear filtro para que el reingreso no herede coordenadas lejanas
+            // que retrasen la detección del trigger al volver al path.
+            _gpsFilter.reset();
           }
         } else if (_activeTrigger != null) {
           _activeTrigger = null;
@@ -234,6 +263,7 @@ class MonitorUserLocationUseCase {
         final asset = await _audioRepository.findById(match.audioAssetId);
         if (asset != null) {
           onAudioChanged(asset); // Refresca UI con el nombre/obra aunque siga el mismo trigger
+          onStatusUpdate?.call('Reproduciendo zona: ${match.name}');
         }
         return;
       }
@@ -253,6 +283,7 @@ class MonitorUserLocationUseCase {
         // Si ya estamos reproduciendo el mismo path, no hacer nada
         if (_activePath?.id == path.id) {
           onLog?.call('Mismo path activo (id=${path.id}), manteniendo reproducción');
+          onStatusUpdate?.call('Reproduciendo camino: ${path.name}');
           return;
         }
 
@@ -273,7 +304,7 @@ class MonitorUserLocationUseCase {
         _activePath = path;
         _activeTrigger = null;
         onAudioChanged(asset);
-        onStatusUpdate?.call('Reproduciendo camino asociado al trigger: ${match.name}');
+      onStatusUpdate?.call('Reproduciendo camino: ${path.name}');
         return;
       }
 

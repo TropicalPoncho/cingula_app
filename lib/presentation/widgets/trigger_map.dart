@@ -174,6 +174,8 @@ class _TriggerMapWidgetState extends State<TriggerMapWidget> {
   Widget build(BuildContext context) {
     // Polígonos para radios de triggers
     final polygons = <Polygon>[];
+    // Índice de paths para lookup rápido al tocar marcador
+    final pathById = {for (final p in widget.paths) p.id: p};
     for (final t in widget.triggers) {
       final radius = widget.triggerRadius ?? t.radiusMeters;
       final poly = _circlePolygon(t.latitude, t.longitude, radius, points: 32);
@@ -198,7 +200,18 @@ class _TriggerMapWidgetState extends State<TriggerMapWidget> {
         width: 36,
         height: 36,
         point: ll.LatLng(t.latitude, t.longitude),
-        child: const Icon(Icons.location_on, color: Colors.red, size: 28),
+        child: GestureDetector(
+          onTap: () {
+            final pathName = t.geoPathId != null
+                ? (pathById[t.geoPathId!]?.name ?? 'Path ${t.geoPathId}')
+                : 'Trigger sin path';
+            final triggerName = (t.name.isNotEmpty ?? false) ? t.name : 'Trigger ${t.id}';
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('$triggerName • $pathName'), duration: const Duration(seconds: 2)),
+            );
+          },
+          child: const Icon(Icons.location_on, color: Colors.red, size: 28),
+        ),
       ));
     }
 

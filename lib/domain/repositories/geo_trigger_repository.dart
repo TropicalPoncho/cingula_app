@@ -6,6 +6,7 @@ abstract class GeoTriggerRepository {
   Future<List<GeoTrigger>> fetchAll();
   Future<List<GeoTrigger>> fetchByPathId(int pathId);
   Future<int> deleteByAudioAssetId(int audioAssetId);
+  Future<int> deleteOrphaned();
   Future<GeoTrigger?> findMatch(Coordinate coordinate);
 
   /// Inserta un trigger nuevo y devuelve el id.

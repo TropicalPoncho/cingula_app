@@ -20,6 +20,33 @@ class GeoTriggerLocalDataSource {
     return rows.map(GeoTriggerModel.fromMap).toList(growable: false);
   }
 
+  /// Borra triggers cuyo geo_path_id apunta a paths inexistentes.
+  Future<int> deleteOrphaned() async {
+    // Capturar UUIDs de huérfanos antes de borrar para encolar outbox.
+    final rows = await _database.rawQuery(
+      'SELECT uuid FROM geo_triggers WHERE geo_path_id IS NOT NULL AND geo_path_id NOT IN (SELECT id FROM geo_paths)',
+    );
+
+    final deleted = await _database.delete(
+      'geo_triggers',
+      where: 'geo_path_id IS NOT NULL AND geo_path_id NOT IN (SELECT id FROM geo_paths)',
+    );
+
+    for (final row in rows) {
+      final uuid = row['uuid'] as String?;
+      if (uuid != null) {
+        await _sync.enqueueOutbox(
+          tableName: 'geo_triggers',
+          recordUuid: uuid,
+          op: 'delete',
+          payload: {'reason': 'orphan_geo_path'},
+        );
+      }
+    }
+
+    return deleted;
+  }
+
   /// Borra todos los triggers asociados a un audioAssetId y devuelve el número de filas borradas.
   Future<int> deleteByAudioAssetId(int audioAssetId) async {
     // Capture UUIDs before deleting so we can enqueue delete events.

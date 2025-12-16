@@ -342,22 +342,29 @@ class _DiagnosticsPanelState extends State<DiagnosticsPanel> {
                           onPressed: !_isRecording
                               ? null
                               : () async {
-                                  final radius = double.tryParse(_triggerRadiusController.text) ?? 12.0;
-                                  final spacing = math.max(1.0, radius - 2.0);
-                                  final created = await getIt<RecorderService>().stopRecording(
-                                    spacingMeters: spacing,
-                                    triggerRadiusMeters: radius,
-                                  );
-                                  setState(() {
-                                    _lastTriggers = created;
-                                    _isRecording = false;
-                                  });
-                                  if (mounted) {
+                                  try {
+                                    final radius = double.tryParse(_triggerRadiusController.text) ?? 12.0;
+                                    final spacing = math.max(1.0, radius - 2.0);
+                                    final created = await getIt<RecorderService>().stopRecording(
+                                      spacingMeters: spacing,
+                                      triggerRadiusMeters: radius,
+                                    );
+                                    if (!mounted) return;
+                                    setState(() {
+                                      _lastTriggers = created;
+                                      _isRecording = false;
+                                    });
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(content: Text('Recording stopped and triggers created')),
                                     );
+                                    await _refreshMapData();
+                                  } catch (e) {
+                                    if (!mounted) return;
+                                    setState(() => _isRecording = false);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('No se pudo frenar la grabación: $e')),
+                                    );
                                   }
-                                  await _refreshMapData();
                                 },
                           child: const Text('Frenar grabación'),
                         ),

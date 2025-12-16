@@ -14,14 +14,14 @@ import 'package:cingula_app/domain/repositories/region_repository.dart';
 
 // Fakes/simple implementations for testing
 class FakeLocationRepository implements LocationRepository {
-  FakeLocationRepository(this._coord);
-  final Coordinate _coord;
+  FakeLocationRepository(this.coord);
+  Coordinate coord;
 
   @override
   Future<void> ensureServiceAndPermissions() async {}
 
   @override
-  Future<Coordinate> currentPosition() async => _coord;
+  Future<Coordinate> currentPosition() async => coord;
 
   @override
   Stream<Coordinate> positionStream({double? distanceFilter}) => Stream.empty();
@@ -69,6 +69,9 @@ class FakeGeoTriggerRepository implements GeoTriggerRepository {
     _triggers.removeWhere((t) => t.audioAssetId == audioAssetId);
     return removed.length;
   }
+
+  @override
+  Future<int> deleteOrphaned() async => 0;
 }
 
 class FakeGeoPathRepository implements GeoPathRepository {
@@ -87,7 +90,21 @@ class FakeGeoPathRepository implements GeoPathRepository {
   }
 
   @override
-  Future<void> saveProgress(int pathId, int offsetMs) async {}
+  Future<void> saveProgress(int pathId, int offsetMs) async {
+    final idx = _paths.indexWhere((p) => p.id == pathId);
+    if (idx == -1) return;
+    _paths[idx] = GeoPath(
+      id: _paths[idx].id,
+      name: _paths[idx].name,
+      audioAssetId: _paths[idx].audioAssetId,
+      toleranceMeters: _paths[idx].toleranceMeters,
+      savedOffsetMs: offsetMs,
+      uuid: _paths[idx].uuid,
+      updatedAt: _paths[idx].updatedAt,
+      deletedAt: _paths[idx].deletedAt,
+      logicalVersion: _paths[idx].logicalVersion,
+    );
+  }
 
   @override
   Future<int> createPath({required String name, required int audioAssetId, double toleranceMeters = 10.0}) async {
@@ -186,12 +203,16 @@ class RecordingPlaybackGateway implements AudioPlaybackGateway {
   Duration? playedOffset;
   bool playFromCalled = false;
   bool playCalled = false;
+  bool pauseCalled = false;
+  Duration currentPositionValue = Duration.zero;
 
   @override
   AudioAsset? get currentAsset => playedAsset;
 
   @override
-  Future<void> pause() async {}
+  Future<void> pause() async {
+    pauseCalled = true;
+  }
 
   @override
   Future<void> play(AudioAsset asset) async {
@@ -207,7 +228,15 @@ class RecordingPlaybackGateway implements AudioPlaybackGateway {
   }
 
   @override
-  Future<Duration?> currentPosition() async => Duration.zero;
+  Future<Duration?> currentPosition() async => currentPositionValue;
+
+  void resetFlags() {
+    playCalled = false;
+    playFromCalled = false;
+    playedOffset = null;
+    playedAsset = null;
+    pauseCalled = false;
+  }
 
   @override
   Future<void> stop() async {}
@@ -310,5 +339,77 @@ void main() {
 
     expect(playback.playCalled, isTrue);
     expect(playback.playedAsset?.id, equals(audioAsset.id));
+  });
+
+  test('resume from saved offset when re-entering path', () async {
+    final inside = Coordinate(latitude: -34.786151, longitude: -58.409156, accuracyMeters: 5.0);
+    final outside = Coordinate(latitude: -34.700000, longitude: -58.300000, accuracyMeters: 5.0);
+
+    final trigger = GeoTrigger(
+      id: 3,
+      name: 'T-path',
+      description: 'path trigger',
+      latitude: inside.latitude,
+      longitude: inside.longitude,
+      radiusMeters: 10.0,
+      audioAssetId: 4,
+      regionId: 1,
+      geoPathId: 10,
+    );
+
+    final path = GeoPath(
+      id: 10,
+      name: 'P-resume',
+      audioAssetId: 4,
+      toleranceMeters: 20.0,
+      savedOffsetMs: 0,
+    );
+
+    final audioAsset = AudioAsset(
+      id: 4,
+      title: 'path-audio-resume',
+      artist: 'artist',
+      description: 'desc',
+      duration: Duration(seconds: 60),
+      localPath: 'assets/audio/resume.mp3',
+    );
+
+    final locationRepo = FakeLocationRepository(inside);
+    final triggerRepo = FakeGeoTriggerRepository([trigger]);
+    final pathRepo = FakeGeoPathRepository([path]);
+    final audioRepo = FakeAudioRepository([audioAsset]);
+    final playback = RecordingPlaybackGateway();
+
+    final usecase = MonitorUserLocationUseCase(
+      locationRepository: locationRepo,
+      geoTriggerRepository: triggerRepo,
+      geoPathRepository: pathRepo,
+      regionRepository: FakeRegionRepository(),
+      audioRepository: audioRepo,
+      playbackGateway: playback,
+    );
+
+    // First entry should start from offset 0.
+    await usecase.executeSingleCheck();
+    expect(playback.playFromCalled, isTrue);
+    expect(playback.playedOffset, equals(Duration.zero));
+
+    // Simulate progress and exiting the path (three checks outside to trigger pause/save).
+    playback.currentPositionValue = const Duration(seconds: 12);
+    playback.resetFlags();
+    locationRepo.coord = outside;
+    await usecase.executeSingleCheck();
+    await usecase.executeSingleCheck();
+    await usecase.executeSingleCheck();
+    expect(playback.pauseCalled, isTrue);
+    final savedPath = await pathRepo.fetchById(path.id);
+    expect(savedPath?.savedOffsetMs, equals(12000));
+
+    // Re-enter: should resume from saved offset.
+    playback.resetFlags();
+    locationRepo.coord = inside;
+    await usecase.executeSingleCheck();
+    expect(playback.playFromCalled, isTrue);
+    expect(playback.playedOffset, equals(const Duration(seconds: 12)));
   });
 }

@@ -12,6 +12,9 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final notifier = context.watch<PlaybackNotifier>();
+    final currentAsset = notifier.currentAsset;
+    final status = notifier.statusMessage;
+    final showAudioCard = currentAsset != null || (status != null && status.toLowerCase().startsWith('reproduciendo'));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Cingula')),
@@ -27,7 +30,15 @@ class HomePage extends StatelessWidget {
               onChanged: (v) => v ? notifier.startMonitoring() : notifier.stopMonitoring(),
             ),
             const SizedBox(height: 24),
-            if (notifier.currentAsset != null) AudioDetails(asset: notifier.currentAsset!),
+            if (showAudioCard)
+              currentAsset != null
+                  ? AudioDetails(asset: currentAsset)
+                  : Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Text(status ?? 'Reproduciendo…'),
+                      ),
+                    ),
             const SizedBox(height: 16),
             const DiagnosticsPanel(),
           ],

@@ -43,6 +43,7 @@ class PlaybackNotifier extends ChangeNotifier {
     if (_isMonitoring) return;
     _errorMessage = null;
     _statusMessage = 'Iniciando monitoreo…';
+    _isMonitoring = true; // Optimista para que el switch/btn refleje inmediatamente
     notifyListeners();
 
     try {
@@ -52,10 +53,11 @@ class PlaybackNotifier extends ChangeNotifier {
         onLog: _addLog,
         onStateChanged: _handleStateChanged,
       );
-      _isMonitoring = true;
+      _statusMessage = 'Monitoreo activo';
     } catch (error) {
       _errorMessage = error.toString();
       _statusMessage = 'Ocurrió un problema al iniciar.';
+      _isMonitoring = false;
     } finally {
       notifyListeners();
     }
@@ -84,6 +86,8 @@ class PlaybackNotifier extends ChangeNotifier {
 
   Future<void> stopMonitoring() async {
     if (!_isMonitoring && !_monitorUseCase.isRunning) return;
+    _statusMessage = 'Deteniendo…';
+    notifyListeners();
     await _monitorUseCase.stop();
     _isMonitoring = false;
     _currentAsset = null;

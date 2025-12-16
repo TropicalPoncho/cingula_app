@@ -147,6 +147,23 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
     }
   }
 
+  Future<void> _cleanupOrphanTriggers() async {
+    try {
+      final triggerRepo = _getIt<GeoTriggerRepository>();
+      final deleted = await triggerRepo.deleteOrphaned();
+      await _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Triggers huérfanos eliminados: $deleted')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo limpiar triggers huérfanos: $e')),
+      );
+    }
+  }
+
   Future<void> _importDb() async {
     try {
       final result = await FilePicker.platform.pickFiles(
@@ -231,9 +248,10 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
       }
     }
     if (regionId == null) return '-';
-    final region = _regions.where((r) => r.id == regionId).toList();
-    if (region.isEmpty) return '-';
-    return region.first.name;
+    for (final r in _regions) {
+      if (r.id == regionId) return r.name;
+    }
+    return '-';
   }
 
   String _audioNameForPath(GeoPath path) {
@@ -309,6 +327,7 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
                       ElevatedButton.icon(onPressed: _exportDb, icon: const Icon(Icons.upload_file), label: const Text('Exportar BD')),
                       ElevatedButton.icon(onPressed: _importDb, icon: const Icon(Icons.download), label: const Text('Importar BD')),
                       OutlinedButton.icon(onPressed: _showStats, icon: const Icon(Icons.info_outline), label: const Text('Ver contenido BD')),
+                      OutlinedButton.icon(onPressed: _cleanupOrphanTriggers, icon: const Icon(Icons.cleaning_services_outlined), label: const Text('Limpiar triggers huérfanos')),
                     ],
                   ),
                   const SizedBox(height: 12),

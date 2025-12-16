@@ -23,6 +23,9 @@ class _FakeGeoTriggerRepository implements GeoTriggerRepository {
   Future<int> deleteByAudioAssetId(int audioAssetId) async => 0;
 
   @override
+  Future<int> deleteOrphaned() async => 0;
+
+  @override
   Future<List<GeoTrigger>> fetchAll() async => _list;
 
   @override
@@ -86,6 +89,9 @@ class _NoopLocationRepo implements LocationRepository {
 class _NoopGeoTriggerRepo implements GeoTriggerRepository {
   @override
   Future<int> deleteByAudioAssetId(int audioAssetId) async => 0;
+
+  @override
+  Future<int> deleteOrphaned() async => 0;
 
   @override
   Future<List<GeoTrigger>> fetchAll() async => [];

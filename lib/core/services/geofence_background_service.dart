@@ -73,7 +73,7 @@ class GeofenceBackgroundService {
     required void Function(Coordinate coordinate) onLocation,
     required void Function(Region? region) onRegionChange,
     void Function(String log)? onLog,
-    double? overrideTriggerRadiusMeters,
+    double? overrideTriggerRadiusMeters, // Usar el radio configurado en cada trigger; el activationRadius queda solo para debug visual.
   }) async {
     if (_running) return;
     _configureListeners(
