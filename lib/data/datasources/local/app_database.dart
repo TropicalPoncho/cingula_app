@@ -4,6 +4,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
+import 'db_recovery.dart';
 import 'seed_data.dart';
 
 /// Gestiona la instancia de SQLite y crea tablas iniciales.
@@ -12,6 +13,10 @@ class AppDatabase {
   static const _dbVersion = 5;
 
   Database? _database;
+
+  /// Registro del último evento de recuperación de base (null si no hubo).
+  /// La UI lo lee una vez tras el primer frame y lo limpia (ver plan 01-03).
+  DatabaseRecoveryEvent? lastRecoveryEvent;
 
   Database get database {
     final db = _database;
@@ -36,19 +41,25 @@ class AppDatabase {
         onUpgrade: _onUpgrade,
       );
     } catch (e) {
-      // Si la BD falla al abrir (corrupcion, esquema incompatible), se borra y recrea.
-      stderr.writeln('Database init failed: $e. Attempting to delete and recreate...');
-      try {
-        await deleteDatabase(path);
-        _database = await openDatabase(
-          path,
-          version: _dbVersion,
-          onCreate: _onCreate,
-          onUpgrade: _onUpgrade,
+      stderr.writeln(
+        'Database init failed: $e. Renombrando el archivo existente y arrancando en limpio...',
+      );
+      // Si el rename falla, la excepción se propaga a propósito: preferimos
+      // no arrancar antes que destruir datos del usuario (DATA-01).
+      final backupPath = await renameCorruptDatabase(path, DateTime.now());
+
+      _database = await openDatabase(
+        path,
+        version: _dbVersion,
+        onCreate: _onCreate,
+        onUpgrade: _onUpgrade,
+      );
+
+      if (backupPath != null) {
+        lastRecoveryEvent = DatabaseRecoveryEvent(
+          backupPath: backupPath,
+          occurredAt: DateTime.now(),
         );
-      } catch (e2) {
-        stderr.writeln('Failed to recreate database: $e2');
-        rethrow;
       }
     }
   }
