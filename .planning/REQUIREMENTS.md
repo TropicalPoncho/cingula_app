@@ -43,7 +43,7 @@ Requirements para este milestone. Cada uno mapea a fases del roadmap.
 
 ### Dashboard (UI)
 
-- [ ] **UI-01**: Un toggle en runtime (no flavors de Flutter) alterna entre el dashboard de usuario final y el panel de debug
+- [x] **UI-01**: Un toggle en runtime (no flavors de Flutter) alterna entre el dashboard de usuario final y el panel de debug
 
 ## v2 Requirements
 
@@ -78,7 +78,7 @@ Reconocidos pero diferidos, no forman parte del roadmap de este milestone.
 |-------------|-------|--------|
 | DATA-01 | Phase 1 | Pending |
 | DATA-02 | Phase 1 | Pending |
-| UI-01 | Phase 1 | Pending |
+| UI-01 | Phase 1 | Complete |
 | SYNC-01 | Phase 2 | Pending |
 | SYNC-02 | Phase 2 | Pending |
 | SYNC-03 | Phase 2 | Pending |
