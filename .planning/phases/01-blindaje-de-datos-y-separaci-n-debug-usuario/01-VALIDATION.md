@@ -1,10 +1,11 @@
 ---
 phase: 01
 slug: blindaje-de-datos-y-separaci-n-debug-usuario
-status: draft
+status: planned
 nyquist_compliant: false
-wave_0_complete: false
+wave_0_complete: n/a
 created: 2026-08-08
+updated: 2026-08-08
 ---
 
 # Phase 01 — Validation Strategy
@@ -19,18 +20,30 @@ created: 2026-08-08
 |----------|-------|
 | **Framework** | `flutter_test` (bundled with Flutter SDK, already in `dev_dependencies`) |
 | **Config file** | none — no `dart_test.yaml` in repo; tests run via default `flutter test` discovery of `test/**/*_test.dart` |
-| **Quick run command** | `flutter test test\core\app_database_test.dart` (targeted once new files exist) |
+| **Quick run command** | `flutter test test/<archivo>_test.dart` (targeted) |
 | **Full suite command** | `flutter test` |
 | **Estimated runtime** | ~30 seconds (small suite) |
+| **New dev dependencies** | none — `sqflite_common_ffi` NO se adopta (ver "Decisión de planning") |
+
+---
+
+## Decisión de planning (2026-08-08)
+
+El research ofrecía dos caminos para DATA-01: adoptar `sqflite_common_ffi` para probar el ciclo real `openDatabase` → fallo → rename → reopen, o dejarlo como QA manual. Se eligió un tercer camino, más barato y con mejor cobertura del riesgo real:
+
+- La lógica de riesgo (renombrar sin borrar, incluidos los sidecars `-wal`/`-shm`/`-journal`) vive en `lib/data/datasources/local/db_recovery.dart`, que importa **solo `dart:io`**. Se prueba con un directorio temporal real, sin sqflite, sin `path_provider`, sin plugins y sin dependencias nuevas.
+- El pegamento restante en `AppDatabase.init()` (llamar al helper y reabrir) queda cubierto por el chequeo estático `grep -rn "deleteDatabase(" lib/` → 0 y por la QA manual en dispositivo.
+
+Por el mismo criterio se descartaron los widget tests de `HomePage` completa (`home_page_gesture_test.dart` / `home_page_mode_test.dart` propuestos por el research): exigirían montar todo el grafo de `getIt` + Provider (`RecorderService`, `MonitorUserLocationUseCase` con 6 repositorios, `DiagnosticsPanel`) para verificar un booleano de una línea. En su lugar se extrajeron las piezas con lógica real a widgets propios sin DI (`HiddenTapGesture`, `UserModeView`), que sí se prueban directamente.
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run `flutter test`
-- **After every plan wave:** Run `flutter test`
-- **Before `/gsd:verify-work`:** Full suite must be green, plus the manual QA step for the DB-recovery banner
-- **Max feedback latency:** 30 seconds
+- **After every task commit:** `flutter test`
+- **After every plan wave:** `flutter test` + `flutter analyze`
+- **Before `/gsd:verify-work`:** suite verde + auditoría ponytail (plan 01-04 task 1) + QA manual (plan 01-04 task 2)
+- **Max feedback latency:** 30 segundos
 
 ---
 
@@ -38,25 +51,27 @@ created: 2026-08-08
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 01-01-01 | 01 | 0 | DATA-01 | unit | `flutter test test/core/app_database_test.dart` | ❌ W0 | ⬜ pending |
-| 01-01-02 | 01 | 1 | DATA-01 | manual | Corrupt `cingula.db` on device/emulator, cold-start, confirm banner text + renamed file present | N/A manual-only | ⬜ pending |
-| 01-01-03 | 01 | 1 | DATA-02 | unit / static check | `flutter test` + `grep -rn "recreateForTesting\|importDatabase" lib/` returns no matches outside intentionally-kept code | ✅ existing suite | ⬜ pending |
-| 01-01-04 | 01 | 0 | UI-01 | unit | `flutter test test/core/config/app_mode_config_test.dart` | ❌ W0 | ⬜ pending |
-| 01-01-05 | 01 | 1 | UI-01 | widget | `flutter test test/presentation/pages/home_page_gesture_test.dart` | ❌ W0 | ⬜ pending |
-| 01-01-06 | 01 | 1 | UI-01 | widget | `flutter test test/presentation/pages/home_page_mode_test.dart` | ❌ W0 | ⬜ pending |
+| 01-01-01 | 01 | 1 | DATA-01 | unit | `flutter test test/data/datasources/local/db_recovery_test.dart` | creado por la tarea (tdd) | ⬜ pending |
+| 01-01-02 | 01 | 1 | DATA-02 | static + suite | `flutter analyze` + `flutter test` + `grep -rn "recreateForTesting\|importDatabase\|file_picker\|deleteDatabase(" lib/ test/` → 0 | ✅ existing suite | ⬜ pending |
+| 01-02-01 | 02 | 1 | UI-01 | unit | `flutter test test/core/config/app_mode_config_test.dart` | creado por la tarea (tdd) | ⬜ pending |
+| 01-02-02 | 02 | 1 | UI-01 | widget | `flutter test test/presentation/widgets/hidden_tap_gesture_test.dart` | creado por la tarea (tdd) | ⬜ pending |
+| 01-02-03 | 02 | 1 | UI-01 | widget | `flutter test test/presentation/pages/home/widgets/user_mode_view_test.dart` | creado por la tarea (tdd) | ⬜ pending |
+| 01-03-01 | 03 | 2 | UI-01 | static + suite | `flutter analyze` + `flutter test` + greps de `<acceptance_criteria>` del plan 01-03 | ✅ existing suite | ⬜ pending |
+| 01-03-02 | 03 | 2 | DATA-01 | static + suite | `flutter analyze` + `flutter test` + `grep -c "showDialog" lib/presentation/pages/home_page_impl.dart` → 0 | ✅ existing suite | ⬜ pending |
+| 01-04-01 | 04 | 3 | DATA-01/02, UI-01 | suite + static | `flutter analyze` + `flutter test` + greps de completitud | ✅ existing suite | ⬜ pending |
+| 01-04-02 | 04 | 3 | DATA-01, UI-01 | manual (checkpoint) | ver "Manual-Only Verifications" | N/A manual-only | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+
+No hay 3 tareas consecutivas sin verificación automatizada: cada tarea de los planes 01-01 a 01-04 corre al menos `flutter test`.
 
 ---
 
 ## Wave 0 Requirements
 
-- [ ] `test/core/app_database_test.dart` — stubs for DATA-01 rename-recovery behavior (only if `sqflite_common_ffi` is adopted; otherwise this becomes a manual-only verification, see Manual-Only Verifications below)
-- [ ] `test/core/config/app_mode_config_test.dart` — stubs for UI-01 persistence/default behavior, using `SharedPreferences.setMockInitialValues({})` (no new dependency needed)
-- [ ] `test/presentation/pages/home_page_gesture_test.dart` — stubs for UI-01 tap-count/timeout gesture
-- [ ] `test/presentation/pages/home_page_mode_test.dart` — stubs for UI-01 conditional widget visibility
+Ninguno. Los 4 archivos de test los crea la tarea que implementa el código correspondiente (tareas marcadas `tdd="true"` en los planes 01-01 y 01-02, con el bloque `<behavior>` fijando los casos antes de escribir la implementación). No hay ningún `<verify>` que apunte a un archivo que no exista al momento de correrse.
 
-*(No shared fixtures/conftest-equivalent needed — each new test file is self-contained per existing repo convention.)*
+*(No hacen falta fixtures compartidos — cada archivo de test es autocontenido, según la convención del repo.)*
 
 ---
 
@@ -64,9 +79,8 @@ created: 2026-08-08
 
 | Behavior | Requirement | Why Manual | Test Instructions |
 |----------|-------------|------------|--------------------|
-| App starts normally (no blocking UI) after a DB recovery event; banner text matches UI-SPEC copy | DATA-01 | Requires real filesystem state manipulation on-device; low ROI to automate a one-time startup event | Corrupt `cingula.db` on a device/emulator, cold-start app, confirm banner text + dismiss works, confirm renamed file present in app documents dir |
-
-*Planner may choose to automate the DATA-01 rename-recovery unit test via `sqflite_common_ffi` (adds one dev dependency) instead of relying solely on this manual step — either approach satisfies Nyquist as long as the chosen path is reflected in the Per-Task Verification Map above.*
+| Arranque en frío tras corromper `cingula.db`: la app abre normal (sin UI bloqueante), muestra el `MaterialBanner` con el copy del UI-SPEC, y el archivo renombrado queda en disco | DATA-01 | Requiere manipular el estado real del filesystem del sandbox de la app en un dispositivo; automatizarlo pediría un integration test con `adb` para un evento de arranque único | Plan 01-04, task 2, pasos 9-13 (incluye los comandos `adb run-as`) |
+| Persistencia del toggle entre reinicios reales de la app, y que el gesto de 5 taps sea alcanzable/no descubrible en el AppBar real | UI-01 | `SharedPreferences` está mockeado en tests (no hay reinicio de proceso real); la ergonomía del gesto sobre el AppBar solo se juzga en dispositivo | Plan 01-04, task 2, pasos 1-7 |
 
 ---
 
@@ -79,4 +93,4 @@ created: 2026-08-08
 - [ ] Feedback latency < 30s
 - [ ] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** pending — se firma en el plan 01-04, task 1.
