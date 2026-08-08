@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:file_picker/file_picker.dart';
 
 import '../../domain/entities/geo_path.dart';
 import '../../domain/entities/geo_trigger.dart';
@@ -102,30 +101,6 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
     }
   }
 
-  Future<void> _recreateDb() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('⚠️ Advertencia'),
-        content: const Text('Esto BORRARÁ TODOS los datos grabados incluyendo rutas de prueba. ¿Continuar?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Borrar todo')),
-        ],
-      ),
-    );
-    if (confirm != true) return;
-    final db = _getIt<AppDatabase>();
-    await db.recreateForTesting();
-    _dirty = true;
-    await _load();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Database recreada (debug)')),
-      );
-    }
-  }
-
   Future<void> _exportDb() async {
     try {
       final db = _getIt<AppDatabase>();
@@ -161,52 +136,6 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('No se pudo limpiar triggers huérfanos: $e')),
       );
-    }
-  }
-
-  Future<void> _importDb() async {
-    try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['db'],
-      );
-      if (result == null || result.files.isEmpty) return;
-      final filePath = result.files.first.path;
-      if (filePath == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Error: no se pudo obtener la ruta del archivo')),
-          );
-        }
-        return;
-      }
-      final confirm = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Importar BD'),
-          content: const Text('Esto reemplazará la base de datos actual. ¿Continuar?'),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-            ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Importar')),
-          ],
-        ),
-      );
-      if (confirm != true) return;
-      final db = _getIt<AppDatabase>();
-      await db.importDatabase(filePath);
-      _dirty = true;
-      await _load();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('BD importada exitosamente')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al importar: $e')),
-        );
-      }
     }
   }
 
@@ -323,9 +252,7 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      OutlinedButton(onPressed: _recreateDb, child: const Text('Recreate DB (debug)')),
                       ElevatedButton.icon(onPressed: _exportDb, icon: const Icon(Icons.upload_file), label: const Text('Exportar BD')),
-                      ElevatedButton.icon(onPressed: _importDb, icon: const Icon(Icons.download), label: const Text('Importar BD')),
                       OutlinedButton.icon(onPressed: _showStats, icon: const Icon(Icons.info_outline), label: const Text('Ver contenido BD')),
                       OutlinedButton.icon(onPressed: _cleanupOrphanTriggers, icon: const Icon(Icons.cleaning_services_outlined), label: const Text('Limpiar triggers huérfanos')),
                     ],
