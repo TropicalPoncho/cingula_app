@@ -9,8 +9,8 @@ Requirements para este milestone. Cada uno mapea a fases del roadmap.
 
 ### Data Integrity (DATA)
 
-- [ ] **DATA-01**: La app nunca borra/recrea la base de datos local sin respaldo previo, ni siquiera ante fallo de apertura
-- [ ] **DATA-02**: Las acciones destructivas de la UI de debug (recrear DB, importar DB) piden confirmación explícita antes de ejecutarse
+- [x] **DATA-01**: La app nunca borra/recrea la base de datos local sin respaldo previo, ni siquiera ante fallo de apertura
+- [x] **DATA-02**: Las acciones destructivas de la UI de debug (recrear DB, importar DB) piden confirmación explícita antes de ejecutarse
 
 ### Sync (SYNC)
 
@@ -76,8 +76,8 @@ Reconocidos pero diferidos, no forman parte del roadmap de este milestone.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | Phase 1 | Pending |
-| DATA-02 | Phase 1 | Pending |
+| DATA-01 | Phase 1 | Complete |
+| DATA-02 | Phase 1 | Complete |
 | UI-01 | Phase 1 | Pending |
 | SYNC-01 | Phase 2 | Pending |
 | SYNC-02 | Phase 2 | Pending |
