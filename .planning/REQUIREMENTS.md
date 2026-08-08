@@ -74,36 +74,34 @@ Reconocidos pero diferidos, no forman parte del roadmap de este milestone.
 
 ## Traceability
 
-Se completa durante la creación del roadmap.
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | — | Pending |
-| DATA-02 | — | Pending |
-| SYNC-01 | — | Pending |
-| SYNC-02 | — | Pending |
-| SYNC-03 | — | Pending |
-| SYNC-04 | — | Pending |
-| SYNC-05 | — | Pending |
-| SYNC-06 | — | Pending |
-| SYNC-07 | — | Pending |
-| SYNC-08 | — | Pending |
-| GEO-01 | — | Pending |
-| GEO-02 | — | Pending |
-| GEO-03 | — | Pending |
-| GEO-04 | — | Pending |
-| AUDIO-01 | — | Pending |
-| DOWNLOAD-01 | — | Pending |
-| DOWNLOAD-02 | — | Pending |
-| DOWNLOAD-03 | — | Pending |
-| DOWNLOAD-04 | — | Pending |
-| UI-01 | — | Pending |
+| DATA-01 | Phase 1 | Pending |
+| DATA-02 | Phase 1 | Pending |
+| UI-01 | Phase 1 | Pending |
+| SYNC-01 | Phase 2 | Pending |
+| SYNC-02 | Phase 2 | Pending |
+| SYNC-03 | Phase 2 | Pending |
+| SYNC-06 | Phase 2 | Pending |
+| SYNC-07 | Phase 2 | Pending |
+| SYNC-08 | Phase 2 | Pending |
+| SYNC-04 | Phase 3 | Pending |
+| SYNC-05 | Phase 3 | Pending |
+| GEO-01 | Phase 4 | Pending |
+| GEO-02 | Phase 4 | Pending |
+| GEO-03 | Phase 4 | Pending |
+| GEO-04 | Phase 4 | Pending |
+| AUDIO-01 | Phase 5 | Pending |
+| DOWNLOAD-01 | Phase 5 | Pending |
+| DOWNLOAD-02 | Phase 5 | Pending |
+| DOWNLOAD-03 | Phase 5 | Pending |
+| DOWNLOAD-04 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 20 total
-- Mapped to phases: 0 (pendiente de roadmap)
-- Unmapped: 20 ⚠️
+- Mapped to phases: 20 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-08-08*
-*Last updated: 2026-08-08 after initial definition*
+*Last updated: 2026-08-08 after roadmap creation (5 phases, 100% coverage)*
