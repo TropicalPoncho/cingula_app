@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-02-PLAN.md
+stopped_at: Completed 01-01-PLAN.md, 01-02-PLAN.md
 last_updated: "2026-08-08T17:45:52.876Z"
 last_activity: 2026-08-08
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 4
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -52,6 +52,7 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: -
 
 *Updated after each plan completion*
+| Phase 01 P01 | 15 | 2 tasks | 6 files |
 | Phase 01 P02 | 25 | 3 tasks | 7 files |
 
 ## Accumulated Context
@@ -64,6 +65,8 @@ Recent decisions affecting current work:
 - Roadmap: UI-01 (toggle debug/usuario) folded into Phase 1 alongside DATA-01/02 — both touch the same debug panel, small and low-risk, no need for a standalone phase.
 - Roadmap: Phase 4 (geofencing) sequenced after Phase 3 following research's build-order (isolates real-device/platform risk from backend work) even though it is architecturally independent of sync and could run in parallel.
 - PROJECT.md: Ponytail audit is a hard part of every execution phase's checklist, not just a milestone close-out — reflected as a Ponytail audit note on every phase in ROADMAP.md.
+- [Phase 01]: db_recovery.dart kept pure-Dart (dart:io only) so rename-not-delete recovery logic is unit-testable without sqflite/path_provider plugin bindings
+- [Phase 01]: Destructive debug actions (recreate DB, import DB) deleted outright rather than confirmation-guarded, per project memory feedback_no_destructive_automation
 - [Phase 01]: Plan 01-02 ejecutado sin desviaciones: AppModeConfig, HiddenTapGesture, y UserModeView creados exactamente segun el contrato de interfaces del plan.
 
 ### Pending Todos
@@ -78,5 +81,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-08-08T17:45:52.872Z
-Stopped at: Completed 01-02-PLAN.md
+Stopped at: Completed 01-01-PLAN.md, 01-02-PLAN.md
 Resume file: None

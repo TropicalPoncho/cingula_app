@@ -39,7 +39,7 @@ Future<void> setupServiceLocator({bool reinitialize = false}) async {
 
   // Inicializamos la base de datos local y la exponemos como singleton.
   // No recreamos la base automáticamente para preservar datos creados en el campo.
-  // Use AppDatabase.recreateForTesting() manualmente desde la UI/debug.
+  // No existe ninguna acción de recreado/reemplazo de BD: se eliminaron en la fase 01 (DATA-02).
   final database = AppDatabase();
   await database.init();
   getIt.registerSingleton<AppDatabase>(database);

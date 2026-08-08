@@ -31,7 +31,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Ninguna ruta destructiva sobre la base de datos queda alcanzable desde la UI, en ninguno de los dos modos del toggle.
 **Plans**: 4 plans
 Plans:
-- [ ] 01-01-PLAN.md — Recuperación rename-not-delete de la BD + eliminación de las acciones destructivas de debug (DATA-01, DATA-02)
+- [x] 01-01-PLAN.md — Recuperación rename-not-delete de la BD + eliminación de las acciones destructivas de debug (DATA-01, DATA-02)
 - [x] 01-02-PLAN.md — Piezas del toggle: AppModeConfig (persistencia), HiddenTapGesture (5 taps), UserModeView (estética de usuario final) (UI-01)
 - [ ] 01-03-PLAN.md — Cableado en HomePage: rama debug/usuario, gesto oculto y banner de recuperación (UI-01, DATA-01)
 - [ ] 01-04-PLAN.md — Auditoría ponytail + QA manual en dispositivo (DATA-01, DATA-02, UI-01)
