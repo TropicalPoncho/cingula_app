@@ -2,10 +2,9 @@ import 'dart:io';
 
 /// Evento one-shot: la base no abría y se recuperó renombrando el archivo.
 class DatabaseRecoveryEvent {
-  const DatabaseRecoveryEvent({required this.backupPath, required this.occurredAt});
+  const DatabaseRecoveryEvent({required this.backupPath});
 
   final String backupPath;
-  final DateTime occurredAt;
 
   /// Nombre del archivo de respaldo, sin directorio (para mostrar en la UI).
   String get backupFileName =>

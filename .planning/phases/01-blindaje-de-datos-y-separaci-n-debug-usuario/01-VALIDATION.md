@@ -2,7 +2,7 @@
 phase: 01
 slug: blindaje-de-datos-y-separaci-n-debug-usuario
 status: planned
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: n/a
 created: 2026-08-08
 updated: 2026-08-08
@@ -49,17 +49,28 @@ Por el mismo criterio se descartaron los widget tests de `HomePage` completa (`h
 
 ## Per-Task Verification Map
 
-| Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
-|---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 01-01-01 | 01 | 1 | DATA-01 | unit | `flutter test test/data/datasources/local/db_recovery_test.dart` | creado por la tarea (tdd) | ⬜ pending |
-| 01-01-02 | 01 | 1 | DATA-02 | static + suite | `flutter analyze` + `flutter test` + `grep -rn "recreateForTesting\|importDatabase\|file_picker\|deleteDatabase(" lib/ test/` → 0 | ✅ existing suite | ⬜ pending |
-| 01-02-01 | 02 | 1 | UI-01 | unit | `flutter test test/core/config/app_mode_config_test.dart` | creado por la tarea (tdd) | ⬜ pending |
-| 01-02-02 | 02 | 1 | UI-01 | widget | `flutter test test/presentation/widgets/hidden_tap_gesture_test.dart` | creado por la tarea (tdd) | ⬜ pending |
-| 01-02-03 | 02 | 1 | UI-01 | widget | `flutter test test/presentation/pages/home/widgets/user_mode_view_test.dart` | creado por la tarea (tdd) | ⬜ pending |
-| 01-03-01 | 03 | 2 | UI-01 | static + suite | `flutter analyze` + `flutter test` + greps de `<acceptance_criteria>` del plan 01-03 | ✅ existing suite | ⬜ pending |
-| 01-03-02 | 03 | 2 | DATA-01 | static + suite | `flutter analyze` + `flutter test` + `grep -c "showDialog" lib/presentation/pages/home_page_impl.dart` → 0 | ✅ existing suite | ⬜ pending |
-| 01-04-01 | 04 | 3 | DATA-01/02, UI-01 | suite + static | `flutter analyze` + `flutter test` + greps de completitud | ✅ existing suite | ⬜ pending |
-| 01-04-02 | 04 | 3 | DATA-01, UI-01 | manual (checkpoint) | ver "Manual-Only Verifications" | N/A manual-only | ⬜ pending |
+Archivos de test realmente creados en la fase (los 4 exigidos por el plan 01-04):
+
+| Test File | Plan | Requirement | Automated Command | Status |
+|-----------|------|-------------|-------------------|--------|
+| `test/data/datasources/local/db_recovery_test.dart` | 01-01 | DATA-01 | `flutter test test/data/datasources/local/db_recovery_test.dart` | ✅ green |
+| `test/core/config/app_mode_config_test.dart` | 01-02 | UI-01 | `flutter test test/core/config/app_mode_config_test.dart` | ✅ green |
+| `test/presentation/widgets/hidden_tap_gesture_test.dart` | 01-02 | UI-01 | `flutter test test/presentation/widgets/hidden_tap_gesture_test.dart` | ✅ green |
+| `test/presentation/pages/home/widgets/user_mode_view_test.dart` | 01-02 | UI-01 | `flutter test test/presentation/pages/home/widgets/user_mode_view_test.dart` | ✅ green |
+
+Verificación estática + suite completa por plan:
+
+| Task ID | Plan | Wave | Requirement | Test Type | Automated Command | Status |
+|---------|------|------|-------------|-----------|-------------------|--------|
+| 01-01-01 | 01 | 1 | DATA-01 | unit | `flutter test test/data/datasources/local/db_recovery_test.dart` | ✅ green |
+| 01-01-02 | 01 | 1 | DATA-02 | static + suite | `flutter analyze` + `flutter test` + `grep -rn "recreateForTesting\|importDatabase\|file_picker\|deleteDatabase(" lib/ test/` → 0 | ✅ green |
+| 01-02-01 | 02 | 1 | UI-01 | unit | `flutter test test/core/config/app_mode_config_test.dart` | ✅ green |
+| 01-02-02 | 02 | 1 | UI-01 | widget | `flutter test test/presentation/widgets/hidden_tap_gesture_test.dart` | ✅ green |
+| 01-02-03 | 02 | 1 | UI-01 | widget | `flutter test test/presentation/pages/home/widgets/user_mode_view_test.dart` | ✅ green |
+| 01-03-01 | 03 | 2 | UI-01 | static + suite | `flutter analyze` + `flutter test` + greps de `<acceptance_criteria>` del plan 01-03 | ✅ green |
+| 01-03-02 | 03 | 2 | DATA-01 | static + suite | `flutter analyze` + `flutter test` + `grep -c "showDialog" lib/presentation/pages/home_page_impl.dart` → 0 | ✅ green |
+| 01-04-01 | 04 | 3 | DATA-01/02, UI-01 | suite + static | `flutter analyze` + `flutter test` + greps de completitud | ✅ green |
+| 01-04-02 | 04 | 3 | DATA-01, UI-01 | manual (checkpoint) | ver "Manual-Only Verifications" | ⬜ pending (aguarda QA en dispositivo real) |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -86,11 +97,11 @@ Ninguno. Los 4 archivos de test los crea la tarea que implementa el código corr
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 30s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 30s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending — se firma en el plan 01-04, task 1.
+**Approval:** firmado en el plan 01-04, task 1 (auditoría ponytail completa, `flutter analyze`/`flutter test` verdes, greps de completitud en cero). La fila 01-04-02 (QA manual en dispositivo) queda `⬜ pending` hasta que el checkpoint humano del task 2 se resuelva.

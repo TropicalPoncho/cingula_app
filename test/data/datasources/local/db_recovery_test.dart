@@ -61,7 +61,6 @@ void main() {
   test('DatabaseRecoveryEvent.backupFileName strips the directory', () {
     final event = DatabaseRecoveryEvent(
       backupPath: '<tmp>/cingula.db.corrupto-20260808-131003',
-      occurredAt: DateTime(2026, 8, 8, 13, 10, 3),
     );
 
     expect(event.backupFileName, 'cingula.db.corrupto-20260808-131003');
