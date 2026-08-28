@@ -17,10 +17,11 @@ Que la app siga siendo confiable en el bolsillo del usuario mientras se construy
 - ✓ Modelo de datos local con soporte de versionado lógico y outbox pattern (uuid, updated_at, deleted_at, logical_version, sync_outbox, sync_state) — existente, preparado pero no conectado a un backend real
 - ✓ Filtrado de triggers por región activa (region_id como FK nullable en geo_triggers) — existente
 - ✓ Exportar/importar base de datos local manualmente desde la UI de debug — existente
+- ✓ El sistema nunca pierde datos existentes en el celular ante un fallo de apertura de la base (rename-not-delete con backup timestamped) y las acciones destructivas del panel de debug (recrear/importar BD) fueron eliminadas por completo en vez de gateadas con confirmación — Validado en Fase 1 (DATA-01, DATA-02). Confirmación humana en dispositivo real del flujo completo de recuperación quedó diferida por decisión explícita del usuario (ver `01-HUMAN-UAT.md`); la lógica está cubierta por tests automatizados.
+- ✓ Separación de dashboard de usuario final vs. panel de debug mediante un toggle en runtime persistente (gesto oculto de 5 taps, sin flavors de Flutter) — Validado en Fase 1 (UI-01)
 
 ### Active
 
-- [ ] El sistema nunca pierde datos existentes en el celular al introducir sync (blindar el auto-borrado de AppDatabase, gatear acciones destructivas de la UI de debug con confirmación explícita)
 - [ ] Cada escritura local (audio_assets, geo_triggers, geo_paths, regions) se sincroniza contra un backend real vía el outbox ya existente (push)
 - [ ] El celular puede recibir cambios hechos fuera de él (pull) — hoy `SyncApi.pullChanges()` existe en la interfaz pero nunca se invoca
 - [ ] El servidor mantiene el estado actual + 1 versión anterior de cada entidad (no historial ilimitado); el celular siempre reemplaza con el último estado, nunca guarda historial local
@@ -29,7 +30,6 @@ Que la app siga siendo confiable en el bolsillo del usuario mientras se construy
 - [ ] En iOS, el sistema nunca intenta monitorear más de ~19 regiones/triggers simultáneos (límite duro de CoreLocation es 20) — ventana deslizante que rota el set activo según posición
 - [ ] El audio del geotrigger más cercano se precarga antes de que el usuario entre a su radio, para eliminar la latencia de `setFilePath()` en el momento del disparo
 - [ ] El contenido (audio) de las obras de una región se descarga o marca para descarga al entrar a esa región con señal suficiente, en vez de requerir conectividad en el punto exacto de la obra
-- [ ] Separación de dashboard de usuario final vs. panel de debug mediante un toggle en runtime (no flavors de Flutter), con las acciones destructivas de debug gateadas por confirmación explícita independientemente del toggle
 
 ### Out of Scope
 
@@ -76,6 +76,12 @@ Que la app siga siendo confiable en el bolsillo del usuario mientras se construy
 | Background híbrido: geofencing nativo a nivel Región + polling fino dentro de región activa | Resuelve la tensión batería-vs-precisión encontrada en el research; evoluciona el esquema de dos niveles que ya existía en el modelo de datos en vez de descartarlo | ✓ Good |
 | Dashboard usuario/debug: toggle en runtime, no flavors de Flutter | v0 es de un solo usuario que cumple ambos roles (graba en campo y prueba la experiencia final); flavors son sobre-ingeniería hasta que haya un usuario final real no técnico (v1) | ✓ Good |
 | Ponytail como parte del checklist de cada fase de ejecución | Preferencia explícita del usuario para mantener el código lo más simple posible en cada entrega, no solo al final | ✓ Good |
+| Acciones destructivas de debug (recrear/importar BD): eliminadas por completo en vez de gateadas con confirmación | Reemplaza la redacción original del requirement; alineado con memoria de feedback del proyecto (no automatizar rutas destructivas, ni con confirmación) | ✓ Good |
+| Confirmación humana en dispositivo real de la recuperación de BD corrupta: diferida, no bloquea el cierre de Fase 1 | El celular real del usuario es la única copia de datos de campo — no quiso arriesgarla corrompiéndola a propósito, y declinó la alternativa de probarlo en un emulador. La lógica de rename-not-delete está cubierta por tests automatizados (`db_recovery_test.dart`, verde) | ✓ Good — riesgo aceptado conscientemente, registrado en `01-HUMAN-UAT.md` |
+
+## Current State
+
+**Fase 1 (Blindaje de Datos y Separación Debug/Usuario) completa** (2026-08-28): recuperación no destructiva de BD, eliminación de acciones destructivas del panel de debug, y toggle runtime debug/usuario — todo validado en código y tests; un ítem de confirmación manual en dispositivo quedó diferido por decisión del usuario. Próximo: Fase 2 (Backend Real + Push Sync).
 
 ## Evolution
 
@@ -95,4 +101,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-08 after initialization*
+*Last updated: 2026-08-28 after Phase 1 completion*
