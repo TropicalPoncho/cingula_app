@@ -12,7 +12,7 @@ Este milestone blinda primero la integridad de datos ya en el celular (porque ca
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Blindaje de Datos y Separación Debug/Usuario** - La app nunca pierde datos existentes al fallar la apertura de la DB, las acciones destructivas de debug piden confirmación, y un toggle runtime separa dashboard de usuario final del panel de debug.
+- [x] **Phase 1: Blindaje de Datos y Separación Debug/Usuario** - La app nunca pierde datos existentes al fallar la apertura de la DB, las acciones destructivas de debug piden confirmación, y un toggle runtime separa dashboard de usuario final del panel de debug. (completed 2026-08-28)
 - [ ] **Phase 2: Backend Real + Push Sync** - Cada escritura local llega a un backend real vía el outbox existente, con push idempotente, reintentos con backoff, autenticación mínima y estado de sync honesto y visible.
 - [ ] **Phase 3: Sync Bidireccional (Pull)** - Cambios hechos fuera del celular llegan de vuelta vía pull, sin arriesgar nunca datos locales aún no subidos en el primer sync.
 - [ ] **Phase 4: Reemplazo de Geofencing Híbrido** - Detección de región vía geofencing nativo del SO en vez de polling continuo, manteniendo precisión de triggers de radio chico y respetando el límite de 20 regiones de iOS.
@@ -25,7 +25,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Depends on**: Nothing (first phase)
 **Requirements**: DATA-01, DATA-02, UI-01
 **Success Criteria** (what must be TRUE):
-  1. Ante un fallo forzado de apertura de la base de datos (ej. archivo corrupto), la app genera un backup con timestamp antes de cualquier fallback destructivo — nunca borra/recrea sin respaldo previo.
+  1. Ante un fallo forzado de apertura de la base de datos (ej. archivo corrupto), la app genera un backup con timestamp antes de cualquier fallback destructivo — nunca borra/recrea sin respaldo previo. **Cubierto por `db_recovery_test.dart` (automatizado, verde); la confirmación humana en dispositivo real queda diferida por decisión explícita del usuario — ver STATE.md → Blockers/Concerns y 01-04-SUMMARY.md.**
   2. No existe ninguna acción de "recrear DB" ni "importar DB" en el panel de debug ni en el API de `AppDatabase` — se eliminan por completo en vez de protegerse con confirmación (D-03/D-04 del 01-CONTEXT.md, que reemplaza la redacción original de este criterio).
   3. Un toggle en runtime alterna entre el dashboard de usuario final y el panel de debug sin necesidad de rebuild/flavor, y el estado del toggle persiste entre reinicios de la app.
   4. Ninguna ruta destructiva sobre la base de datos queda alcanzable desde la UI, en ninguno de los dos modos del toggle.
@@ -34,7 +34,7 @@ Plans:
 - [x] 01-01-PLAN.md — Recuperación rename-not-delete de la BD + eliminación de las acciones destructivas de debug (DATA-01, DATA-02)
 - [x] 01-02-PLAN.md — Piezas del toggle: AppModeConfig (persistencia), HiddenTapGesture (5 taps), UserModeView (estética de usuario final) (UI-01)
 - [x] 01-03-PLAN.md — Cableado en HomePage: rama debug/usuario, gesto oculto y banner de recuperación (UI-01, DATA-01)
-- [ ] 01-04-PLAN.md — Auditoría ponytail + QA manual en dispositivo (DATA-01, DATA-02, UI-01)
+- [x] 01-04-PLAN.md — Auditoría ponytail + QA manual en dispositivo (DATA-01, DATA-02, UI-01)
 **UI hint**: yes
 **Ponytail audit**: Requerido como parte del checklist de esta fase (y de todas las siguientes) antes de marcarla completa — revisar el código nuevo en busca de sobre-ingeniería y simplificar antes del cierre (ver PROJECT.md Constraints).
 
@@ -97,7 +97,7 @@ Nota de dependencias: la Fase 4 depende solo de la Fase 1 (es arquitectónicamen
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Blindaje de Datos y Separación Debug/Usuario | 0/4 | Planned | - |
+| 1. Blindaje de Datos y Separación Debug/Usuario | 4/4 | Complete   | 2026-08-28 |
 | 2. Backend Real + Push Sync | 0/TBD | Not started | - |
 | 3. Sync Bidireccional (Pull) | 0/TBD | Not started | - |
 | 4. Reemplazo de Geofencing Híbrido | 0/TBD | Not started | - |
