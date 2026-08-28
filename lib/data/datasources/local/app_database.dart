@@ -56,10 +56,7 @@ class AppDatabase {
       );
 
       if (backupPath != null) {
-        lastRecoveryEvent = DatabaseRecoveryEvent(
-          backupPath: backupPath,
-          occurredAt: DateTime.now(),
-        );
+        lastRecoveryEvent = DatabaseRecoveryEvent(backupPath: backupPath);
       }
     }
   }
