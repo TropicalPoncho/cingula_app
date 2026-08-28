@@ -124,6 +124,9 @@ class _NoopGeoPathRepo implements GeoPathRepository {
 
   @override
   Future<void> saveProgress(int pathId, int offsetMs) async {}
+
+  @override
+  Future<void> updateAudio({required int pathId, required int audioAssetId}) async {}
 }
 
 class _NoopRegionRepo implements RegionRepository {

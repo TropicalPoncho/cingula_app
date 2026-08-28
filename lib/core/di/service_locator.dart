@@ -6,6 +6,7 @@ import '../../data/datasources/local/geo_trigger_local_data_source.dart';
 import '../../data/datasources/local/geo_path_local_data_source.dart';
 import '../../data/datasources/local/region_local_data_source.dart';
 import '../../data/datasources/local/sync_local_data_source.dart';
+import '../../data/sync/sync_api.dart';
 import '../../data/sync/sync_client.dart';
 import '../../data/sync/sync_api_stub.dart';
 import '../../data/repositories/region_repository_impl.dart';
@@ -23,8 +24,10 @@ import '../../domain/repositories/audio_repository.dart';
 import '../../domain/repositories/geo_trigger_repository.dart';
 import '../../domain/repositories/location_repository.dart';
 import '../../domain/usecases/monitor_user_location_usecase.dart';
+import '../../domain/usecases/run_sync_usecase.dart';
 import '../services/audio_player_service.dart';
 import '../services/recorder_service.dart';
+import '../services/notification_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -52,8 +55,15 @@ Future<void> setupServiceLocator({bool reinitialize = false}) async {
     () => SyncClient(sync: getIt<SyncLocalDataSource>()),
   );
   // Capa de red ficticia para probar flujo de sync sin servidor real.
-  getIt.registerLazySingleton<SyncApiStub>(
-    () => SyncApiStub(getIt<SyncClient>()),
+  getIt.registerLazySingleton<SyncApi>(
+    () => SyncApiStub(),
+  );
+
+  getIt.registerLazySingleton<RunSyncUseCase>(
+    () => RunSyncUseCase(
+      client: getIt<SyncClient>(),
+      api: getIt<SyncApi>(),
+    ),
   );
 
   // Data sources encapsulan el acceso crudo a SQLite.
@@ -103,6 +113,12 @@ Future<void> setupServiceLocator({bool reinitialize = false}) async {
   // Simple in-memory log service for debug UI
   getIt.registerLazySingleton(() => LogService());
 
+  // Notificaciones locales para mostrar estado de grabación.
+  getIt.registerLazySingleton<NotificationService>(
+    () => NotificationService(),
+  );
+  await getIt<NotificationService>().init();
+
   // Gateway de reproducción con un servicio compartido de audio.
   getIt.registerLazySingleton<AudioPlayerService>(
     () => AudioPlayerService(),
@@ -134,6 +150,7 @@ Future<void> setupServiceLocator({bool reinitialize = false}) async {
       geoPathRepository: getIt<GeoPathRepository>(),
       geoTriggerRepository: getIt<GeoTriggerRepository>(),
       audioRepository: getIt<AudioRepository>(),
+      notificationService: getIt<NotificationService>(),
     ),
   );
 }

@@ -52,6 +52,12 @@ class GeoPathRepositoryImpl implements GeoPathRepository {
   }
 
   @override
+  Future<void> updateAudio({required int pathId, required int audioAssetId}) async {
+    await _local.updateAudio(pathId: pathId, audioAssetId: audioAssetId);
+    _cache = null;
+  }
+
+  @override
   Future<int> deleteByAudioAssetId(int audioAssetId) async {
     final deleted = await _local.deleteByAudioAssetId(audioAssetId);
     _cache = null;

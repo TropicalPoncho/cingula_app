@@ -9,6 +9,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../domain/value_objects/coordinate.dart';
 import '../utils/gps_filter.dart';
@@ -17,6 +18,21 @@ import '../../domain/repositories/location_repository.dart';
 import '../../domain/repositories/geo_path_repository.dart';
 import '../../domain/repositories/geo_trigger_repository.dart';
 import '../../domain/repositories/audio_repository.dart';
+import 'notification_service.dart';
+
+class RecordingStatus {
+  const RecordingStatus({
+    this.isRecording = false,
+    this.startedAt,
+    this.label,
+    this.withMic = false,
+  });
+
+  final bool isRecording;
+  final DateTime? startedAt;
+  final String? label;
+  final bool withMic;
+}
 
 /// Servicio simple para grabar un camino en campo y generar triggers a lo largo
 /// del mismo asociados a un asset de audio.
@@ -26,15 +42,18 @@ class RecorderService {
     required GeoPathRepository geoPathRepository,
     required GeoTriggerRepository geoTriggerRepository,
     required AudioRepository audioRepository,
+    required NotificationService notificationService,
   })  : _location = locationRepository,
         _geoPathRepo = geoPathRepository,
         _triggerRepo = geoTriggerRepository,
-        _audioRepo = audioRepository;
+        _audioRepo = audioRepository,
+        _notificationService = notificationService;
 
   final LocationRepository _location;
   final GeoPathRepository _geoPathRepo;
   final GeoTriggerRepository _triggerRepo;
   final AudioRepository _audioRepo;
+  final NotificationService _notificationService;
 
   // Instancia del filtro de GPS para suavizar la grabación
   final WeightedMovingAverageFilter _gpsFilter = WeightedMovingAverageFilter(windowSize: 3);
@@ -56,6 +75,7 @@ class RecorderService {
   final bool _debugLogs = true;
 
   bool get isRecording => _sub != null;
+  final ValueNotifier<RecordingStatus> recordingStatus = ValueNotifier(const RecordingStatus());
 
   Future<int?> startRecording({
     required int audioAssetId,
@@ -222,6 +242,15 @@ class RecorderService {
         }
       }
 
+      // Limpiar notificación persistente si se estaba grabando micrófono.
+      try {
+        await _notificationService.clearRecordingNotification();
+      } catch (e) {
+        if (_debugLogs) {
+          developer.log('Error limpiando notificación de grabación: $e', name: 'RecorderService');
+        }
+      }
+
       if (_debugLogs) {
         developer.log('stopRecording: pathId=$pathId triggers creados=$_triggerCount', name: 'RecorderService');
         GetIt.instance<LogService>().log('Grabación finalizada: $_triggerCount triggers creados');
@@ -254,6 +283,7 @@ class RecorderService {
       _recordingStart = null;
       _triggerCount = 0;
       _gpsFilter.reset();
+      recordingStatus.value = const RecordingStatus();
     }
 
     return created;
@@ -312,12 +342,40 @@ class RecorderService {
       duration: Duration.zero,
     );
 
-    return startRecording(
-      audioAssetId: audioId,
-      name: name,
-      sampleDistanceMeters: sampleDistanceMeters,
-      spacingMeters: spacingMeters,
-      triggerRadiusMeters: triggerRadiusMeters,
+    recordingStatus.value = RecordingStatus(
+      isRecording: true,
+      startedAt: _recordingStart,
+      label: name,
+      withMic: true,
     );
+
+    try {
+      await _notificationService.showRecordingNotification(
+        title: 'Grabando audio',
+        body: name,
+      );
+    } catch (e) {
+      if (_debugLogs) {
+        developer.log('No se pudo mostrar notificación de grabación: $e', name: 'RecorderService');
+      }
+    }
+
+    try {
+      return await startRecording(
+        audioAssetId: audioId,
+        name: name,
+        sampleDistanceMeters: sampleDistanceMeters,
+        spacingMeters: spacingMeters,
+        triggerRadiusMeters: triggerRadiusMeters,
+      );
+    } catch (e) {
+      // Si falla el path, detener micrófono y limpiar notificación.
+      try {
+        await _micRecorder.stop();
+        await _notificationService.clearRecordingNotification();
+      } catch (_) {}
+      recordingStatus.value = const RecordingStatus();
+      rethrow;
+    }
   }
 }

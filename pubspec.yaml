@@ -43,6 +43,7 @@ dependencies:
   uuid: ^4.4.2
   geofence_service: ^6.0.0+1
   wakelock_plus: ^1.2.5
+  flutter_local_notifications: ^17.2.2
 
 dev_dependencies:
   flutter_test:

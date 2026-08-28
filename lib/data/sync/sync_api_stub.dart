@@ -1,39 +1,53 @@
 import 'dart:developer';
 
-import 'sync_client.dart';
+import 'sync_api.dart';
 
-/// Stub de red para ilustrar cómo consumir `SyncClient`.
-/// No realiza llamadas HTTP; simplemente imprime el outbox pendiente
-/// y marca como reconocido (ack) en local.
-class SyncApiStub {
-  SyncApiStub(this._client);
-
-  final SyncClient _client;
-
-  /// Realiza un ciclo de sincronización ficticio:
-  /// - Lee outbox
-  /// - "Envía" (log)
-  /// - Ack en local
-  /// - Actualiza cursor/lastSync
-  Future<void> syncOnce() async {
-    final outbox = await _client.pendingOutbox(limit: 50);
+/// Stub remoto para probar flujo de sincronizacion sin HTTP real.
+class SyncApiStub implements SyncApi {
+  @override
+  Future<SyncPushResult> pushOutbox({
+    required List<Map<String, Object?>> outbox,
+    String? cursor,
+    String? deviceId,
+  }) async {
     if (outbox.isEmpty) {
-      log('[SyncStub] Outbox vacío');
-      return;
+      log('[SyncStub] Outbox vacio');
+      return SyncPushResult(
+        ackedIds: const [],
+        serverCursor: cursor ?? 'stub-cursor',
+        receivedAt: DateTime.now(),
+      );
     }
 
+    final ackedIds = <int>[];
     for (final item in outbox) {
-      final id = item['id'] as int?;
+      final id = item['id'];
       log('[SyncStub] Enviando -> $item');
-      if (id != null) {
-        await _client.ackOutbox(id);
+      if (id is int) {
+        ackedIds.add(id);
       }
     }
 
-    await _client.saveState(
-      serverCursor: 'stub-cursor',
-      lastSync: DateTime.now(),
+    return SyncPushResult(
+      ackedIds: ackedIds,
+      serverCursor: cursor ?? 'stub-cursor',
+      receivedAt: DateTime.now(),
     );
-    log('[SyncStub] Sync ficticia completada');
+  }
+
+  @override
+  Future<SyncStateResult> fetchState() async {
+    return SyncStateResult(
+      serverCursor: 'stub-cursor',
+      lastSyncAt: DateTime.now(),
+    );
+  }
+
+  @override
+  Future<SyncPullResult> pullChanges({String? cursor}) async {
+    return SyncPullResult(
+      changes: const [],
+      serverCursor: cursor ?? 'stub-cursor',
+    );
   }
 }

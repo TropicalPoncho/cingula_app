@@ -9,6 +9,9 @@ abstract class GeoPathRepository {
 
   Future<void> saveProgress(int pathId, int offsetMs);
 
+  /// Actualiza el audio asociado a un path existente.
+  Future<void> updateAudio({required int pathId, required int audioAssetId});
+
   /// Crea un nuevo GeoPath (metadata) y devuelve el id insertado.
   Future<int> createPath({
     required String name,

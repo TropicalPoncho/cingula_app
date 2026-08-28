@@ -67,6 +67,41 @@ class GeoPathLocalDataSource {
     );
   }
 
+  Future<void> updateAudio({required int pathId, required int audioAssetId}) async {
+    final existing = await _database.query(
+      'geo_paths',
+      columns: ['uuid', 'logical_version'],
+      where: 'id = ?',
+      whereArgs: [pathId],
+      limit: 1,
+    );
+    final existingUuid = existing.isNotEmpty ? existing.first['uuid'] as String? : null;
+    final existingVersion = existing.isNotEmpty ? existing.first['logical_version'] as int? : null;
+
+    final values = _sync.withUpdateMetadata({
+      'uuid': existingUuid ?? _sync.newUuid(),
+      'logical_version': existingVersion,
+      'audio_asset_id': audioAssetId,
+    });
+
+    await _database.update(
+      'geo_paths',
+      values,
+      where: 'id = ?',
+      whereArgs: [pathId],
+    );
+
+    await _sync.enqueueOutbox(
+      tableName: 'geo_paths',
+      recordUuid: values['uuid'] as String,
+      op: 'update',
+      payload: {
+        ...values,
+        'id': pathId,
+      },
+    );
+  }
+
   /// Borra paths (metadata) asociados a un audio y devuelve el número de filas borradas.
   Future<int> deleteByAudioAssetId(int audioAssetId) async {
     final rows = await _database.query(

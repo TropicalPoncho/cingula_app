@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/config/app_mode_config.dart';
 import '../../core/di/service_locator.dart';
+import '../../core/services/recorder_service.dart';
 import '../../data/datasources/local/app_database.dart';
 import '../notifiers/playback_notifier.dart';
 import '../widgets/hidden_tap_gesture.dart';
@@ -116,37 +119,141 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildDebugBody(BuildContext context, PlaybackNotifier notifier) {
+    final recorder = getIt<RecorderService>();
     final currentAsset = notifier.currentAsset;
     final status = notifier.statusMessage;
     final showAudioCard = currentAsset != null || (status != null && status.toLowerCase().startsWith('reproduciendo'));
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SwitchListTile(
-            title: const Text('Monitorear ubicacion en segundo plano'),
-            subtitle: Text(notifier.statusMessage ?? 'Listo para iniciar'),
-            value: notifier.isMonitoring,
-            onChanged: (v) => v ? notifier.startMonitoring() : notifier.stopMonitoring(),
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SwitchListTile(
+                title: const Text('Monitorear ubicacion en segundo plano'),
+                subtitle: Text(notifier.statusMessage ?? 'Listo para iniciar'),
+                value: notifier.isMonitoring,
+                onChanged: (v) => v ? notifier.startMonitoring() : notifier.stopMonitoring(),
+              ),
+              const SizedBox(height: 24),
+              if (showAudioCard)
+                currentAsset != null
+                    ? AudioDetails(asset: currentAsset)
+                    : Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Text(status ?? 'Reproduciendo…'),
+                        ),
+                      ),
+              const SizedBox(height: 16),
+              const DiagnosticsPanel(),
+            ],
           ),
-          const SizedBox(height: 24),
-          if (showAudioCard)
-            currentAsset != null
-                ? AudioDetails(asset: currentAsset)
-                : Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Text(status ?? 'Reproduciendo…'),
-                    ),
-                  ),
-          const SizedBox(height: 16),
-          const DiagnosticsPanel(),
-        ],
-      ),
+        ),
+        _RecordingBanner(recorder: recorder),
+      ],
     );
   }
 }
 
 // _MiniMapWidget replaced by reusable TriggerMapWidget in lib/presentation/widgets/trigger_map.dart
+
+class _RecordingBanner extends StatefulWidget {
+  const _RecordingBanner({required this.recorder});
+
+  final RecorderService recorder;
+
+  @override
+  State<_RecordingBanner> createState() => _RecordingBannerState();
+}
+
+class _RecordingBannerState extends State<_RecordingBanner> {
+  Timer? _ticker;
+  Duration _elapsed = Duration.zero;
+  RecordingStatus _status = const RecordingStatus();
+
+  @override
+  void initState() {
+    super.initState();
+    widget.recorder.recordingStatus.addListener(_handleStatusChange);
+    _handleStatusChange();
+  }
+
+  @override
+  void dispose() {
+    widget.recorder.recordingStatus.removeListener(_handleStatusChange);
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  void _handleStatusChange() {
+    final next = widget.recorder.recordingStatus.value;
+    if (!next.isRecording || next.startedAt == null) {
+      _ticker?.cancel();
+      setState(() {
+        _elapsed = Duration.zero;
+        _status = next;
+      });
+      return;
+    }
+
+    _ticker?.cancel();
+    setState(() {
+      _status = next;
+      _elapsed = DateTime.now().difference(next.startedAt!);
+    });
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted || widget.recorder.recordingStatus.value.startedAt == null) return;
+      setState(() {
+        _elapsed = DateTime.now().difference(widget.recorder.recordingStatus.value.startedAt!);
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_status.isRecording || _status.startedAt == null) return const SizedBox.shrink();
+
+    final minutes = _elapsed.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = _elapsed.inSeconds.remainder(60).toString().padLeft(2, '0');
+    final label = _status.label ?? 'Grabando micrófono';
+
+    return SafeArea(
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Material(
+            elevation: 4,
+            borderRadius: BorderRadius.circular(12),
+            color: Colors.red.shade50,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.red.shade200),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.mic, color: Colors.red.shade400),
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text('$minutes:$seconds', style: TextStyle(color: Colors.grey.shade700)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

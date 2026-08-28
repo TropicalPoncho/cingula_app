@@ -132,6 +132,24 @@ class FakeGeoPathRepository implements GeoPathRepository {
     _paths.removeWhere((p) => p.id == pathId);
     return removed.length;
   }
+
+  @override
+  Future<void> updateAudio({required int pathId, required int audioAssetId}) async {
+    final idx = _paths.indexWhere((p) => p.id == pathId);
+    if (idx == -1) return;
+    final existing = _paths[idx];
+    _paths[idx] = GeoPath(
+      id: existing.id,
+      name: existing.name,
+      audioAssetId: audioAssetId,
+      toleranceMeters: existing.toleranceMeters,
+      savedOffsetMs: existing.savedOffsetMs,
+      uuid: existing.uuid,
+      updatedAt: existing.updatedAt,
+      deletedAt: existing.deletedAt,
+      logicalVersion: existing.logicalVersion,
+    );
+  }
 }
 
 class FakeAudioRepository implements AudioRepository {

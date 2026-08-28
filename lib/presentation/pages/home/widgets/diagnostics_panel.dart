@@ -20,7 +20,7 @@ import '../../../../domain/repositories/geo_trigger_repository.dart';
 import '../../../../domain/repositories/location_repository.dart';
 import '../../../../domain/repositories/region_repository.dart';
 import '../../../../data/sync/sync_client.dart';
-import '../../../../data/sync/sync_api_stub.dart';
+import '../../../../domain/usecases/run_sync_usecase.dart';
 import '../../../notifiers/playback_notifier.dart';
 import '../../../widgets/trigger_map.dart';
 import '../../data_browser_page.dart';
@@ -494,13 +494,15 @@ class _DiagnosticsPanelState extends State<DiagnosticsPanel> {
                           ElevatedButton(
                             onPressed: () async {
                               try {
-                                await getIt<SyncApiStub>().syncOnce();
+                                final result = await getIt<RunSyncUseCase>().pushOutboxOnce(limit: 100);
                                 await _refreshSyncStatus();
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Sync push (stub) ejecutado')),
-                                  );
-                                }
+                                if (!mounted) return;
+                                final message = result.hadWork
+                                    ? 'Push outbox: ${result.acked}/${result.totalOutbox} acked (cursor ${result.serverCursor ?? '-'})'
+                                    : 'No hay outbox pendiente';
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(message)),
+                                );
                               } catch (e) {
                                 if (mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(

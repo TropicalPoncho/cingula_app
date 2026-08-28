@@ -28,6 +28,8 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
   bool _loading = true;
   bool _dirty = false;
   final _getIt = GetIt.instance;
+  final TextEditingController _newAudioTitle = TextEditingController(text: 'Nuevo audio');
+  final TextEditingController _newAudioPath = TextEditingController(text: 'assets/audio/');
 
   String _fmt(DateTime? dt) => dt == null ? '-' : dt.toIso8601String();
 
@@ -35,6 +37,13 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _newAudioTitle.dispose();
+    _newAudioPath.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -139,6 +148,60 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
     }
   }
 
+  Future<void> _addAudioAsset() async {
+    final title = _newAudioTitle.text.trim();
+    final path = _newAudioPath.text.trim();
+    if (title.isEmpty || path.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Título y path son obligatorios')),
+        );
+      }
+      return;
+    }
+
+    try {
+      final id = await _getIt<AudioRepository>().insertLocalRecording(
+        title: title,
+        description: 'Asset manual',
+        localPath: path,
+        duration: Duration.zero,
+      );
+      _dirty = true;
+      await _load();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Audio agregado (id: $id)')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo agregar audio: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _resetPathProgress(GeoPath path) async {
+    try {
+      await _getIt<GeoPathRepository>().saveProgress(path.id, 0);
+      _dirty = true;
+      await _load();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Progreso reiniciado para "${path.name}"')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo reiniciar: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _showStats() async {
     final db = _getIt<AppDatabase>();
     final stats = await db.getDatabaseStats();
@@ -225,6 +288,65 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
     }
   }
 
+  Future<void> _changePathAudio(GeoPath path) async {
+    if (_audios.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No hay audios disponibles para asignar')),
+        );
+      }
+      return;
+    }
+
+    int selectedAudioId = path.audioAssetId;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setStateDialog) => AlertDialog(
+            title: const Text('Cambiar audio del path'),
+            content: DropdownButton<int>(
+              value: selectedAudioId,
+              items: _audios
+                  .map((a) => DropdownMenuItem<int>(value: a.id, child: Text(a.title)))
+                  .toList(growable: false),
+              onChanged: (v) {
+                if (v != null) {
+                  setStateDialog(() => selectedAudioId = v);
+                }
+              },
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+              ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Guardar')),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (confirmed != true || selectedAudioId == path.audioAssetId) return;
+
+    try {
+      await _getIt<GeoPathRepository>().updateAudio(pathId: path.id, audioAssetId: selectedAudioId);
+      _dirty = true;
+      await _load();
+      if (mounted) {
+        final newAudio = _audios.firstWhere((a) => a.id == selectedAudioId, orElse: () => _audios.first);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Audio actualizado a "${newAudio.title}"')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo actualizar: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final pathById = {for (final p in _paths) p.id: p};
@@ -256,6 +378,35 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
                       OutlinedButton.icon(onPressed: _showStats, icon: const Icon(Icons.info_outline), label: const Text('Ver contenido BD')),
                       OutlinedButton.icon(onPressed: _cleanupOrphanTriggers, icon: const Icon(Icons.cleaning_services_outlined), label: const Text('Limpiar triggers huérfanos')),
                     ],
+                  ),
+                  const SizedBox(height: 12),
+                  Card(
+                    margin: EdgeInsets.zero,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        const Text('Agregar audio manual a la tabla', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _newAudioTitle,
+                          decoration: const InputDecoration(labelText: 'Título', border: OutlineInputBorder(), isDense: true),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _newAudioPath,
+                          decoration: const InputDecoration(labelText: 'Asset o path local', hintText: 'assets/audio/tu_audio.wav', border: OutlineInputBorder(), isDense: true),
+                        ),
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: ElevatedButton.icon(
+                            onPressed: _addAudioAsset,
+                            icon: const Icon(Icons.add),
+                            label: const Text('Guardar en audio_assets'),
+                          ),
+                        ),
+                      ]),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   const Text('Paths', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -293,6 +444,16 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
                                     IconButton(
                                       icon: const Icon(Icons.play_arrow, color: Colors.teal),
                                       onPressed: () => _playPathAudio(p),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.replay, color: Colors.orange),
+                                      tooltip: 'Reiniciar progreso (offset=0)',
+                                      onPressed: () => _resetPathProgress(p),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.library_music, color: Colors.indigo),
+                                      tooltip: 'Cambiar audio',
+                                      onPressed: () => _changePathAudio(p),
                                     ),
                                     IconButton(
                                       icon: const Icon(Icons.delete, color: Colors.redAccent),

@@ -205,7 +205,7 @@ class _TriggerMapWidgetState extends State<TriggerMapWidget> {
             final pathName = t.geoPathId != null
                 ? (pathById[t.geoPathId!]?.name ?? 'Path ${t.geoPathId}')
                 : 'Trigger sin path';
-            final triggerName = (t.name.isNotEmpty ?? false) ? t.name : 'Trigger ${t.id}';
+            final triggerName = t.name.isNotEmpty ? t.name : 'Trigger ${t.id}';
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('$triggerName • $pathName'), duration: const Duration(seconds: 2)),
             );

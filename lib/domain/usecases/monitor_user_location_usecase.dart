@@ -276,12 +276,14 @@ class MonitorUserLocationUseCase {
 
     final totalMs = asset.duration.inMilliseconds;
 
-    // Prefer the trigger-specific offset if present, otherwise fallback to path saved progress.
+    // Prefer saved progress; if reset to 0 we start desde el inicio ignorando offset del trigger.
+    // Solo usamos offset del trigger si no se ha hecho reset (savedMs > 0).
     final triggerOffsetMs = match.offsetMs;
     final savedMs = path.savedOffsetMs;
-    final startOffset = (triggerOffsetMs > 0)
-      ? Duration(milliseconds: triggerOffsetMs)
-      : (savedMs > 0 ? Duration(milliseconds: savedMs) : Duration.zero);
+    final effectiveOffsetMs = (savedMs == 0)
+      ? 0
+      : (triggerOffsetMs > 0 ? triggerOffsetMs : savedMs);
+    final startOffset = Duration(milliseconds: effectiveOffsetMs);
 
     // Si el offset guardado quedó al final del audio, considerar el camino completado y no reproducir.
     if (totalMs > 0 && startOffset.inMilliseconds >= totalMs - 500) {
