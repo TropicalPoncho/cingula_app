@@ -52,7 +52,7 @@ Plans:
 **Plans**: 5 plans
 Plans:
 - [ ] 02-01-PLAN.md — Huecos de schema local: columna next_attempt_at + backoff Full Jitter + logical_version en payloads de delete (SYNC-02, SYNC-03)
-- [ ] 02-02-PLAN.md — Backend nuevo en backend/: Vercel Functions + Neon, auth bearer, upsert versionado idempotente (SYNC-01, SYNC-02, SYNC-06, SYNC-07)
+- [x] 02-02-PLAN.md — Backend nuevo en backend/: Vercel Functions + Neon, auth bearer, upsert versionado idempotente (SYNC-01, SYNC-02, SYNC-06, SYNC-07)
 - [ ] 02-03-PLAN.md — SyncApiHttp reemplaza a SyncApiStub; errores terminales vs transitorios en RunSyncUseCase (SYNC-01, SYNC-03, SYNC-07)
 - [ ] 02-04-PLAN.md — Push automático tras cada escritura y al reconectar, + estado de sync honesto en el panel de debug (SYNC-01, SYNC-03, SYNC-08)
 - [ ] 02-05-PLAN.md — Auditoría ponytail + setup Neon/Vercel + verificación end-to-end contra backend real (los 6 requisitos)

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-stopped_at: Phase 2 context gathered
-last_updated: "2026-08-29T05:06:20.440Z"
-last_activity: 2026-08-28
+status: executing
+stopped_at: Completed 02-02-PLAN.md (backend Neon+Vercel, parallel wave 1)
+last_updated: "2026-08-29T14:26:49.050Z"
+last_activity: 2026-08-29
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
-  percent: 0
+  total_plans: 9
+  completed_plans: 5
+  percent: 56
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-08-08)
 ## Current Position
 
 Phase: 2
-Plan: Not started
-Status: Phase complete, ready to plan Phase 2
-Last activity: 2026-08-28
+Plan: 02-02 complete (parallel wave 1, alongside 02-01) — 4 plans remain
+Status: Executing (parallel wave 1)
+Last activity: 2026-08-29
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██████░░░░] 56%
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01 P02 | 25 | 3 tasks | 7 files |
 | Phase 01 P03 | 20min | 2 tasks | 1 files |
 | Phase 01 P04 | 25min | 2 tasks | 4 files |
+| Phase 02 P02 | 12min | 3 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,8 @@ Recent decisions affecting current work:
 - [Phase 01]: [Phase 01]: Plan 01-03's Task 1 referenced a _RecordingBanner/RecorderService wiring in home_page_impl.dart that only existed in an uncommitted stash (WIP sync/geofencing work set aside before Phase 1) -- implemented the debug/user split without conditioning that nonexistent code; UI-01/DATA-01 acceptance holds since UserModeView never renders a recording banner.
 - [Phase 01]: Removed dead DatabaseRecoveryEvent.occurredAt field (populated but never read) during phase-01 ponytail audit
 - [Phase 01]: Phase 01 closed with one deferred item: user explicitly declined on-device DB-corruption-recovery QA (real device holds only copy of field data); automated db_recovery_test.dart coverage stands, human confirmation deferred not failed
+- [Phase 02]: Backend (02-02) escrito en JS ESM en vez de TypeScript: Node v22.14 confirmado, .ts hubiera necesitado tsx/tsconfig para 2 endpoints
+- [Phase 02]: Backend (02-02): tabla unica synced_entities (current+previous version) en vez de 4 tablas espejo del schema SQLite -- payload es opaco al servidor hasta el pull de Fase 3
 
 ### Pending Todos
 
@@ -85,6 +88,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-29T05:06:20.428Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-backend-real-push-sync/02-CONTEXT.md
+Last session: 2026-08-29T14:25:27.272Z
+Stopped at: Completed 02-02-PLAN.md (backend Neon+Vercel, parallel wave 1)
+Resume file: None
