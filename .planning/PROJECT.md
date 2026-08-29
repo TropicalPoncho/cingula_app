@@ -70,7 +70,7 @@ Que la app siga siendo confiable en el bolsillo del usuario mientras se construy
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Backend real: local/a definir durante la fase, no elegido ahora | Faltan datos de volumen/costo para decidir entre VPS propio, Postgres gestionado o Vercel; no bloquear el arranque del milestone por esto | — Pending |
+| Backend real: Neon (Postgres serverless) + Vercel Functions | Investigado a fondo (ver CLAUDE.md Technology Stack): free tier cubre v0 de un solo editor a $0/mes indefinidamente, scale-to-zero encaja con conectividad intermitente, alternativas (Supabase, VPS propio, PowerSync/ElectricSQL) descartadas con justificación explícita. Confirmado en discuss-phase de Fase 2 (2026-08-29) sin objeciones. | ✓ Good |
 | Web de edición fuera de alcance de este milestone | El usuario priorizó blindar sync + celular primero; la web depende de que el backend/API de sync exista y esté probado | ✓ Good |
 | Versionado: celular reemplaza (sin historial local), servidor guarda 1 versión anterior por entidad | Evita explotar almacenamiento en el celular; alcanza para el caso de uso de un solo editor (RNF-02) | ✓ Good |
 | Background híbrido: geofencing nativo a nivel Región + polling fino dentro de región activa | Resuelve la tensión batería-vs-precisión encontrada en el research; evoluciona el esquema de dos niveles que ya existía en el modelo de datos en vez de descartarlo | ✓ Good |
