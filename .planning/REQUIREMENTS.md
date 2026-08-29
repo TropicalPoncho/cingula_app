@@ -15,8 +15,8 @@ Requirements para este milestone. Cada uno mapea a fases del roadmap.
 ### Sync (SYNC)
 
 - [ ] **SYNC-01**: Un backend real implementa el contrato de outbox ya existente en el celular (push), reemplazando el `SyncApiStub`
-- [ ] **SYNC-02**: El push es idempotente — el servidor dedupe por `uuid` + `logical_version`, con ack por fila individual
-- [ ] **SYNC-03**: El push reintenta con backoff exponencial + jitter, distinguiendo errores transitorios (reintentar) de terminales (no reintentar)
+- [x] **SYNC-02**: El push es idempotente — el servidor dedupe por `uuid` + `logical_version`, con ack por fila individual
+- [x] **SYNC-03**: El push reintenta con backoff exponencial + jitter, distinguiendo errores transitorios (reintentar) de terminales (no reintentar)
 - [ ] **SYNC-04**: El pull sync se invoca de verdad — sync es bidireccional, no solo push; reemplaza fila local con la última versión del servidor
 - [ ] **SYNC-05**: En el primer sync de un celular con datos preexistentes, el push drena por completo antes de correr el primer pull (evita que un pull temprano sobrescriba datos locales aún no subidos)
 - [ ] **SYNC-06**: El backend guarda el estado actual + 1 versión anterior por entidad, sin historial ilimitado
@@ -80,8 +80,8 @@ Reconocidos pero diferidos, no forman parte del roadmap de este milestone.
 | DATA-02 | Phase 1 | Complete |
 | UI-01 | Phase 1 | Complete |
 | SYNC-01 | Phase 2 | Pending |
-| SYNC-02 | Phase 2 | Pending |
-| SYNC-03 | Phase 2 | Pending |
+| SYNC-02 | Phase 2 | Complete |
+| SYNC-03 | Phase 2 | Complete |
 | SYNC-06 | Phase 2 | Pending |
 | SYNC-07 | Phase 2 | Pending |
 | SYNC-08 | Phase 2 | Pending |

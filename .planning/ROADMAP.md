@@ -51,7 +51,7 @@ Plans:
   6. Después de varios pushes sobre la misma entidad, el backend conserva solo el estado actual más una versión anterior (verificable inspeccionando el storage del backend).
 **Plans**: 5 plans
 Plans:
-- [ ] 02-01-PLAN.md — Huecos de schema local: columna next_attempt_at + backoff Full Jitter + logical_version en payloads de delete (SYNC-02, SYNC-03)
+- [x] 02-01-PLAN.md — Huecos de schema local: columna next_attempt_at + backoff Full Jitter + logical_version en payloads de delete (SYNC-02, SYNC-03)
 - [ ] 02-02-PLAN.md — Backend nuevo en backend/: Vercel Functions + Neon, auth bearer, upsert versionado idempotente (SYNC-01, SYNC-02, SYNC-06, SYNC-07)
 - [ ] 02-03-PLAN.md — SyncApiHttp reemplaza a SyncApiStub; errores terminales vs transitorios en RunSyncUseCase (SYNC-01, SYNC-03, SYNC-07)
 - [ ] 02-04-PLAN.md — Push automático tras cada escritura y al reconectar, + estado de sync honesto en el panel de debug (SYNC-01, SYNC-03, SYNC-08)
