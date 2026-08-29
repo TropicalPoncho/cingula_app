@@ -35,15 +35,7 @@ class SyncApiHttp implements SyncApi {
       throw SyncTransientException('network failure: $e');
     }
 
-    if (response.statusCode == 401) {
-      throw SyncAuthException('API key rechazada (401)');
-    }
-    if (response.statusCode != 200) {
-      // ponytail: todo lo no-200 y no-401 es transitorio. Un 400 tampoco va a andar
-      // reintentando, pero inventar una tercera categoría de error para un caso que
-      // sólo aparece con un bug de payload no paga (research Open Question 1).
-      throw SyncTransientException('HTTP ${response.statusCode}: ${response.body}');
-    }
+    _throwForStatus(response);
 
     final body = jsonDecode(response.body) as Map<String, Object?>;
     return SyncPushResult(
@@ -53,6 +45,9 @@ class SyncApiHttp implements SyncApi {
     );
   }
 
+  // ponytail: sin llamadores hoy (ni el panel, ni RunSyncUseCase) fuera de sus propios
+  // tests; existe porque SyncApi lo declara como parte del contrato. Si la Fase 3 no
+  // termina usándolo, sacar el método del contrato en vez de dejarlo sin uso.
   @override
   Future<SyncStateResult> fetchState() async {
     final http.Response response;
@@ -61,12 +56,7 @@ class SyncApiHttp implements SyncApi {
     } catch (e) {
       throw SyncTransientException('network failure: $e');
     }
-    if (response.statusCode == 401) {
-      throw SyncAuthException('API key rechazada (401)');
-    }
-    if (response.statusCode != 200) {
-      throw SyncTransientException('HTTP ${response.statusCode}: ${response.body}');
-    }
+    _throwForStatus(response);
     final body = jsonDecode(response.body) as Map<String, Object?>;
     final lastSyncAt = body['lastSyncAt'] as String?;
     return SyncStateResult(
@@ -80,5 +70,19 @@ class SyncApiHttp implements SyncApi {
     // El pull es Fase 3 (SYNC-04/SYNC-05). Falla ruidosamente en vez de devolver
     // una lista vacía que parecería "no hay cambios".
     throw UnimplementedError('pullChanges llega en la Fase 3 (sync bidireccional)');
+  }
+
+  /// Clasifica la respuesta: 401 es terminal, cualquier otro no-200 es transitorio.
+  /// Compartido por pushOutbox/fetchState -- ambos hacían la misma clasificación inline.
+  void _throwForStatus(http.Response response) {
+    if (response.statusCode == 401) {
+      throw SyncAuthException('API key rechazada (401)');
+    }
+    if (response.statusCode != 200) {
+      // ponytail: todo lo no-200 y no-401 es transitorio. Un 400 tampoco va a andar
+      // reintentando, pero inventar una tercera categoría de error para un caso que
+      // sólo aparece con un bug de payload no paga (research Open Question 1).
+      throw SyncTransientException('HTTP ${response.statusCode}: ${response.body}');
+    }
   }
 }
