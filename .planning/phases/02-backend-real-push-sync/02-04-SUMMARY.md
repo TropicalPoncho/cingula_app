@@ -3,7 +3,7 @@ phase: 02-backend-real-push-sync
 plan: 04
 subsystem: sync
 tags: [dart, flutter, debounce, connectivity, ui]
-status: paused-at-checkpoint
+status: complete-device-qa-deferred
 
 # Dependency graph
 requires:
@@ -38,23 +38,25 @@ key-files:
     - lib/presentation/pages/home/widgets/diagnostics_panel.dart
 
 key-decisions:
-  - "Task 4 (blocking human-verify checkpoint) requires on-device QA the executor cannot perform -- Tasks 1-3 committed and verified via automated tests; execution paused here per plan's own gate=\"blocking\" instruction, no fabricated device-test result"
+  - "Task 4 (blocking human-verify checkpoint) requires on-device QA the executor cannot perform -- Tasks 1-3 committed and verified via automated tests; execution paused there per the plan's own gate=\"blocking\" instruction, no fabricated device-test result"
+  - "User explicitly deferred all 5 Task 4 on-device verification cases (2026-08-29): no time to test on a real device right now, plans to run it later (\"tonight\"). This is a scope decision, not a failed or skipped test -- same pattern as Phase 1's DATA-01 on-device deferral in 01-04-SUMMARY.md. Recorded as deferred, not signed off, and tracked in STATE.md Blockers/Concerns so it isn't silently dropped."
 
 requirements-completed: []
-# SYNC-01, SYNC-03, SYNC-08 are code-complete but not yet requirement-complete:
-# Task 4's on-device verification is the plan's actual closing gate for these IDs.
+# SYNC-01, SYNC-03, SYNC-08 are code-complete (Tasks 1-3, automated tests green) but their
+# on-device human confirmation (this plan's actual closing gate for these IDs) is deferred,
+# not done -- see "Known Gaps" below. Not marked complete until the user runs Task 4's 5 cases.
 
-duration: in-progress (paused at checkpoint)
-completed: null
+duration: ~20min (Tasks 1-3, agent work)
+completed: 2026-08-29
 ---
 
 # Phase 02 Plan 04: Auto-Push Trigger + Honest Sync Status Summary
 
-**`SyncTrigger` coalesces write bursts into one debounced push, guards against overlapping runs, and is wired to both `enqueueOutbox` (every local write) and `connectivity_plus` reconnect events, with zero periodic timers; the debug panel now shows real pending count, last sync, and distinguishes an auth failure from a network failure instead of ever claiming "all synced" while pending > 0.**
+**`SyncTrigger` coalesces write bursts into one debounced push, guards against overlapping runs, and is wired to both `enqueueOutbox` (every local write) and `connectivity_plus` reconnect events, with zero periodic timers; the debug panel now shows real pending count, last sync, and distinguishes an auth failure from a network failure instead of ever claiming "all synced" while pending > 0. All 5 on-device verification cases are explicitly deferred by the user (2026-08-29), not tested, not failed.**
 
-## Performance (Tasks 1-3 only; Task 4 pending)
+## Performance
 
-- **Tasks completed:** 3/4 (Task 4 is the blocking human-verify checkpoint, awaiting user)
+- **Tasks completed:** 3/3 code tasks (Task 4 is a verification-only checkpoint, no code) — all 5 device-QA cases explicitly deferred by user decision, not run
 - **Files modified:** 7 (2 created, 5 modified)
 
 ## Accomplishments (Tasks 1-3)
@@ -70,7 +72,7 @@ completed: null
 1. **Task 1: SyncTrigger — debounce, un solo push en vuelo, estado observable** - `c1dcf0c` (feat, TDD: test+impl same commit since plan pre-wrote both)
 2. **Task 2: Cablear el disparo automático — enqueueOutbox + reconexión + DI** - `c04063f` (feat)
 3. **Task 3: Panel de debug con estado de sync honesto** - `4229b77` (feat)
-4. **Task 4: Verificación en dispositivo** - PAUSED (checkpoint, see below)
+4. **Task 4: Verificación en dispositivo** - no code commit (verification-only task); all 5 cases DEFERRED by explicit user decision (2026-08-29), see "Known Gaps" below
 
 ## Files Created/Modified
 - `lib/data/sync/sync_trigger.dart` - `SyncTrigger`, `SyncTriggerStatus` enum
@@ -94,7 +96,17 @@ completed: null
 - **Issue:** Plan's acceptance criteria expects `grep -c "RunSyncUseCase" diagnostics_panel.dart` to return 2+ (import + usage). The actual import line is `import '../../../../domain/usecases/run_sync_usecase.dart';` (lowercase filename) which doesn't textually contain the class name `RunSyncUseCase`; only the one usage site (`getIt<RunSyncUseCase>()`) matches. Real occurrence count is 1.
 - **Impact:** None — functionally the manual "Forzar push ahora" button is correctly wired to `RunSyncUseCase` (D-06 satisfied). This is the same class of plan-authoring grep-count mismatch already documented in 02-01-SUMMARY.md and 02-02-SUMMARY.md for this phase; not a code defect, no fix applied.
 
-No other deviations. Tasks 1-3 executed as written, including the plan's inline reference implementation for `SyncTrigger` (used verbatim).
+No other code deviations. Tasks 1-3 executed as written, including the plan's inline reference implementation for `SyncTrigger` (used verbatim). Task 4's `<acceptance_criteria>` expected either "aprobado" or a described failure for each of the 5 cases; the actual outcome (all 5 explicitly deferred, none run) is neither — documented honestly below rather than forced into either bucket, matching how 01-04-SUMMARY.md handled its own deferred device check. No code was touched in response to the deferral.
+
+## Known Gaps
+
+- **Task 4's on-device verification (SYNC-01, SYNC-03, SYNC-08's human-confirmation gate) is not done.** The user explicitly deferred all 5 cases on 2026-08-29 — no time to test on a real device right now, intends to run it later ("tonight"). This is **not** a bug report and **not** a failed test — it is a scope decision, exactly the same pattern as Phase 1's DATA-01 deferral (`01-04-SUMMARY.md`). The 5 deferred cases, none tested:
+  1. Push automático (SYNC-01) — write reaches backend without touching any button
+  2. Coalescing — cascade delete produces one POST /sync/push, not N+1
+  3. Offline write + reconnect drain (SYNC-03, D-05) — airplane mode queues, reconnect drains, panel never claims "synced" while pending > 0
+  4. Terminal auth error (SYNC-07, D-03) — bad key shows the specific auth message, no retry storm
+  5. Manual button (D-06) — "Forzar push ahora" present and functional
+  All 5 remain covered by the automated test suite for their non-device-dependent logic (`sync_trigger_test.dart`'s coalescing/reentrancy/status-classification tests, `sync_api_http_test.dart`'s 401/5xx/network-error classification, `run_sync_usecase_test.dart`'s markAttempt/no-markAttempt-on-auth behavior) — 64/64 green. What's missing is the human, on-device confirmation that the full wiring (real HTTP, real airplane mode, real cascade delete, real reconnect) behaves as the automated tests predict. Tracked in `STATE.md` → Blockers/Concerns, not silently closed. Steps to close: `02-04-PLAN.md` Task 4's `<how-to-verify>`, the exact same 5 cases listed above.
 
 ## Ponytail Audit (Tasks 1-3)
 
@@ -111,17 +123,18 @@ The assigned worktree's branch (`worktree-agent-ab45ee6f3ab1245db`) was checked 
 
 ## User Setup Required
 
-None new for Tasks 1-3 (reuses `CINGULA_API_BASE_URL`/`CINGULA_SYNC_API_KEY` `--dart-define` flags from 02-02/02-03). Task 4's on-device verification requires the backend reachable (either deployed, or `cd backend && vercel dev` locally) — see checkpoint details below.
+None further for Tasks 1-3 (reuses `CINGULA_API_BASE_URL`/`CINGULA_SYNC_API_KEY` `--dart-define` flags from 02-02/02-03). Task 4's on-device verification remains available to run later whenever the user chooses to pick it back up — requires the backend reachable (either deployed, or `cd backend && vercel dev` locally). The exact `flutter run` command and 5 numbered cases are in `02-04-PLAN.md` Task 4's `<how-to-verify>`.
 
 ## Next Phase Readiness
 
-Blocked on Task 4 (human-verify checkpoint). Once approved:
-- SYNC-01, SYNC-03, SYNC-08 requirements can be marked complete
-- Plan 02-05 (remaining phase-closing work) can proceed
+- Code for this plan is complete, tested, and committed (Tasks 1-3: `c1dcf0c`, `c04063f`, `4229b77`). Plan 02-05 depends on this plan's *code* (per ROADMAP.md), not on the pending human verification, so it is not blocked.
+- SYNC-01, SYNC-03, SYNC-08 are code-complete with automated coverage but not yet requirement-complete — their on-device human confirmation (Task 4) is deferred, not done, and is flagged honestly rather than silently passed or blocking.
+- If/when the user wants to close the gap, no new planning is needed — `02-04-PLAN.md` Task 4's `<how-to-verify>` (5 numbered cases) are still the exact instructions to run.
 
 ---
 *Phase: 02-backend-real-push-sync*
-*Status: Tasks 1-3 complete and committed; Task 4 paused at blocking checkpoint, awaiting user device verification*
+*Tasks 1-3 completed and committed: 2026-08-29*
+*Task 4 (all 5 device-QA cases) deferred by explicit user decision: 2026-08-29*
 
 ## Self-Check: PASSED
 
