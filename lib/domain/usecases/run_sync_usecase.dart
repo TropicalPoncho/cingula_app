@@ -1,5 +1,6 @@
 import '../../data/sync/sync_api.dart';
 import '../../data/sync/sync_client.dart';
+import '../../data/sync/sync_errors.dart';
 
 /// Caso de uso simple que empuja el outbox al servidor y confirma acks.
 class RunSyncUseCase {
@@ -26,11 +27,24 @@ class RunSyncUseCase {
       );
     }
 
-    final response = await _api.pushOutbox(
-      outbox: outbox,
-      cursor: cursor,
-      deviceId: deviceId,
-    );
+    final SyncPushResult response;
+    try {
+      response = await _api.pushOutbox(outbox: outbox, cursor: cursor, deviceId: deviceId);
+    } on SyncAuthException {
+      // D-03: un 401 es un problema de configuración (API key mal compilada), no de red.
+      // No se toca attempt_count ni next_attempt_at: reintentar con backoff sólo gastaría
+      // batería sin arreglar nada. Las filas quedan pendientes hasta que se corrija la clave.
+      rethrow;
+    } on SyncTransientException {
+      // Fallo de red/servidor: cada fila del lote suma un intento y queda agendada con backoff.
+      for (final row in outbox) {
+        final id = row['id'];
+        if (id is int) {
+          await _client.markAttempt(id, attemptCount: (row['attempt_count'] as int?) ?? 0);
+        }
+      }
+      rethrow;
+    }
 
     final ackedSet = response.ackedIds.toSet();
     final sentIds = outbox.map((row) => row['id']).whereType<int>().toSet();

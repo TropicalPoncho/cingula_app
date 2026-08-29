@@ -12,6 +12,17 @@ class ApiConfig {
   /// Mutable base URL for runtime overrides (e.g. debug panel input).
   static String baseUrl = _defaultBaseUrl;
 
+  /// Token compartido con el backend. Se fija en tiempo de compilación con
+  /// `--dart-define=CINGULA_SYNC_API_KEY=<token>` (D-02: sin login, sin rotación).
+  /// Vacío = la app no puede autenticar y el backend va a responder 401.
+  static const String _defaultApiKey = String.fromEnvironment(
+    'CINGULA_SYNC_API_KEY',
+    defaultValue: '',
+  );
+
+  /// Mutable para overrides en runtime desde el panel de debug (mismo patrón que [baseUrl]).
+  static String apiKey = _defaultApiKey;
+
   static Uri syncPushUri({String? overrideBase}) {
     return _buildUri('/sync/push', overrideBase: overrideBase);
   }
