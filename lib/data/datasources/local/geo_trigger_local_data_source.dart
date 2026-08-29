@@ -3,6 +3,9 @@
 import 'sync_local_data_source.dart';
 import '../../models/geo_trigger_model.dart';
 
+/// Próxima versión lógica para un borrado, misma regla que SyncLocalDataSource.withUpdateMetadata.
+int _nextDeleteVersion(Object? current) => ((current as int?) ?? 0) + 1;
+
 /// Acceso directo a la tabla de geozonas configuradas.
 class GeoTriggerLocalDataSource {
   GeoTriggerLocalDataSource(this._database, this._sync);
@@ -24,7 +27,7 @@ class GeoTriggerLocalDataSource {
   Future<int> deleteOrphaned() async {
     // Capturar UUIDs de huérfanos antes de borrar para encolar outbox.
     final rows = await _database.rawQuery(
-      'SELECT uuid FROM geo_triggers WHERE geo_path_id IS NOT NULL AND geo_path_id NOT IN (SELECT id FROM geo_paths)',
+      'SELECT uuid, logical_version FROM geo_triggers WHERE geo_path_id IS NOT NULL AND geo_path_id NOT IN (SELECT id FROM geo_paths)',
     );
 
     final deleted = await _database.delete(
@@ -39,7 +42,11 @@ class GeoTriggerLocalDataSource {
           tableName: 'geo_triggers',
           recordUuid: uuid,
           op: 'delete',
-          payload: {'reason': 'orphan_geo_path'},
+          payload: {
+            'reason': 'orphan_geo_path',
+            'uuid': uuid,
+            'logical_version': _nextDeleteVersion(row['logical_version']),
+          },
         );
       }
     }
@@ -52,7 +59,7 @@ class GeoTriggerLocalDataSource {
     // Capture UUIDs before deleting so we can enqueue delete events.
     final rows = await _database.query(
       'geo_triggers',
-      columns: ['uuid'],
+      columns: ['uuid', 'logical_version'],
       where: 'audio_asset_id = ?',
       whereArgs: [audioAssetId],
     );
@@ -66,7 +73,11 @@ class GeoTriggerLocalDataSource {
           tableName: 'geo_triggers',
           recordUuid: uuid,
           op: 'delete',
-          payload: {'audio_asset_id': audioAssetId},
+          payload: {
+            'audio_asset_id': audioAssetId,
+            'uuid': uuid,
+            'logical_version': _nextDeleteVersion(row['logical_version']),
+          },
         );
       }
     }

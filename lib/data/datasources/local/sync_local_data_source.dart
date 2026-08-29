@@ -55,6 +55,7 @@ class SyncLocalDataSource {
       'device_id': deviceId,
       'created_at': _nowSeconds(),
       'attempt_count': 0,
+      'next_attempt_at': null,
     });
   }
 
@@ -78,11 +79,12 @@ class SyncLocalDataSource {
     await _database.delete('sync_outbox', where: 'id = ?', whereArgs: [id]);
   }
 
-  /// Incrementa el contador de intentos; útil para backoff simple.
-  Future<void> incrementOutboxAttempt(int id) async {
+  /// Incrementa el contador de intentos y agenda cuándo la fila vuelve a ser elegible.
+  /// [nextAttemptAt] son epoch seconds; null = elegible inmediatamente.
+  Future<void> incrementOutboxAttempt(int id, {int? nextAttemptAt}) async {
     await _database.rawUpdate(
-      'UPDATE sync_outbox SET attempt_count = attempt_count + 1 WHERE id = ?',
-      [id],
+      'UPDATE sync_outbox SET attempt_count = attempt_count + 1, next_attempt_at = ? WHERE id = ?',
+      [nextAttemptAt, id],
     );
   }
 

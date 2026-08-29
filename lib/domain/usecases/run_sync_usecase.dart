@@ -39,9 +39,10 @@ class RunSyncUseCase {
       await _client.ackOutbox(id);
     }
 
-    // Incrementar contador de intentos para los que no se confirmaron; útil para backoff.
+    // Incrementar contador de intentos y agendar backoff para los que no se confirmaron.
+    final byId = {for (final row in outbox) row['id'] as int: row};
     for (final id in sentIds.difference(ackedSet)) {
-      await _client.markAttempt(id);
+      await _client.markAttempt(id, attemptCount: (byId[id]?['attempt_count'] as int?) ?? 0);
     }
 
     await _client.saveState(

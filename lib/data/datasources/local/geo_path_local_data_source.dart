@@ -5,6 +5,9 @@ import '../../models/geo_path_model.dart';
 // GeoPathLocalDataSource no longer handles storing raw point arrays. Path
 // geometry is modelled by GeoTriggers that reference geo_path_id.
 
+/// Próxima versión lógica para un borrado, misma regla que SyncLocalDataSource.withUpdateMetadata.
+int _nextDeleteVersion(Object? current) => ((current as int?) ?? 0) + 1;
+
 /// Acceso a la tabla `geo_paths`.
 class GeoPathLocalDataSource {
   GeoPathLocalDataSource(this._database, this._sync);
@@ -106,7 +109,7 @@ class GeoPathLocalDataSource {
   Future<int> deleteByAudioAssetId(int audioAssetId) async {
     final rows = await _database.query(
       'geo_paths',
-      columns: ['uuid'],
+      columns: ['uuid', 'logical_version'],
       where: 'audio_asset_id = ?',
       whereArgs: [audioAssetId],
     );
@@ -120,7 +123,11 @@ class GeoPathLocalDataSource {
           tableName: 'geo_paths',
           recordUuid: uuid,
           op: 'delete',
-          payload: {'audio_asset_id': audioAssetId},
+          payload: {
+            'audio_asset_id': audioAssetId,
+            'uuid': uuid,
+            'logical_version': _nextDeleteVersion(row['logical_version']),
+          },
         );
       }
     }
@@ -133,14 +140,14 @@ class GeoPathLocalDataSource {
     // Capturamos UUID del path y de los triggers asociados antes de borrar.
     final pathRows = await _database.query(
       'geo_paths',
-      columns: ['uuid'],
+      columns: ['uuid', 'logical_version'],
       where: 'id = ?',
       whereArgs: [pathId],
       limit: 1,
     );
     final triggerRows = await _database.query(
       'geo_triggers',
-      columns: ['uuid'],
+      columns: ['uuid', 'logical_version'],
       where: 'geo_path_id = ?',
       whereArgs: [pathId],
     );
@@ -156,7 +163,11 @@ class GeoPathLocalDataSource {
           tableName: 'geo_triggers',
           recordUuid: uuid,
           op: 'delete',
-          payload: {'geo_path_id': pathId},
+          payload: {
+            'geo_path_id': pathId,
+            'uuid': uuid,
+            'logical_version': _nextDeleteVersion(row['logical_version']),
+          },
         );
       }
     }
@@ -168,7 +179,11 @@ class GeoPathLocalDataSource {
           tableName: 'geo_paths',
           recordUuid: uuid,
           op: 'delete',
-          payload: {'id': pathId},
+          payload: {
+            'id': pathId,
+            'uuid': uuid,
+            'logical_version': _nextDeleteVersion(pathRows.first['logical_version']),
+          },
         );
       }
     }
