@@ -8,7 +8,7 @@ import '../../data/datasources/local/region_local_data_source.dart';
 import '../../data/datasources/local/sync_local_data_source.dart';
 import '../../data/sync/sync_api.dart';
 import '../../data/sync/sync_client.dart';
-import '../../data/sync/sync_api_stub.dart';
+import '../../data/sync/sync_api_http.dart';
 import '../../data/repositories/region_repository_impl.dart';
 import '../../domain/repositories/region_repository.dart';
 import '../../domain/repositories/geo_path_repository.dart';
@@ -54,9 +54,11 @@ Future<void> setupServiceLocator({bool reinitialize = false}) async {
   getIt.registerLazySingleton<SyncClient>(
     () => SyncClient(sync: getIt<SyncLocalDataSource>()),
   );
-  // Capa de red ficticia para probar flujo de sync sin servidor real.
+  // Backend real (Vercel Functions + Neon). Base URL y API key vienen por --dart-define:
+  //   --dart-define=CINGULA_API_BASE_URL=https://<proyecto>.vercel.app
+  //   --dart-define=CINGULA_SYNC_API_KEY=<token>
   getIt.registerLazySingleton<SyncApi>(
-    () => SyncApiStub(),
+    () => SyncApiHttp(),
   );
 
   getIt.registerLazySingleton<RunSyncUseCase>(

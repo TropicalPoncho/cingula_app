@@ -22,7 +22,7 @@ void main() {
     test('envía POST a {baseUrl}/sync/push con headers y body correctos', () async {
       http.Request? captured;
       final client = MockClient((request) async {
-        captured = request as http.Request;
+        captured = request;
         return http.Response(
           jsonEncode({
             'ackedIds': [1],
@@ -53,7 +53,7 @@ void main() {
     test('el array outbox del body es idéntico al que se pasó', () async {
       http.Request? captured;
       final client = MockClient((request) async {
-        captured = request as http.Request;
+        captured = request;
         return http.Response(
           jsonEncode({
             'ackedIds': <int>[],
@@ -217,7 +217,7 @@ void main() {
     test('hace GET a {baseUrl}/sync/state con Authorization y parsea la respuesta', () async {
       http.Request? captured;
       final client = MockClient((request) async {
-        captured = request as http.Request;
+        captured = request;
         return http.Response(
           jsonEncode({
             'serverCursor': 'c1',
