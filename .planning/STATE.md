@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: "Phase 01 complete (plan 01-04): ponytail audit done, device QA Parts A/B PASSED, Part C (DB recovery) deferred by user decision"
-last_updated: "2026-08-28T18:15:12.331Z"
+stopped_at: Phase 2 context gathered
+last_updated: "2026-08-29T05:06:20.440Z"
 last_activity: 2026-08-28
 progress:
   total_phases: 5
@@ -80,12 +80,11 @@ None yet.
 
 ### Blockers/Concerns
 
-- Phase 2: backend host not finalized (Neon+Vercel recommended by research, PROJECT.md still lists as pending) — resolve during Phase 2 planning, doesn't block Phase 1.
 - Phase 4: real-device/real-terrain geofencing latency numbers are estimates from docs, not measured in Comarca Andina — flag for on-the-ground validation during Phase 4 planning.
 - Phase 01: DATA-01 on-device human verification of DB-corruption cold-start recovery is deferred (not done) -- user declined to corrupt their real device's DB (only copy of field data) and chose not to use an emulator alternative either. Automated db_recovery_test.dart coverage stands and is green; the full AppDatabase.init() catch-path has not been confirmed end-to-end on real hardware. Steps to close: 01-04-PLAN.md task 2, section C, steps 9-14, recommended on an emulator.
 
 ## Session Continuity
 
-Last session: 2026-08-28T17:52:39.034Z
-Stopped at: Phase 01 complete (plan 01-04): ponytail audit done, device QA Parts A/B PASSED, Part C (DB recovery) deferred by user decision
-Resume file: None
+Last session: 2026-08-29T05:06:20.428Z
+Stopped at: Phase 2 context gathered
+Resume file: .planning/phases/02-backend-real-push-sync/02-CONTEXT.md
