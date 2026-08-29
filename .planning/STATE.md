@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-01-PLAN.md, 02-02-PLAN.md
+stopped_at: Completed 02-01-PLAN.md, 02-02-PLAN.md (wave 1)
 last_updated: "2026-08-29T14:28:10.063Z"
 last_activity: 2026-08-29
 progress:
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-08-08)
 ## Current Position
 
 Phase: 02 (backend-real-push-sync) — EXECUTING
-Plan: 2 of 5 complete (02-01, 02-02)
+Plan: 2 of 5 complete (02-01, 02-02) — 3 plans remain
 Status: Executing Phase 02
 Last activity: 2026-08-29
 
@@ -57,6 +57,7 @@ Progress: [████░░░░░░] 44%
 | Phase 01 P03 | 20min | 2 tasks | 1 files |
 | Phase 01 P04 | 25min | 2 tasks | 4 files |
 | Phase 02 P01 | 4min | 3 tasks | 8 files |
+| Phase 02 P02 | 12min | 3 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -75,6 +76,8 @@ Recent decisions affecting current work:
 - [Phase 01]: Removed dead DatabaseRecoveryEvent.occurredAt field (populated but never read) during phase-01 ponytail audit
 - [Phase 01]: Phase 01 closed with one deferred item: user explicitly declined on-device DB-corruption-recovery QA (real device holds only copy of field data); automated db_recovery_test.dart coverage stands, human confirmation deferred not failed
 - [Phase 02-backend-real-push-sync]: [Phase 02 Plan 01]: next_attempt_at (resolved instant) chosen over research's last_attempt_at so backoff jitter is decided once at failure time, not re-rolled on every outbox read
+- [Phase 02]: Backend (02-02) escrito en JS ESM en vez de TypeScript: Node v22.14 confirmado, .ts hubiera necesitado tsx/tsconfig para 2 endpoints
+- [Phase 02]: Backend (02-02): tabla unica synced_entities (current+previous version) en vez de 4 tablas espejo del schema SQLite -- payload es opaco al servidor hasta el pull de Fase 3
 
 ### Pending Todos
 
@@ -88,5 +91,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-08-29T14:28:10.055Z
-Stopped at: Completed 02-01-PLAN.md, 02-02-PLAN.md
+Stopped at: Completed 02-01-PLAN.md, 02-02-PLAN.md (wave 1)
 Resume file: None
