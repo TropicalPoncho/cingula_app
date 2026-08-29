@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 02-04-PLAN.md (Tasks 1-3 code+tests; Task 4 device QA deferred by user)
+stopped_at: 02-05-PLAN.md Task 1 (ponytail audit) complete; paused at Task 2 blocking checkpoint (Neon+Vercel setup, requires user browser/credentials)
 last_updated: "2026-08-29T16:09:50.269Z"
 last_activity: 2026-08-29
 progress:
@@ -26,8 +26,11 @@ See: .planning/PROJECT.md (updated 2026-08-08)
 ## Current Position
 
 Phase: 02 (backend-real-push-sync) — EXECUTING
-Plan: 4 of 5 complete (02-01, 02-02, 02-03, 02-04) — 1 plan remains (02-05)
-Status: 02-04 code complete; Task 4 on-device verification deferred by user (see Blockers/Concerns)
+Plan: 4 of 5 complete (02-01, 02-02, 02-03, 02-04) — 1 plan in progress (02-05)
+Status: 02-05 Task 1 (ponytail audit) complete and committed (b7315f7). Paused at Task 2, a
+  blocking human-action checkpoint (Neon dev branch + schema apply + SYNC_API_KEY + Vercel
+  account/deploy) — requires the user's own browser session, cannot be automated. Tasks 3
+  (end-to-end device verification) and 4 (close validation table) remain after Task 2.
 Last activity: 2026-08-29
 
 Progress: [█████████░] 89%
@@ -83,6 +86,7 @@ Recent decisions affecting current work:
 - [Phase 02]: [Phase 02 Plan 03]: 400 classified as SyncTransientException (not a third terminal category) -- a client payload bug on 400 keeps surfacing on retry rather than being silently dropped
 - [Phase 02]: [Phase 02 Plan 04]: SyncTrigger is purely event-driven (write, reconnect, manual button) with zero periodic timers, matching the milestone's anti-polling constraint
 - [Phase 02]: [Phase 02 Plan 04]: Task 4's 5-case on-device verification explicitly deferred by user (2026-08-29, no time now, will run later) -- code complete and automated-tested, not a failure, tracked in Blockers/Concerns same as Phase 1's DATA-01 deferral
+- [Phase 02]: [Phase 02 Plan 05]: Ponytail audit (Task 1) found and fixed real duplication (SyncApiHttp's 401/non-200 classification block, identical in pushOutbox and fetchState, extracted to a private _throwForStatus helper) and one truly dead symbol (SyncTrigger.isRunning, zero callers anywhere including tests, removed). SyncTrigger.flush() was flagged by the same check (test-only callers) but kept deliberately: D-06 has the manual button call RunSyncUseCase directly (not flush()), so flush()'s only caller is the test suite -- but it is the sole deterministic way to test coalescing/reentrancy without depending on real timers, so removing it would have been a net loss for regression coverage, not a simplification. Documented with a ponytail: comment instead of deleted.
 
 ### Pending Todos
 
