@@ -10,7 +10,7 @@ import 'seed_data.dart';
 /// Gestiona la instancia de SQLite y crea tablas iniciales.
 class AppDatabase {
   static const _dbName = 'cingula.db';
-  static const _dbVersion = 5;
+  static const _dbVersion = 6;
 
   Database? _database;
 
@@ -143,7 +143,8 @@ class AppDatabase {
         payload TEXT,
         device_id TEXT,
         created_at INTEGER NOT NULL,
-        attempt_count INTEGER NOT NULL DEFAULT 0
+        attempt_count INTEGER NOT NULL DEFAULT 0,
+        next_attempt_at INTEGER
       );
     ''');
 
@@ -243,7 +244,8 @@ class AppDatabase {
             payload TEXT,
             device_id TEXT,
             created_at INTEGER NOT NULL,
-            attempt_count INTEGER NOT NULL DEFAULT 0
+            attempt_count INTEGER NOT NULL DEFAULT 0,
+            next_attempt_at INTEGER
           );
         ''');
       } catch (_) {}
@@ -257,6 +259,12 @@ class AppDatabase {
             device_id TEXT
           );
         ''');
+      } catch (_) {}
+    }
+
+    if (oldVersion < 6) {
+      try {
+        await db.execute('ALTER TABLE sync_outbox ADD COLUMN next_attempt_at INTEGER;');
       } catch (_) {}
     }
   }
