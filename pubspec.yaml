@@ -44,6 +44,8 @@ dependencies:
   geofence_service: ^6.0.0+1
   wakelock_plus: ^1.2.5
   flutter_local_notifications: ^17.2.2
+  # Cliente HTTP para el backend real de sync.
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:
