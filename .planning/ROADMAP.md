@@ -54,7 +54,7 @@ Plans:
 - [x] 02-01-PLAN.md — Huecos de schema local: columna next_attempt_at + backoff Full Jitter + logical_version en payloads de delete (SYNC-02, SYNC-03)
 - [x] 02-02-PLAN.md — Backend nuevo en backend/: Vercel Functions + Neon, auth bearer, upsert versionado idempotente (SYNC-01, SYNC-02, SYNC-06, SYNC-07)
 - [x] 02-03-PLAN.md — SyncApiHttp reemplaza a SyncApiStub; errores terminales vs transitorios en RunSyncUseCase (SYNC-01, SYNC-03, SYNC-07)
-- [ ] 02-04-PLAN.md — Push automático tras cada escritura y al reconectar, + estado de sync honesto en el panel de debug (SYNC-01, SYNC-03, SYNC-08)
+- [x] 02-04-PLAN.md — Push automático tras cada escritura y al reconectar, + estado de sync honesto en el panel de debug (SYNC-01, SYNC-03, SYNC-08)
 - [ ] 02-05-PLAN.md — Auditoría ponytail + setup Neon/Vercel + verificación end-to-end contra backend real (los 6 requisitos)
 **Waves**: 1 → [02-01, 02-02] · 2 → [02-03] · 3 → [02-04] · 4 → [02-05]
 **Ponytail audit**: Requerido como parte del checklist de esta fase antes de marcarla completa — cubierto por la tarea 1 del plan 02-05 (ver PROJECT.md Constraints).
@@ -105,7 +105,7 @@ Nota de dependencias: la Fase 4 depende solo de la Fase 1 (es arquitectónicamen
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Blindaje de Datos y Separación Debug/Usuario | 4/4 | Complete   | 2026-08-28 |
-| 2. Backend Real + Push Sync | 0/5 | Planned | - |
+| 2. Backend Real + Push Sync | 4/5 | In Progress | - |
 | 3. Sync Bidireccional (Pull) | 0/TBD | Not started | - |
 | 4. Reemplazo de Geofencing Híbrido | 0/TBD | Not started | - |
 | 5. Precarga de Audio + Descarga por Región | 0/TBD | Not started | - |

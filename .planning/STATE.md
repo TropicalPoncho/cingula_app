@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 02-03-PLAN.md
-last_updated: "2026-08-29T14:41:51.756Z"
+status: verifying
+stopped_at: Completed 02-04-PLAN.md (Tasks 1-3 code+tests; Task 4 device QA deferred by user)
+last_updated: "2026-08-29T16:09:50.269Z"
 last_activity: 2026-08-29
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 9
-  completed_plans: 7
-  percent: 44
+  completed_plans: 8
+  percent: 89
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-08-08)
 ## Current Position
 
 Phase: 02 (backend-real-push-sync) — EXECUTING
-Plan: 3 of 5 complete (02-01, 02-02) — 3 plans remain
-Status: Ready to execute
+Plan: 4 of 5 complete (02-01, 02-02, 02-03, 02-04) — 1 plan remains (02-05)
+Status: 02-04 code complete; Task 4 on-device verification deferred by user (see Blockers/Concerns)
 Last activity: 2026-08-29
 
-Progress: [████░░░░░░] 44%
+Progress: [█████████░] 89%
 
 ## Performance Metrics
 
@@ -59,6 +59,7 @@ Progress: [████░░░░░░] 44%
 | Phase 02 P01 | 4min | 3 tasks | 8 files |
 | Phase 02 P02 | 12min | 3 tasks | 14 files |
 | Phase 02 P03 | 8min | 2 tasks | 9 files |
+| Phase 02 P04 | 20min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,8 @@ Recent decisions affecting current work:
 - [Phase 02]: Backend (02-02) escrito en JS ESM en vez de TypeScript: Node v22.14 confirmado, .ts hubiera necesitado tsx/tsconfig para 2 endpoints
 - [Phase 02]: Backend (02-02): tabla unica synced_entities (current+previous version) en vez de 4 tablas espejo del schema SQLite -- payload es opaco al servidor hasta el pull de Fase 3
 - [Phase 02]: [Phase 02 Plan 03]: 400 classified as SyncTransientException (not a third terminal category) -- a client payload bug on 400 keeps surfacing on retry rather than being silently dropped
+- [Phase 02]: [Phase 02 Plan 04]: SyncTrigger is purely event-driven (write, reconnect, manual button) with zero periodic timers, matching the milestone's anti-polling constraint
+- [Phase 02]: [Phase 02 Plan 04]: Task 4's 5-case on-device verification explicitly deferred by user (2026-08-29, no time now, will run later) -- code complete and automated-tested, not a failure, tracked in Blockers/Concerns same as Phase 1's DATA-01 deferral
 
 ### Pending Todos
 
@@ -89,9 +92,10 @@ None yet.
 
 - Phase 4: real-device/real-terrain geofencing latency numbers are estimates from docs, not measured in Comarca Andina — flag for on-the-ground validation during Phase 4 planning.
 - Phase 01: DATA-01 on-device human verification of DB-corruption cold-start recovery is deferred (not done) -- user declined to corrupt their real device's DB (only copy of field data) and chose not to use an emulator alternative either. Automated db_recovery_test.dart coverage stands and is green; the full AppDatabase.init() catch-path has not been confirmed end-to-end on real hardware. Steps to close: 01-04-PLAN.md task 2, section C, steps 9-14, recommended on an emulator.
+- Phase 02: 02-04 Task 4 on-device human verification (5 cases: auto-push, coalescing, offline+reconnect, terminal auth error, manual button) is deferred (not done) -- user explicitly declined to run it now (no time), plans to run it later ("tonight"), not a failure. Automated coverage stands and is green (flutter analyze 0 errors, flutter test 64/64); code committed (c1dcf0c, c04063f, 4229b77). Steps to close: 02-04-PLAN.md Task 4's `<how-to-verify>`, 5 numbered cases.
 
 ## Session Continuity
 
-Last session: 2026-08-29T14:41:51.749Z
-Stopped at: Completed 02-03-PLAN.md
+Last session: 2026-08-29T16:09:43.064Z
+Stopped at: Completed 02-04-PLAN.md (Tasks 1-3 code+tests; Task 4 device QA deferred by user)
 Resume file: None

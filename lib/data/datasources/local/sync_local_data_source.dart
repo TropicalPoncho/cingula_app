@@ -11,6 +11,11 @@ class SyncLocalDataSource {
   final Database _database;
   final Uuid _uuid;
 
+  /// Se invoca después de encolar una fila de outbox. El service locator lo cablea a
+  /// SyncTrigger.schedule() para que cada escritura local dispare un push (D-04).
+  /// Nullable a propósito: en tests y en el arranque temprano puede no haber trigger todavía.
+  void Function()? onOutboxEnqueued;
+
   /// Epoch seconds helper.
   int _nowSeconds() => DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
@@ -57,6 +62,7 @@ class SyncLocalDataSource {
       'attempt_count': 0,
       'next_attempt_at': null,
     });
+    onOutboxEnqueued?.call();
   }
 
   /// Lee el outbox ordenado por creación, limita resultados y los devuelve con payload ya decodificado.

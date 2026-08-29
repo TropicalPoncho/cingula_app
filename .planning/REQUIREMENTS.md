@@ -21,7 +21,7 @@ Requirements para este milestone. Cada uno mapea a fases del roadmap.
 - [ ] **SYNC-05**: En el primer sync de un celular con datos preexistentes, el push drena por completo antes de correr el primer pull (evita que un pull temprano sobrescriba datos locales aún no subidos)
 - [x] **SYNC-06**: El backend guarda el estado actual + 1 versión anterior por entidad, sin historial ilimitado
 - [x] **SYNC-07**: El backend nuevo exige autenticación mínima (API key/bearer token), aunque sea de un solo usuario
-- [ ] **SYNC-08**: El usuario puede ver el estado real de sync (cantidad de pendientes en el outbox + timestamp del último sync exitoso), sin indicadores falsos de "todo sincronizado"
+- [x] **SYNC-08**: El usuario puede ver el estado real de sync (cantidad de pendientes en el outbox + timestamp del último sync exitoso), sin indicadores falsos de "todo sincronizado"
 
 ### Geofencing (GEO)
 
@@ -84,7 +84,7 @@ Reconocidos pero diferidos, no forman parte del roadmap de este milestone.
 | SYNC-03 | Phase 2 | Complete |
 | SYNC-06 | Phase 2 | Complete |
 | SYNC-07 | Phase 2 | Complete |
-| SYNC-08 | Phase 2 | Pending |
+| SYNC-08 | Phase 2 | Complete |
 | SYNC-04 | Phase 3 | Pending |
 | SYNC-05 | Phase 3 | Pending |
 | GEO-01 | Phase 4 | Pending |

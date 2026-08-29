@@ -46,6 +46,8 @@ dependencies:
   flutter_local_notifications: ^17.2.2
   # Cliente HTTP para el backend real de sync.
   http: ^1.6.0
+  # Pre-check barato de conectividad para disparar sync al reconectar (D-05).
+  connectivity_plus: ^7.3.1
 
 dev_dependencies:
   flutter_test:
