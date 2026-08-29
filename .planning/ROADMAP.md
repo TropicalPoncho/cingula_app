@@ -49,8 +49,15 @@ Plans:
   4. Pedidos al backend sin API key/bearer token válido son rechazados.
   5. La interfaz existente muestra la cantidad real de pendientes en el outbox y el timestamp del último sync exitoso — nunca indica "todo sincronizado" cuando hay escrituras sin pushear.
   6. Después de varios pushes sobre la misma entidad, el backend conserva solo el estado actual más una versión anterior (verificable inspeccionando el storage del backend).
-**Plans**: TBD
-**Ponytail audit**: Requerido como parte del checklist de esta fase antes de marcarla completa — revisar el código nuevo en busca de sobre-ingeniería y simplificar antes del cierre (ver PROJECT.md Constraints).
+**Plans**: 5 plans
+Plans:
+- [ ] 02-01-PLAN.md — Huecos de schema local: columna next_attempt_at + backoff Full Jitter + logical_version en payloads de delete (SYNC-02, SYNC-03)
+- [ ] 02-02-PLAN.md — Backend nuevo en backend/: Vercel Functions + Neon, auth bearer, upsert versionado idempotente (SYNC-01, SYNC-02, SYNC-06, SYNC-07)
+- [ ] 02-03-PLAN.md — SyncApiHttp reemplaza a SyncApiStub; errores terminales vs transitorios en RunSyncUseCase (SYNC-01, SYNC-03, SYNC-07)
+- [ ] 02-04-PLAN.md — Push automático tras cada escritura y al reconectar, + estado de sync honesto en el panel de debug (SYNC-01, SYNC-03, SYNC-08)
+- [ ] 02-05-PLAN.md — Auditoría ponytail + setup Neon/Vercel + verificación end-to-end contra backend real (los 6 requisitos)
+**Waves**: 1 → [02-01, 02-02] · 2 → [02-03] · 3 → [02-04] · 4 → [02-05]
+**Ponytail audit**: Requerido como parte del checklist de esta fase antes de marcarla completa — cubierto por la tarea 1 del plan 02-05 (ver PROJECT.md Constraints).
 
 ### Phase 3: Sync Bidireccional (Pull)
 **Goal**: El celular puede recibir cambios hechos fuera de él vía pull, sin que un pull temprano arriesgue nunca datos locales todavía no subidos.
@@ -98,7 +105,7 @@ Nota de dependencias: la Fase 4 depende solo de la Fase 1 (es arquitectónicamen
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Blindaje de Datos y Separación Debug/Usuario | 4/4 | Complete   | 2026-08-28 |
-| 2. Backend Real + Push Sync | 0/TBD | Not started | - |
+| 2. Backend Real + Push Sync | 0/5 | Planned | - |
 | 3. Sync Bidireccional (Pull) | 0/TBD | Not started | - |
 | 4. Reemplazo de Geofencing Híbrido | 0/TBD | Not started | - |
 | 5. Precarga de Audio + Descarga por Región | 0/TBD | Not started | - |
