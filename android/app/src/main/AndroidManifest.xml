@@ -18,6 +18,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <!-- Mic recording for path creation -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- connectivity_plus necesita esto para observar reconexiones de red (D-05). -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     
     <!-- Requerir GPS físico para máxima precisión -->
     <uses-feature android:name="android.hardware.location.gps" android:required="true" />
