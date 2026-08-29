@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-01-PLAN.md, 02-02-PLAN.md (wave 1)
-last_updated: "2026-08-29T14:28:10.063Z"
+stopped_at: Completed 02-03-PLAN.md
+last_updated: "2026-08-29T14:41:51.756Z"
 last_activity: 2026-08-29
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 9
-  completed_plans: 6
+  completed_plans: 7
   percent: 44
 ---
 
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-08-08)
 ## Current Position
 
 Phase: 02 (backend-real-push-sync) — EXECUTING
-Plan: 2 of 5 complete (02-01, 02-02) — 3 plans remain
-Status: Executing Phase 02
+Plan: 3 of 5 complete (02-01, 02-02) — 3 plans remain
+Status: Ready to execute
 Last activity: 2026-08-29
 
 Progress: [████░░░░░░] 44%
@@ -58,6 +58,7 @@ Progress: [████░░░░░░] 44%
 | Phase 01 P04 | 25min | 2 tasks | 4 files |
 | Phase 02 P01 | 4min | 3 tasks | 8 files |
 | Phase 02 P02 | 12min | 3 tasks | 14 files |
+| Phase 02 P03 | 8min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,7 @@ Recent decisions affecting current work:
 - [Phase 02-backend-real-push-sync]: [Phase 02 Plan 01]: next_attempt_at (resolved instant) chosen over research's last_attempt_at so backoff jitter is decided once at failure time, not re-rolled on every outbox read
 - [Phase 02]: Backend (02-02) escrito en JS ESM en vez de TypeScript: Node v22.14 confirmado, .ts hubiera necesitado tsx/tsconfig para 2 endpoints
 - [Phase 02]: Backend (02-02): tabla unica synced_entities (current+previous version) en vez de 4 tablas espejo del schema SQLite -- payload es opaco al servidor hasta el pull de Fase 3
+- [Phase 02]: [Phase 02 Plan 03]: 400 classified as SyncTransientException (not a third terminal category) -- a client payload bug on 400 keeps surfacing on retry rather than being silently dropped
 
 ### Pending Todos
 
@@ -90,6 +92,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-29T14:28:10.055Z
-Stopped at: Completed 02-01-PLAN.md, 02-02-PLAN.md (wave 1)
+Last session: 2026-08-29T14:41:51.749Z
+Stopped at: Completed 02-03-PLAN.md
 Resume file: None
