@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/config/api_config.dart';
 import '../../../../core/config/location_config.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/services/log_service.dart';
@@ -20,6 +21,7 @@ import '../../../../domain/repositories/geo_trigger_repository.dart';
 import '../../../../domain/repositories/location_repository.dart';
 import '../../../../domain/repositories/region_repository.dart';
 import '../../../../data/sync/sync_client.dart';
+import '../../../../data/sync/sync_trigger.dart';
 import '../../../../domain/usecases/run_sync_usecase.dart';
 import '../../../notifiers/playback_notifier.dart';
 import '../../../widgets/trigger_map.dart';
@@ -52,6 +54,8 @@ class _DiagnosticsPanelState extends State<DiagnosticsPanel> {
   String? _serverCursor;
   DateTime? _lastSync;
   int _outboxCount = 0;
+  SyncTriggerStatus _syncStatus = SyncTriggerStatus.idle;
+  StreamSubscription<SyncTriggerStatus>? _syncStatusSub;
 
   // Crear región
   final TextEditingController _regionNameController = TextEditingController(text: 'Mi región');
@@ -67,9 +71,33 @@ class _DiagnosticsPanelState extends State<DiagnosticsPanel> {
     _activationRadiusController.text = LocationConfig.activationRadiusMeters.toStringAsFixed(1);
     _loadConfig();
     _refreshSyncStatus();
+    _syncStatus = getIt<SyncTrigger>().lastStatus;
+    _syncStatusSub = getIt<SyncTrigger>().statusStream.listen((status) {
+      if (!mounted) return;
+      setState(() => _syncStatus = status);
+      // El contador de pendientes cambia con cada push: refrescarlo para que nunca quede viejo.
+      _refreshSyncStatus();
+    });
     _logSub = getIt<LogService>().stream.listen((list) {
       if (mounted) setState(() => _logs = list.reversed.toList(growable: false));
     });
+  }
+
+  String get _syncStatusLabel {
+    switch (_syncStatus) {
+      case SyncTriggerStatus.idle:
+        return 'sin intentos todavía';
+      case SyncTriggerStatus.running:
+        return 'enviando...';
+      case SyncTriggerStatus.ok:
+        return _outboxCount > 0
+            ? 'último push OK, quedan $_outboxCount pendientes'
+            : 'último push OK, outbox vacío';
+      case SyncTriggerStatus.transientError:
+        return 'ERROR de red/servidor — reintenta con backoff';
+      case SyncTriggerStatus.authError:
+        return 'ERROR DE AUTH (401) — revisar --dart-define=CINGULA_SYNC_API_KEY. No se reintenta.';
+    }
   }
 
   Future<void> _loadConfig() async {
@@ -117,6 +145,7 @@ class _DiagnosticsPanelState extends State<DiagnosticsPanel> {
   @override
   void dispose() {
     _logSub?.cancel();
+    _syncStatusSub?.cancel();
     _pathNameController.dispose();
     _triggerRadiusController.dispose();
     _regionNameController.dispose();
@@ -481,6 +510,9 @@ class _DiagnosticsPanelState extends State<DiagnosticsPanel> {
                       Text('Cursor servidor: ${_serverCursor ?? '-'}'),
                       Text('Última sync: ${_lastSync?.toIso8601String() ?? '-'}'),
                       Text('Outbox pendiente: $_outboxCount'),
+                      Text('Estado: $_syncStatusLabel'),
+                      Text('Backend: ${ApiConfig.baseUrl}'),
+                      Text('API key: ${ApiConfig.apiKey.isEmpty ? 'NO CONFIGURADA' : 'configurada (${ApiConfig.apiKey.length} chars)'}'),
                       const SizedBox(height: 8),
                       Row(
                         children: [
@@ -511,7 +543,7 @@ class _DiagnosticsPanelState extends State<DiagnosticsPanel> {
                                 }
                               }
                             },
-                            child: const Text('Push outbox (stub)'),
+                            child: const Text('Forzar push ahora'),
                           ),
                         ],
                       ),
