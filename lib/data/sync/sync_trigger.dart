@@ -33,7 +33,6 @@ class SyncTrigger {
 
   SyncTriggerStatus get lastStatus => _lastStatus;
   Stream<SyncTriggerStatus> get statusStream => _statusController.stream;
-  bool get isRunning => _inFlight != null;
 
   /// Agenda un push. Llamadas repetidas dentro de la ventana de debounce colapsan en una.
   /// Fire-and-forget: nunca lanza, para no romper la escritura local que lo disparó.
@@ -42,7 +41,12 @@ class SyncTrigger {
     _timer = Timer(_debounce, () => unawaited(_run()));
   }
 
-  /// Corre un push ya mismo y espera a que termine. Para tests y para el botón manual.
+  // ponytail: flush() sólo lo llaman los tests hoy -- el botón manual del panel de debug
+  // llama a RunSyncUseCase directamente (D-06 en 02-CONTEXT.md, decisión explícita, no un
+  // descuido). Se deja porque es el único mecanismo determinístico para probar coalescing/
+  // reentrancy sin depender de temporizadores reales; si algún día el botón lo usa, borrar
+  // este comentario.
+  /// Corre un push ya mismo y espera a que termine.
   Future<void> flush() {
     _timer?.cancel();
     return _run();

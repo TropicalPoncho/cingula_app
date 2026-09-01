@@ -17,9 +17,9 @@ export default async function handler(request, response) {
     return response.status(200).json({ ackedIds: [], serverCursor: null, receivedAt });
   }
 
-  // Validar TODO antes de tocar la DB: sql.transaction() es todo-o-nada, así que una fila
-  // malformada abortaría el batch entero de forma silenciosa. Preferimos un 400 explícito
-  // que nombra qué ids fallaron (ver 02-RESEARCH.md > Pitfall 4).
+  // ponytail: validar TODO antes de tocar la DB. sql.transaction() es todo-o-nada, así que
+  // una fila malformada abortaría el batch entero de forma silenciosa. Preferimos un 400
+  // explícito que nombra qué ids fallaron (ver 02-RESEARCH.md > Pitfall 4).
   const invalid = outbox
     .map((item, index) => ({ item, index, error: validateOutboxItem(item) }))
     .filter((entry) => entry.error !== null);
