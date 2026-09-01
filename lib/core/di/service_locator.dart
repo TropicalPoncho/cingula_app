@@ -74,8 +74,13 @@ Future<void> setupServiceLocator({bool reinitialize = false}) async {
   );
 
   // Disparo automático de push: tras cada escritura local (D-04) y al recuperar red (D-05).
+  // onError vuelca el mensaje completo de la excepción al LogService: el status stream por sí
+  // solo (idle/running/ok/transientError/authError) no alcanza para debuggear qué falló.
   getIt.registerLazySingleton<SyncTrigger>(
-    () => SyncTrigger(runSync: getIt<RunSyncUseCase>()),
+    () => SyncTrigger(
+      runSync: getIt<RunSyncUseCase>(),
+      onError: (message) => getIt<LogService>().log('Sync error: $message'),
+    ),
   );
 
   // D-04: toda escritura local pasa por enqueueOutbox, así que un solo cable alcanza.

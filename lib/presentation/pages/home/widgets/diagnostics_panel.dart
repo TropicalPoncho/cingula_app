@@ -20,6 +20,7 @@ import '../../../../domain/repositories/geo_path_repository.dart';
 import '../../../../domain/repositories/geo_trigger_repository.dart';
 import '../../../../domain/repositories/location_repository.dart';
 import '../../../../domain/repositories/region_repository.dart';
+import '../../../../data/datasources/local/sync_local_data_source.dart';
 import '../../../../data/sync/sync_client.dart';
 import '../../../../data/sync/sync_trigger.dart';
 import '../../../../domain/usecases/run_sync_usecase.dart';
@@ -536,6 +537,8 @@ class _DiagnosticsPanelState extends State<DiagnosticsPanel> {
                                   SnackBar(content: Text(message)),
                                 );
                               } catch (e) {
+                                debugPrint('CINGULA SYNC ERROR (manual push): $e');
+                                getIt<LogService>().log('Error en sync: $e');
                                 if (mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(content: Text('Error en sync: $e')),
@@ -544,6 +547,29 @@ class _DiagnosticsPanelState extends State<DiagnosticsPanel> {
                               }
                             },
                             child: const Text('Forzar push ahora'),
+                          ),
+                          const SizedBox(width: 8),
+                          OutlinedButton(
+                            onPressed: () async {
+                              try {
+                                final repaired = await getIt<SyncLocalDataSource>().repairDeleteOutboxPayloads();
+                                getIt<LogService>().log('Reparación outbox: $repaired filas de delete corregidas');
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Reparadas $repaired filas de delete en outbox')),
+                                  );
+                                }
+                              } catch (e) {
+                                debugPrint('CINGULA SYNC ERROR (repair): $e');
+                                getIt<LogService>().log('Error al reparar outbox: $e');
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Error al reparar: $e')),
+                                  );
+                                }
+                              }
+                            },
+                            child: const Text('Reparar deletes viejos'),
                           ),
                         ],
                       ),

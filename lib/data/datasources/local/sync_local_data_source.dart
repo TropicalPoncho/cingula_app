@@ -94,6 +94,42 @@ class SyncLocalDataSource {
     );
   }
 
+  /// Repara filas de outbox `op: delete` encoladas antes de que existiera el arreglo de
+  /// la Fase 2 (plan 02-01) que agrega `logical_version` al payload de los deletes.
+  /// Sin este campo el backend rechaza el lote ENTERO donde viaja la fila (ver
+  /// backend/api/_lib/outbox.js validateOutboxItem), lo que además bloquea todo lo que
+  /// está detrás en la cola por el orden FIFO de `SyncClient.pendingOutbox`.
+  /// Es seguro poner logical_version=1: estas filas nunca llegaron a un backend real
+  /// (SyncApiStub nunca tocó un servidor), así que no hay ninguna versión previa que pisar.
+  /// Devuelve la cantidad de filas reparadas.
+  Future<int> repairDeleteOutboxPayloads() async {
+    final rows = await _database.query(
+      'sync_outbox',
+      columns: ['id', 'payload'],
+      where: "op = 'delete'",
+    );
+
+    var repaired = 0;
+    for (final row in rows) {
+      final rawPayload = row['payload'] as String?;
+      final payload = rawPayload == null
+          ? <String, Object?>{}
+          : jsonDecode(rawPayload) as Map<String, Object?>;
+      final version = payload['logical_version'];
+      final isValid = version is int && version >= 1;
+      if (isValid) continue;
+
+      await _database.update(
+        'sync_outbox',
+        {'payload': jsonEncode({...payload, 'logical_version': 1})},
+        where: 'id = ?',
+        whereArgs: [row['id']],
+      );
+      repaired++;
+    }
+    return repaired;
+  }
+
   /// Obtiene el estado de sincronización (cursor y device_id si existe).
   Future<Map<String, Object?>> getSyncState() async {
     final rows = await _database.query('sync_state', where: 'id = 1', limit: 1);

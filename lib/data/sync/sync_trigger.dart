@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import '../../domain/usecases/run_sync_usecase.dart';
 import 'sync_errors.dart';
 
@@ -14,11 +16,14 @@ class SyncTrigger {
   SyncTrigger({
     required RunSyncUseCase runSync,
     Duration debounce = const Duration(seconds: 2),
+    void Function(String message)? onError,
   })  : _runSync = runSync,
-        _debounce = debounce;
+        _debounce = debounce,
+        _onError = onError;
 
   final RunSyncUseCase _runSync;
   final Duration _debounce;
+  final void Function(String message)? _onError;
   final _statusController = StreamController<SyncTriggerStatus>.broadcast();
 
   Timer? _timer;
@@ -60,11 +65,17 @@ class SyncTrigger {
     try {
       await _runSync.pushOutboxOnce();
       _emit(SyncTriggerStatus.ok);
-    } on SyncAuthException {
+    } on SyncAuthException catch (e) {
+      debugPrint('CINGULA SYNC ERROR (auth): $e');
+      _onError?.call(e.toString());
       _emit(SyncTriggerStatus.authError);
-    } on SyncTransientException {
+    } on SyncTransientException catch (e) {
+      debugPrint('CINGULA SYNC ERROR (transient): $e');
+      _onError?.call(e.toString());
       _emit(SyncTriggerStatus.transientError);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('CINGULA SYNC ERROR (unexpected): $e');
+      _onError?.call('Sync push failed unexpectedly: $e');
       _emit(SyncTriggerStatus.transientError);
     } finally {
       _inFlight = null;
