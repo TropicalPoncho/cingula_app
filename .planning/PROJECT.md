@@ -19,10 +19,10 @@ Que la app siga siendo confiable en el bolsillo del usuario mientras se construy
 - ✓ Exportar/importar base de datos local manualmente desde la UI de debug — existente
 - ✓ El sistema nunca pierde datos existentes en el celular ante un fallo de apertura de la base (rename-not-delete con backup timestamped) y las acciones destructivas del panel de debug (recrear/importar BD) fueron eliminadas por completo en vez de gateadas con confirmación — Validado en Fase 1 (DATA-01, DATA-02). Confirmación humana en dispositivo real del flujo completo de recuperación quedó diferida por decisión explícita del usuario (ver `01-HUMAN-UAT.md`); la lógica está cubierta por tests automatizados.
 - ✓ Separación de dashboard de usuario final vs. panel de debug mediante un toggle en runtime persistente (gesto oculto de 5 taps, sin flavors de Flutter) — Validado en Fase 1 (UI-01)
+- ✓ Cada escritura local (audio_assets, geo_triggers, geo_paths, regions) se sincroniza contra un backend real (Neon + Vercel) vía el outbox ya existente (push), con idempotencia, backoff, auth y estado honesto — Validado en Fase 2 (SYNC-01/02/03/06/07/08). Confirmado en vivo contra el deploy real: push automático, offline+reconexión, ventana de 2 versiones, botón manual, datos preexistentes intactos (incluye un backlog real de 1186 filas históricas sincronizado por primera vez). Tres casos de QA manual (kill-mid-push, auth inválida desde la app, coalescing en delete cascada) quedaron diferidos por decisión del usuario — ver `02-HUMAN-UAT.md`; no son gaps de código, están cubiertos por tests automatizados.
 
 ### Active
 
-- [ ] Cada escritura local (audio_assets, geo_triggers, geo_paths, regions) se sincroniza contra un backend real vía el outbox ya existente (push)
 - [ ] El celular puede recibir cambios hechos fuera de él (pull) — hoy `SyncApi.pullChanges()` existe en la interfaz pero nunca se invoca
 - [ ] El servidor mantiene el estado actual + 1 versión anterior de cada entidad (no historial ilimitado); el celular siempre reemplaza con el último estado, nunca guarda historial local
 - [ ] Detección de entrada/salida de Región usa geofencing nativo del SO (Android GeofencingClient / iOS CLLocationManager) en vez de polling continuo en foreground service
@@ -85,7 +85,9 @@ Que la app siga siendo confiable en el bolsillo del usuario mientras se construy
 
 ## Current State
 
-**Fase 1 (Blindaje de Datos y Separación Debug/Usuario) completa** (2026-08-28): recuperación no destructiva de BD, eliminación de acciones destructivas del panel de debug, y toggle runtime debug/usuario — todo validado en código y tests; un ítem de confirmación manual en dispositivo quedó diferido por decisión del usuario. Próximo: Fase 2 (Backend Real + Push Sync).
+**Fase 1 (Blindaje de Datos y Separación Debug/Usuario) completa** (2026-08-28): recuperación no destructiva de BD, eliminación de acciones destructivas del panel de debug, y toggle runtime debug/usuario — todo validado en código y tests; un ítem de confirmación manual en dispositivo quedó diferido por decisión del usuario.
+
+**Fase 2 (Backend Real + Push Sync) completa** (2026-09-16): backend real en Neon+Vercel reemplaza SyncApiStub; push idempotente, backoff, auth y estado honesto de sync — validado en código, tests automatizados, y en vivo contra el deploy real (incluye haber destrabado y sincronizado por primera vez un backlog real de 1186 filas históricas del usuario, encontrado y arreglado durante la propia verificación de la fase). Tres casos de QA manual quedaron diferidos por decisión del usuario (ver `02-HUMAN-UAT.md`). Próximo: Fase 3 (Sync Bidireccional — Pull).
 
 ## Evolution
 
@@ -105,4 +107,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-28 after Phase 1 completion*
+*Last updated: 2026-09-16 after Phase 2 completion*
