@@ -7,13 +7,13 @@ import 'package:flutter_test/flutter_test.dart';
 /// Fake escrito a mano: `implements` sobre una clase concreta no invoca su constructor,
 /// así que no hace falta ninguna DB real detrás.
 class _FakeSyncApi implements SyncApi {
-  _FakeSyncApi({List<int>? ackIds, Exception? throwException, this.serverCursor = 'server-cursor'})
+  _FakeSyncApi({List<int>? ackIds, Exception? throwException})
       : _ackIds = ackIds,
         _throwException = throwException;
 
   final List<int>? _ackIds;
   final Exception? _throwException;
-  final String serverCursor;
+  final String serverCursor = 'server-cursor-test';
 
   final List<List<Map<String, Object?>>> pushCalls = [];
 

@@ -33,6 +33,19 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
 
   String _fmt(DateTime? dt) => dt == null ? '-' : dt.toIso8601String();
 
+  /// Loguea a consola (debugPrint) y al panel de diagnóstico (LogService) antes de mostrar el
+  /// SnackBar transitorio -- sin esto, un error que el usuario no llega a leer a tiempo se pierde
+  /// para siempre (mismo bug que tenía SyncTrigger antes de agregarle onError).
+  void _reportError(String label, Object e) {
+    debugPrint('CINGULA APP ERROR ($label): $e');
+    _getIt<LogService>().log('$label: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$label: $e')),
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -67,12 +80,7 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
         });
       }
     } catch (e) {
-      _getIt<LogService>().log('DataBrowser load error: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error cargando datos: $e')),
-        );
-      }
+      _reportError('Error cargando datos', e);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -102,11 +110,7 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No se pudo eliminar: $e')),
-        );
-      }
+      _reportError('No se pudo eliminar', e);
     }
   }
 
@@ -123,11 +127,7 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al exportar: $e')),
-        );
-      }
+      _reportError('Error al exportar', e);
     }
   }
 
@@ -141,10 +141,7 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
         SnackBar(content: Text('Triggers huérfanos eliminados: $deleted')),
       );
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo limpiar triggers huérfanos: $e')),
-      );
+      _reportError('No se pudo limpiar triggers huérfanos', e);
     }
   }
 
@@ -175,11 +172,7 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No se pudo agregar audio: $e')),
-        );
-      }
+      _reportError('No se pudo agregar audio', e);
     }
   }
 
@@ -194,11 +187,7 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No se pudo reiniciar: $e')),
-        );
-      }
+      _reportError('No se pudo reiniciar', e);
     }
   }
 
@@ -280,11 +269,7 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No se pudo reproducir: $e')),
-        );
-      }
+      _reportError('No se pudo reproducir', e);
     }
   }
 
@@ -333,17 +318,20 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
       _dirty = true;
       await _load();
       if (mounted) {
-        final newAudio = _audios.firstWhere((a) => a.id == selectedAudioId, orElse: () => _audios.first);
+        // Evitar orElse de firstWhere por diferencias de tipo en fakes/modelos (ver _audioNameForPath).
+        var newAudioTitle = 'audio';
+        for (final a in _audios) {
+          if (a.id == selectedAudioId) {
+            newAudioTitle = a.title;
+            break;
+          }
+        }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Audio actualizado a "${newAudio.title}"')),
+          SnackBar(content: Text('Audio actualizado a "$newAudioTitle"')),
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No se pudo actualizar: $e')),
-        );
-      }
+      _reportError('No se pudo actualizar', e);
     }
   }
 
