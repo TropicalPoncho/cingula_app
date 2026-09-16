@@ -13,7 +13,7 @@ Este milestone blinda primero la integridad de datos ya en el celular (porque ca
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Blindaje de Datos y Separación Debug/Usuario** - La app nunca pierde datos existentes al fallar la apertura de la DB, las acciones destructivas de debug piden confirmación, y un toggle runtime separa dashboard de usuario final del panel de debug. (completed 2026-08-28)
-- [ ] **Phase 2: Backend Real + Push Sync** - Cada escritura local llega a un backend real vía el outbox existente, con push idempotente, reintentos con backoff, autenticación mínima y estado de sync honesto y visible.
+- [x] **Phase 2: Backend Real + Push Sync** - Cada escritura local llega a un backend real vía el outbox existente, con push idempotente, reintentos con backoff, autenticación mínima y estado de sync honesto y visible. (completed 2026-09-16)
 - [ ] **Phase 3: Sync Bidireccional (Pull)** - Cambios hechos fuera del celular llegan de vuelta vía pull, sin arriesgar nunca datos locales aún no subidos en el primer sync.
 - [ ] **Phase 4: Reemplazo de Geofencing Híbrido** - Detección de región vía geofencing nativo del SO en vez de polling continuo, manteniendo precisión de triggers de radio chico y respetando el límite de 20 regiones de iOS.
 - [ ] **Phase 5: Precarga de Audio + Descarga por Región** - El audio del trigger más cercano se precarga antes del disparo, y el contenido de una región se descarga por adelantado de forma resumible y siempre actualizada.
@@ -55,7 +55,7 @@ Plans:
 - [x] 02-02-PLAN.md — Backend nuevo en backend/: Vercel Functions + Neon, auth bearer, upsert versionado idempotente (SYNC-01, SYNC-02, SYNC-06, SYNC-07)
 - [x] 02-03-PLAN.md — SyncApiHttp reemplaza a SyncApiStub; errores terminales vs transitorios en RunSyncUseCase (SYNC-01, SYNC-03, SYNC-07)
 - [x] 02-04-PLAN.md — Push automático tras cada escritura y al reconectar, + estado de sync honesto en el panel de debug (SYNC-01, SYNC-03, SYNC-08)
-- [ ] 02-05-PLAN.md — Auditoría ponytail + setup Neon/Vercel + verificación end-to-end contra backend real (los 6 requisitos)
+- [x] 02-05-PLAN.md — Auditoría ponytail + setup Neon/Vercel + verificación end-to-end contra backend real (los 6 requisitos) — Tasks 1-2 completos; Task 3/4 (checklist formal de 7 casos + cierre de validación) cerrados por decisión del usuario con evidencia en vivo tras ~4.5h de debugging real (ver 02-05-SUMMARY.md, 02-VERIFICATION.md, 02-HUMAN-UAT.md)
 **Waves**: 1 → [02-01, 02-02] · 2 → [02-03] · 3 → [02-04] · 4 → [02-05]
 **Ponytail audit**: Requerido como parte del checklist de esta fase antes de marcarla completa — cubierto por la tarea 1 del plan 02-05 (ver PROJECT.md Constraints).
 
