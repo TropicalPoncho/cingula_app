@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: "02-05 Tasks 1-2 done + live bug fix (outbox unblocked, 1186->0). Task 3 (02-05) and Task 4 (02-04) both deferred by user choice to stop for the night."
-last_updated: "2026-09-16T17:14:56.340Z"
+stopped_at: Phase 02.1 inserted; model decisions captured in 02.1-CONTEXT.md; 03-CONTEXT.md is a draft pending 2.1
+last_updated: "2026-09-19T20:16:27.504Z"
 last_activity: 2026-09-16
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 2
   total_plans: 9
   completed_plans: 9
@@ -104,6 +104,10 @@ Recent decisions affecting current work:
 - [Phase 02]: [Phase 02 Plan 05, unplanned]: SyncTrigger's swallowed exceptions + SyncClient's FIFO takeWhile head-of-line-blocking combined to silently stall the entire 1186-row outbox behind 8 stale pre-02-01 delete rows -- found and fixed live on the user's device (repairDeleteOutboxPayloads, logical_version=1, safe because no real backend ever existed before this session). See 02-05-SUMMARY.md for the full root-cause chain and the verification steps taken before writing to the user's device (read-only diff, then SHA-256 round-trip after write).
 - [Phase 02]: dart_defines.json (gitignored) + .vscode/launch.json now wire --dart-define-from-file for local VS Code runs, mirroring backend/.env's pattern for the Flutter side. 3 stale launch configs pointing at an already-cleaned-up worktree removed.
 
+### Roadmap Evolution
+
+- Phase 02.1 inserted after Phase 2: Modelo de Datos Objetivo y Migración (URGENT) — 2026-09-19. Origen: durante discuss-phase 3 (pull) el usuario aclaró que el pull es el mecanismo de distribución a celulares de otros usuarios (no solo su propio celular), lo que expuso que el modelo actual (ids enteros locales como referencia entre tablas, blob JSONB genérico en el servidor, progreso de usuario mezclado con contenido) no alcanza para la versión final. Decisión: rediseñar el modelo antes del pull, en vez de parchear. Fase 3 pasa a depender de 2.1; `03-CONTEXT.md` queda como borrador.
+
 ### Pending Todos
 
 None yet.
@@ -119,6 +123,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-01T21:00:00.000Z
-Stopped at: "02-05 Tasks 1-2 done + live bug fix (outbox unblocked, 1186->0). Task 3 (02-05) and Task 4 (02-04) both deferred by user choice to stop for the night."
-Resume file: .planning/phases/02-backend-real-push-sync/02-05-SUMMARY.md
+Last session: 2026-09-19T20:16:27.491Z
+Stopped at: Phase 02.1 inserted; model decisions captured in 02.1-CONTEXT.md; 03-CONTEXT.md is a draft pending 2.1
+Resume file: .planning/phases/02.1-modelo-de-datos-objetivo/02.1-CONTEXT.md

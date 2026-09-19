@@ -14,6 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Blindaje de Datos y Separación Debug/Usuario** - La app nunca pierde datos existentes al fallar la apertura de la DB, las acciones destructivas de debug piden confirmación, y un toggle runtime separa dashboard de usuario final del panel de debug. (completed 2026-08-28)
 - [x] **Phase 2: Backend Real + Push Sync** - Cada escritura local llega a un backend real vía el outbox existente, con push idempotente, reintentos con backoff, autenticación mínima y estado de sync honesto y visible. (completed 2026-09-16)
+- [ ] **Phase 2.1: Modelo de Datos Objetivo y Migración (INSERTED)** - Modelo definitivo (obras, paths, portales, triggers, audios, artistas) con uuid como identidad única y tablas tipadas en el servidor, con migración de todo lo existente sin pérdida de datos.
 - [ ] **Phase 3: Sync Bidireccional (Pull)** - Cambios hechos fuera del celular llegan de vuelta vía pull, sin arriesgar nunca datos locales aún no subidos en el primer sync.
 - [ ] **Phase 4: Reemplazo de Geofencing Híbrido** - Detección de región vía geofencing nativo del SO en vez de polling continuo, manteniendo precisión de triggers de radio chico y respetando el límite de 20 regiones de iOS.
 - [ ] **Phase 5: Precarga de Audio + Descarga por Región** - El audio del trigger más cercano se precarga antes del disparo, y el contenido de una región se descarga por adelantado de forma resumible y siempre actualizada.
@@ -59,9 +60,19 @@ Plans:
 **Waves**: 1 → [02-01, 02-02] · 2 → [02-03] · 3 → [02-04] · 4 → [02-05]
 **Ponytail audit**: Requerido como parte del checklist de esta fase antes de marcarla completa — cubierto por la tarea 1 del plan 02-05 (ver PROJECT.md Constraints).
 
+### Phase 02.1: Modelo de Datos Objetivo y Migración (INSERTED)
+
+**Goal:** El celular y el servidor comparten un modelo de datos definitivo (obras, paths, portales, triggers, audios, artistas) con uuid como única identidad y referencia, tablas tipadas en el servidor en lugar del blob JSONB genérico, y todo lo que ya existe migrado sin perder un solo dato.
+**Requirements**: TBD (se definen en discuss/plan de esta fase)
+**Depends on:** Phase 2
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 02.1 to break down)
+
 ### Phase 3: Sync Bidireccional (Pull)
 **Goal**: El celular puede recibir cambios hechos fuera de él vía pull, sin que un pull temprano arriesgue nunca datos locales todavía no subidos.
-**Depends on**: Phase 2
+**Depends on**: Phase 2.1 (el pull se construye sobre el modelo con uuid; ver `03-CONTEXT.md`, borrador)
 **Requirements**: SYNC-04, SYNC-05
 **Success Criteria** (what must be TRUE):
   1. Un cambio hecho directamente en el backend (simulando una edición externa) se refleja en el celular tras el siguiente ciclo de sync, sin que el usuario reimporte nada manualmente.
