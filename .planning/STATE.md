@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-08)
 
 **Core value:** Que la app siga siendo confiable en el bolsillo del usuario mientras se construye la infraestructura de sync — ningún cambio de este milestone puede arriesgar los datos que ya existen en el celular.
-**Current focus:** Phase 02 — backend-real-push-sync
+**Current focus:** Phase 02.1 — modelo-de-datos-objetivo (INSERTED antes del pull)
 
 ## Current Position
 
-Phase: 3
+Phase: 02.1 (context parcial capturado, sin planificar). Fase 3 (pull) queda con borrador de contexto y depende de 2.1.
 Plan: Not started
-Status: 02-05 Tasks 1-2 complete and merged. Backend live at https://cingula.vercel.app.
+Status: Phase 2 cerrada 2026-09-16 (3 casos de QA manual diferidos, ver 02-HUMAN-UAT.md). Resumen de cómo cerró: 02-05 Tasks 1-2 complete and merged. Backend live at https://cingula.vercel.app.
   During setup, a real production bug surfaced on the user's own device: SyncTrigger was
   swallowing push exceptions (only a status enum survived, no message, nowhere) and 8 stale
   `op: delete` outbox rows (enqueued before 02-01 added logical_version to delete payloads)
