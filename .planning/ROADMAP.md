@@ -61,7 +61,7 @@ Plans:
 **Waves**: 1 → [02-01, 02-02] · 2 → [02-03] · 3 → [02-04] · 4 → [02-05]
 **Ponytail audit**: Requerido como parte del checklist de esta fase antes de marcarla completa — cubierto por la tarea 1 del plan 02-05 (ver PROJECT.md Constraints).
 
-### Phase 02.1: Modelo de Datos Objetivo y Migración (INSERTED)
+### Phase 2.1: Modelo de Datos Objetivo y Migración (INSERTED)
 
 **Goal:** El celular y el servidor comparten un modelo de datos definitivo (obras, paths, portales, triggers, audios, artistas) con uuid como única identidad y referencia, tablas tipadas en el servidor en lugar del blob JSONB genérico, y todo lo que ya existe migrado sin perder un solo dato.
 **Requirements**: MODEL-01, MODEL-02, MODEL-03, MODEL-04, MODEL-05, MODEL-06, MODEL-07, MODEL-08
@@ -78,7 +78,7 @@ Plans:
 Plans:
 - [ ] TBD (run /gsd:plan-phase 02.1 to break down)
 
-### Phase 02.2: Subida de Audios a Storage (INSERTED)
+### Phase 2.2: Subida de Audios a Storage (INSERTED)
 
 **Goal:** Los archivos de audio (grabaciones de campo y versiones finales) quedan respaldados en storage remoto con checksum, subidos de forma resumible y sin tocar ni arriesgar los archivos locales, de modo que cada audio del modelo tenga un `storage_key` real.
 **Requirements**: TBD (se definen en discuss/plan de esta fase)
