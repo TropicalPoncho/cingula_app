@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Phase 02.1 inserted; model decisions captured in 02.1-CONTEXT.md; 03-CONTEXT.md is a draft pending 2.1
-last_updated: "2026-09-19T20:16:27.504Z"
+stopped_at: Phase 2.1 context gathered; phase 2.2 (audio upload) inserted
+last_updated: "2026-09-19T20:44:40.993Z"
 last_activity: 2026-09-16
 progress:
-  total_phases: 6
+  total_phases: 7
   completed_phases: 2
   total_plans: 9
   completed_plans: 9
@@ -107,6 +107,7 @@ Recent decisions affecting current work:
 ### Roadmap Evolution
 
 - Phase 02.1 inserted after Phase 2: Modelo de Datos Objetivo y Migración (URGENT) — 2026-09-19. Origen: durante discuss-phase 3 (pull) el usuario aclaró que el pull es el mecanismo de distribución a celulares de otros usuarios (no solo su propio celular), lo que expuso que el modelo actual (ids enteros locales como referencia entre tablas, blob JSONB genérico en el servidor, progreso de usuario mezclado con contenido) no alcanza para la versión final. Decisión: rediseñar el modelo antes del pull, en vez de parchear. Fase 3 pasa a depender de 2.1; `03-CONTEXT.md` queda como borrador.
+- Phase 02.2 inserted after Phase 2.1: Subida de Audios a Storage (URGENT) — 2026-09-19. Decidido en discuss-phase 2.1 (D-21): los .wav siguen solo en el celular; se respaldan en una fase propia antes del pull. Fase 3 pasa a depender de 2.2.
 
 ### Pending Todos
 
@@ -123,6 +124,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-19T20:16:27.491Z
-Stopped at: Phase 02.1 inserted; model decisions captured in 02.1-CONTEXT.md; 03-CONTEXT.md is a draft pending 2.1
+Last session: 2026-09-19T20:44:40.985Z
+Stopped at: Phase 2.1 context gathered; phase 2.2 (audio upload) inserted
 Resume file: .planning/phases/02.1-modelo-de-datos-objetivo/02.1-CONTEXT.md
