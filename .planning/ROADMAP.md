@@ -64,9 +64,16 @@ Plans:
 ### Phase 02.1: Modelo de Datos Objetivo y Migración (INSERTED)
 
 **Goal:** El celular y el servidor comparten un modelo de datos definitivo (obras, paths, portales, triggers, audios, artistas) con uuid como única identidad y referencia, tablas tipadas en el servidor en lugar del blob JSONB genérico, y todo lo que ya existe migrado sin perder un solo dato.
-**Requirements**: TBD (se definen en discuss/plan de esta fase)
+**Requirements**: MODEL-01, MODEL-02, MODEL-03, MODEL-04, MODEL-05, MODEL-06, MODEL-07, MODEL-08
 **Depends on:** Phase 2
+**Success Criteria** (what must be TRUE):
+  1. Al abrir la app actualizada sobre una copia de la BD real (77 audios, 70 paths, 459 triggers, 20 regiones), la migración automática deja los mismos datos con uuid como única referencia (70 paths → 70 obras, una por path), y existe un backup con timestamp previo a la migración.
+  2. Ante una discrepancia forzada durante la migración (test), la app vuelve sola al backup y sigue funcionando con los datos anteriores.
+  3. Neon tiene las entidades en tablas tipadas con los mismos conteos que tenía `synced_entities`; un push nuevo desde el celular migrado actualiza esas tablas de forma idempotente y conserva solo el estado actual + 1 versión anterior.
+  4. El progreso de reproducción y el estado local de archivos no generan filas de outbox ni pushes; grabar en el campo crea o usa una obra; no queda código, tabla activa ni test que dependa de `Region`.
+  5. Ninguna prueba de migración se corrió contra el celular real.
 **Plans:** 0 plans
+**Ponytail audit**: Requerido como parte del checklist de esta fase antes de marcarla completa (ver PROJECT.md Constraints).
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 02.1 to break down)

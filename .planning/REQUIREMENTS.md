@@ -23,6 +23,19 @@ Requirements para este milestone. Cada uno mapea a fases del roadmap.
 - [x] **SYNC-07**: El backend nuevo exige autenticación mínima (API key/bearer token), aunque sea de un solo usuario
 - [x] **SYNC-08**: El usuario puede ver el estado real de sync (cantidad de pendientes en el outbox + timestamp del último sync exitoso), sin indicadores falsos de "todo sincronizado"
 
+### Modelo de datos (MODEL)
+
+Origen: discuss-phase 2.1 (`.planning/phases/02.1-modelo-de-datos-objetivo/02.1-CONTEXT.md`, decisiones D-01 a D-23).
+
+- [ ] **MODEL-01**: Todas las entidades sincronizables se identifican y se referencian únicamente por uuid, en el celular y en el servidor; no queda ninguna clave foránea entera entre entidades
+- [ ] **MODEL-02**: El modelo contiene obras (`owner_id` nullable, visibilidad `draft|private|public`, `share_token`, cobertura derivada), artistas (`user_id` nullable, muchos a muchos con obras), paths (`kind` `route|portal`, pertenecen a una obra, un audio que suena + grabación cruda opcional), triggers (siempre dentro de un path, ordenados, con `offset_ms` como ancla) y audios (tipo `grabacion|final`, `storage_key` y `checksum` nullable, duración)
+- [ ] **MODEL-03**: El servidor guarda las entidades en tablas tipadas (no en un blob JSONB genérico), mantiene el protocolo de push idempotente con cursor y tombstones, y conserva la regla de estado actual + 1 versión anterior por entidad (SYNC-06 sigue cumplido)
+- [ ] **MODEL-04**: El progreso de reproducción y el estado local de archivos (ruta local, estado de descarga) viven en tablas solo locales que no se sincronizan ni generan filas de outbox
+- [ ] **MODEL-05**: La migración del celular corre automática al abrir la app actualizada: backup con timestamp previo, una sola transacción, verificación de conteos y checksums, y vuelta atrás automática al backup ante cualquier discrepancia; no se pierde ningún dato existente (77 audios, 70 paths → 70 obras una por path, 459 triggers, 20 regiones archivadas sin borrar)
+- [ ] **MODEL-06**: Los datos ya subidos a Neon se migran a las tablas tipadas con un script único que traduce ids enteros a uuid a partir de los payloads; `synced_entities` se conserva renombrada hasta verificar que los conteos coinciden
+- [ ] **MODEL-07**: Región deja de existir como entidad y no queda código que dependa de ella; el monitor considera todos los triggers de la biblioteca; la sección Región del panel de debug se reemplaza por una de Obra y grabar en el campo crea o usa una obra (draft automática con el nombre de la grabación si no se eligió ninguna)
+- [ ] **MODEL-08**: Ninguna prueba de migración se ejecuta contra el celular real: se valida con una copia de la BD real en tests automatizados y en emulador o build de escritorio
+
 ### Geofencing (GEO)
 
 - [ ] **GEO-01**: La detección de entrada/salida de Región usa geofencing nativo del SO (Android GeofencingClient / iOS CLLocationManager) en vez de polling continuo en foreground service
@@ -85,6 +98,14 @@ Reconocidos pero diferidos, no forman parte del roadmap de este milestone.
 | SYNC-06 | Phase 2 | Complete |
 | SYNC-07 | Phase 2 | Complete |
 | SYNC-08 | Phase 2 | Complete |
+| MODEL-01 | Phase 2.1 | Pending |
+| MODEL-02 | Phase 2.1 | Pending |
+| MODEL-03 | Phase 2.1 | Pending |
+| MODEL-04 | Phase 2.1 | Pending |
+| MODEL-05 | Phase 2.1 | Pending |
+| MODEL-06 | Phase 2.1 | Pending |
+| MODEL-07 | Phase 2.1 | Pending |
+| MODEL-08 | Phase 2.1 | Pending |
 | SYNC-04 | Phase 3 | Pending |
 | SYNC-05 | Phase 3 | Pending |
 | GEO-01 | Phase 4 | Pending |
@@ -98,10 +119,10 @@ Reconocidos pero diferidos, no forman parte del roadmap de este milestone.
 | DOWNLOAD-04 | Phase 5 | Pending |
 
 **Coverage:**
-- v1 requirements: 20 total
-- Mapped to phases: 20 ✓
+- v1 requirements: 28 total
+- Mapped to phases: 28 ✓
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-08-08*
-*Last updated: 2026-08-08 after roadmap creation (5 phases, 100% coverage)*
+*Last updated: 2026-09-19 — added MODEL-01..08 for inserted phase 2.1*
