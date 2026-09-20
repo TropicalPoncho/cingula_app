@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: "Phase 2.1 planned: 12 plans in 8 waves, plan-checker passed after 1 revision + 1 manual fix"
-last_updated: "2026-09-20T08:21:06.715Z"
-last_activity: 2026-09-16
+status: executing
+stopped_at: Completed 02.1-01-PLAN.md
+last_updated: "2026-09-20T08:26:34.558Z"
+last_activity: 2026-09-20
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 21
-  completed_plans: 9
+  completed_plans: 11
   percent: 89
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-08)
 
 **Core value:** Que la app siga siendo confiable en el bolsillo del usuario mientras se construye la infraestructura de sync — ningún cambio de este milestone puede arriesgar los datos que ya existen en el celular.
-**Current focus:** Phase 02.1 — modelo-de-datos-objetivo (INSERTED antes del pull)
+**Current focus:** Phase 02.1 — modelo-de-datos-objetivo
 
 ## Current Position
 
-Phase: 02.1 planificada (12 planes, 8 waves, verificada), lista para ejecutar. Fase 2.2 (subida de audios) y Fase 3 (pull) dependen de ella.
-Plan: Not started
-Status: Phase 2 cerrada 2026-09-16 (3 casos de QA manual diferidos, ver 02-HUMAN-UAT.md). Resumen de cómo cerró: 02-05 Tasks 1-2 complete and merged. Backend live at https://cingula.vercel.app.
+Phase: 02.1 (modelo-de-datos-objetivo) — EXECUTING
+Plan: 2 of 12
+Status: Ready to execute
   During setup, a real production bug surfaced on the user's own device: SyncTrigger was
   swallowing push exceptions (only a status enum survived, no message, nowhere) and 8 stale
   `op: delete` outbox rows (enqueued before 02-01 added logical_version to delete payloads)
@@ -43,7 +43,7 @@ Status: Phase 2 cerrada 2026-09-16 (3 casos de QA manual diferidos, ver 02-HUMAN
   Task 3 (7-case structured e2e checklist) and 02-04's Task 4 (5-case on-device checklist)
   both remain formally undone -- deferred by explicit user decision to stop for the night,
   not failures. See Blockers/Concerns.
-Last activity: 2026-09-16
+Last activity: 2026-09-20
 
 Progress: [█████████░] 89%
 
@@ -76,6 +76,7 @@ Progress: [█████████░] 89%
 | Phase 02 P03 | 8min | 2 tasks | 9 files |
 | Phase 02 P04 | 20min | 3 tasks | 7 files |
 | Phase 02 P05 (partial) | ~4.5h | 2/4 tasks | 10 files (incl. live prod fix) |
+| Phase 02.1 P01 | 20min | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -103,6 +104,7 @@ Recent decisions affecting current work:
 - [Phase 02]: [Phase 02 Plan 05, Task 2]: Vercel connected via GitHub import in the dashboard (Root Directory=backend) instead of the plan's `vercel link`/`vercel --prod` CLI flow -- user's choice, functionally equivalent (same env vars, same deploy target), not a deviation worth re-litigating.
 - [Phase 02]: [Phase 02 Plan 05, unplanned]: SyncTrigger's swallowed exceptions + SyncClient's FIFO takeWhile head-of-line-blocking combined to silently stall the entire 1186-row outbox behind 8 stale pre-02-01 delete rows -- found and fixed live on the user's device (repairDeleteOutboxPayloads, logical_version=1, safe because no real backend ever existed before this session). See 02-05-SUMMARY.md for the full root-cause chain and the verification steps taken before writing to the user's device (read-only diff, then SHA-256 round-trip after write).
 - [Phase 02]: dart_defines.json (gitignored) + .vscode/launch.json now wire --dart-define-from-file for local VS Code runs, mirroring backend/.env's pattern for the Flutter side. 3 stale launch configs pointing at an already-cleaned-up worktree removed.
+- [Phase 02.1]: Node uuid v5 via node:crypto; shared vectors asserted in Dart and Node
 
 ### Roadmap Evolution
 
@@ -124,6 +126,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-20T08:21:06.709Z
-Stopped at: Phase 2.1 planned: 12 plans in 8 waves, plan-checker passed after 1 revision + 1 manual fix
-Resume file: .planning/phases/02.1-modelo-de-datos-objetivo/02.1-01-PLAN.md
+Last session: 2026-09-20T08:26:34.552Z
+Stopped at: Completed 02.1-01-PLAN.md
+Resume file: None
