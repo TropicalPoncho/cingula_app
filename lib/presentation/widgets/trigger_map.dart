@@ -7,7 +7,6 @@ import 'package:geolocator/geolocator.dart';
 
 import '../../domain/entities/geo_trigger.dart';
 import '../../domain/entities/geo_path.dart';
-import '../../domain/entities/region.dart';
 // service locator not required here; triggers are passed in via constructor
 
 /// Widget reutilizable que pinta triggers (marcadores) y los radios como polígonos
@@ -15,12 +14,11 @@ import '../../domain/entities/region.dart';
 class TriggerMapWidget extends StatefulWidget {
   final List<GeoPath> paths;
   final List<GeoTrigger> triggers;
-  final List<Region> regions;
   /// Radio global usado para pintar triggers (ignora el guardado en BD si se provee).
   final double? triggerRadius;
   /// Radio de activación del usuario (círculo morado).
   final double activationRadius;
-  const TriggerMapWidget({required this.paths, required this.triggers, this.regions = const [], this.triggerRadius, this.activationRadius = 15.0, super.key});
+  const TriggerMapWidget({required this.paths, required this.triggers, this.triggerRadius, this.activationRadius = 15.0, super.key});
 
   @override
   State<TriggerMapWidget> createState() => _TriggerMapWidgetState();
@@ -182,17 +180,6 @@ class _TriggerMapWidgetState extends State<TriggerMapWidget> {
       polygons.add(Polygon(points: poly, color: const Color.fromRGBO(33, 150, 243, 0.12), borderColor: const Color.fromRGBO(33, 150, 243, 0.6), borderStrokeWidth: 1.0));
     }
 
-    // Polígonos para regiones (área visible)
-    for (final r in widget.regions) {
-      final poly = _circlePolygon(r.center.latitude, r.center.longitude, r.radiusMeters, points: 48);
-      polygons.add(Polygon(
-        points: poly,
-        color: const Color.fromRGBO(255, 152, 0, 0.08),
-        borderColor: const Color.fromRGBO(255, 152, 0, 0.5),
-        borderStrokeWidth: 2.0,
-      ));
-    }
-
     // Marcadores de triggers
     final markers = <Marker>[];
     for (final t in widget.triggers) {
@@ -212,16 +199,6 @@ class _TriggerMapWidgetState extends State<TriggerMapWidget> {
           },
           child: const Icon(Icons.location_on, color: Colors.red, size: 28),
         ),
-      ));
-    }
-
-    // Marcadores de regiones
-    for (final r in widget.regions) {
-      markers.add(Marker(
-        width: 48,
-        height: 48,
-        point: ll.LatLng(r.center.latitude, r.center.longitude),
-        child: const Icon(Icons.place, color: Colors.orange, size: 28),
       ));
     }
 

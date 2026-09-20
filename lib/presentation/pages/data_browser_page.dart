@@ -3,11 +3,9 @@ import 'package:get_it/get_it.dart';
 
 import '../../domain/entities/geo_path.dart';
 import '../../domain/entities/geo_trigger.dart';
-import '../../domain/entities/region.dart';
 import '../../domain/entities/audio_asset.dart';
 import '../../domain/repositories/geo_path_repository.dart';
 import '../../domain/repositories/geo_trigger_repository.dart';
-import '../../domain/repositories/region_repository.dart';
 import '../../domain/repositories/audio_repository.dart';
 import '../../domain/repositories/audio_playback_gateway.dart';
 import '../../core/services/log_service.dart';
@@ -23,7 +21,6 @@ class DataBrowserPage extends StatefulWidget {
 class _DataBrowserPageState extends State<DataBrowserPage> {
   List<GeoPath> _paths = [];
   List<GeoTrigger> _triggers = [];
-  List<Region> _regions = [];
   List<AudioAsset> _audios = [];
   bool _loading = true;
   bool _dirty = false;
@@ -64,18 +61,15 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
     try {
       final pathRepo = _getIt<GeoPathRepository>();
       final triggerRepo = _getIt<GeoTriggerRepository>();
-      final regionRepo = _getIt<RegionRepository>();
       final audioRepo = _getIt<AudioRepository>();
 
       final paths = await pathRepo.fetchAll();
       final triggers = await triggerRepo.fetchAll();
-      final regions = await regionRepo.fetchAll();
       final audios = await audioRepo.fetchAll();
       if (mounted) {
         setState(() {
           _paths = paths;
           _triggers = triggers;
-          _regions = regions;
           _audios = audios;
         });
       }
@@ -208,8 +202,6 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
             Text('📍 Triggers: ${stats['geo_triggers']}'),
             const SizedBox(height: 8),
             Text('🛤️  Paths: ${stats['geo_paths']}'),
-            const SizedBox(height: 8),
-            Text('🗺️  Regions: ${stats['regions']}'),
           ],
         ),
         actions: [
@@ -217,22 +209,6 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
         ],
       ),
     );
-  }
-
-  String _regionNameForPath(GeoPath path) {
-    // Busca la primera región asociada a cualquier trigger del path; si no hay, devuelve '-'.
-    int? regionId;
-    for (final t in _triggers) {
-      if (t.geoPathId == path.id && t.regionId != null) {
-        regionId = t.regionId;
-        break;
-      }
-    }
-    if (regionId == null) return '-';
-    for (final r in _regions) {
-      if (r.id == regionId) return r.name;
-    }
-    return '-';
   }
 
   String _audioNameForPath(GeoPath path) {
@@ -405,7 +381,6 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
                       columns: const [
                         DataColumn(label: Text('id')),
                         DataColumn(label: Text('name')),
-                        DataColumn(label: Text('region')),
                         DataColumn(label: Text('audio')),
                         DataColumn(label: Text('tolerance')),
                         DataColumn(label: Text('offset_ms')),
@@ -419,7 +394,6 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
                             (p) => DataRow(cells: [
                               DataCell(Text('${p.id}')),
                               DataCell(Text(p.name)),
-                              DataCell(Text(_regionNameForPath(p))),
                               DataCell(Text(_audioNameForPath(p))),
                               DataCell(Text(p.toleranceMeters.toStringAsFixed(1))),
                               DataCell(Text('${p.savedOffsetMs}')),

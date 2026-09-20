@@ -7,13 +7,10 @@ import '../../data/datasources/local/app_database.dart';
 import '../../data/datasources/local/audio_local_data_source.dart';
 import '../../data/datasources/local/geo_trigger_local_data_source.dart';
 import '../../data/datasources/local/geo_path_local_data_source.dart';
-import '../../data/datasources/local/region_local_data_source.dart';
 import '../../data/datasources/local/sync_local_data_source.dart';
 import '../../data/sync/sync_api.dart';
 import '../../data/sync/sync_client.dart';
 import '../../data/sync/sync_api_http.dart';
-import '../../data/repositories/region_repository_impl.dart';
-import '../../domain/repositories/region_repository.dart';
 import '../../domain/repositories/geo_path_repository.dart';
 import '../services/log_service.dart';
 import '../services/geofence_background_service.dart';
@@ -107,9 +104,6 @@ Future<void> setupServiceLocator({bool reinitialize = false}) async {
   getIt.registerLazySingleton<GeoPathLocalDataSource>(
     () => GeoPathLocalDataSource(database.database, getIt<SyncLocalDataSource>()),
   );
-  getIt.registerLazySingleton<RegionLocalDataSource>(
-    () => RegionLocalDataSource(database.database, getIt<SyncLocalDataSource>()),
-  );
 
   // Repositorios de lectura apoyados en los data sources preparados.
   getIt.registerLazySingleton<AudioRepository>(
@@ -125,11 +119,6 @@ Future<void> setupServiceLocator({bool reinitialize = false}) async {
   getIt.registerLazySingleton<GeoPathRepository>(
     () => GeoPathRepositoryImpl(
       localDataSource: getIt<GeoPathLocalDataSource>(),
-    ),
-  );
-  getIt.registerLazySingleton<RegionRepository>(
-    () => RegionRepositoryImpl(
-      localDataSource: getIt<RegionLocalDataSource>(),
     ),
   );
   getIt.registerLazySingleton<LocationRepository>(

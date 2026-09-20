@@ -14,12 +14,9 @@ import '../../../../core/services/recorder_service.dart';
 import '../../../../domain/entities/audio_asset.dart';
 import '../../../../domain/entities/geo_path.dart';
 import '../../../../domain/entities/geo_trigger.dart';
-import '../../../../domain/entities/region.dart';
 import '../../../../domain/repositories/audio_repository.dart';
 import '../../../../domain/repositories/geo_path_repository.dart';
 import '../../../../domain/repositories/geo_trigger_repository.dart';
-import '../../../../domain/repositories/location_repository.dart';
-import '../../../../domain/repositories/region_repository.dart';
 import '../../../../data/datasources/local/sync_local_data_source.dart';
 import '../../../../data/sync/sync_client.dart';
 import '../../../../data/sync/sync_trigger.dart';
@@ -49,7 +46,6 @@ class _DiagnosticsPanelState extends State<DiagnosticsPanel> {
   // Map data
   List<GeoTrigger> _mapTriggers = [];
   List<GeoPath> _mapPaths = [];
-  List<Region> _mapRegions = [];
   List<String> _logs = [];
   StreamSubscription<List<String>>? _logSub;
   String? _serverCursor;
@@ -59,9 +55,6 @@ class _DiagnosticsPanelState extends State<DiagnosticsPanel> {
   StreamSubscription<SyncTriggerStatus>? _syncStatusSub;
 
   // Crear región
-  final TextEditingController _regionNameController = TextEditingController(text: 'Mi región');
-  final TextEditingController _regionRadiusController = TextEditingController(text: '500');
-  int? _selectedRegionId;
 
   // Radio de activación para debug
   final TextEditingController _activationRadiusController = TextEditingController();
@@ -117,12 +110,10 @@ class _DiagnosticsPanelState extends State<DiagnosticsPanel> {
     try {
       final triggers = await getIt<GeoTriggerRepository>().fetchAll();
       final paths = await getIt<GeoPathRepository>().fetchAll();
-      final regions = await getIt<RegionRepository>().fetchAll();
       if (mounted) {
         setState(() {
           _mapTriggers = triggers;
           _mapPaths = paths;
-          _mapRegions = regions;
         });
       }
     } catch (_) {}
@@ -149,8 +140,6 @@ class _DiagnosticsPanelState extends State<DiagnosticsPanel> {
     _syncStatusSub?.cancel();
     _pathNameController.dispose();
     _triggerRadiusController.dispose();
-    _regionNameController.dispose();
-    _regionRadiusController.dispose();
     _activationRadiusController.dispose();
     super.dispose();
   }
@@ -167,96 +156,9 @@ class _DiagnosticsPanelState extends State<DiagnosticsPanel> {
               ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   ExpansionTile(
                     initiallyExpanded: true,
-                    title: const Text('Panel: Región'),
-                    children: [
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _regionNameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Nombre de la región',
-                          hintText: 'Ej: Centro ciudad',
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _regionRadiusController,
-                        decoration: const InputDecoration(
-                          labelText: 'Radio de región (m)',
-                          hintText: 'Ej: 500',
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                        ),
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      ),
-                      const SizedBox(height: 8),
-                      ElevatedButton.icon(
-                        onPressed: () async {
-                          try {
-                            final name = _regionNameController.text.trim();
-                            if (name.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Ingresa un nombre para la región')),
-                              );
-                              return;
-                            }
-                            final radius = double.tryParse(_regionRadiusController.text) ?? 500;
-                            if (radius < 10) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('El radio debe ser al menos 10m')),
-                              );
-                              return;
-                            }
-                            final location = getIt<LocationRepository>();
-                            await location.ensureServiceAndPermissions();
-                            final pos = await location.currentPosition();
-
-                            final regionId = await getIt<RegionRepository>().createRegion(
-                              name: name,
-                              latitude: pos.latitude,
-                              longitude: pos.longitude,
-                              radiusMeters: radius,
-                            );
-
-                            await _refreshMapData();
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Región "$name" creada (ID: $regionId)')),
-                              );
-                            }
-                          } catch (e) {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Error al crear región: $e')),
-                              );
-                            }
-                          }
-                        },
-                        icon: const Icon(Icons.add_location),
-                        label: const Text('Crear región en posición actual'),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                  ),
-                  ExpansionTile(
-                    initiallyExpanded: true,
                     title: const Text('Panel: Path + audio'),
                     children: [
                       const SizedBox(height: 8),
-                      const Text('Región (opcional):', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      _mapRegions.isEmpty
-                          ? const Text('No hay regiones. Crea una arriba.', style: TextStyle(fontSize: 12, color: Colors.grey))
-                          : DropdownButton<int?>(
-                              value: _selectedRegionId,
-                              items: [
-                                const DropdownMenuItem(value: null, child: Text('Sin región')),
-                                ..._mapRegions.map((r) => DropdownMenuItem(value: r.id, child: Text('${r.name} (${r.radiusMeters.toStringAsFixed(0)}m)'))),
-                              ],
-                              onChanged: (v) => setState(() => _selectedRegionId = v),
-                            ),
-                      const SizedBox(height: 12),
                       SwitchListTile(
                         title: const Text('Grabar nuevo audio con micrófono'),
                         dense: true,
@@ -445,7 +347,6 @@ class _DiagnosticsPanelState extends State<DiagnosticsPanel> {
                         child: TriggerMapWidget(
                           paths: _mapPaths,
                           triggers: _mapTriggers,
-                          regions: _mapRegions,
                           triggerRadius: LocationConfig.activationRadiusMeters,
                           activationRadius: LocationConfig.activationRadiusMeters,
                         ),
