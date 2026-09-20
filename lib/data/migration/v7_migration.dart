@@ -43,7 +43,7 @@ Future<int> _count(DatabaseExecutor db, String sql) async =>
     Sqflite.firstIntValue(await db.rawQuery(sql)) ?? 0;
 
 /// Corre DENTRO de la transaccion exclusiva que sqflite abre para onUpgrade.
-/// NO llamar a db.transaction() adentro (anidaria y trabaria la base).
+/// NO abrir otra transaccion adentro (anidaria y trabaria la base).
 /// Devuelve un reporte con los conteos y `portalsFromDangling`.
 ///
 /// [onBeforeVerify]: ponytail: existe solo para probar el rollback ante una discrepancia.
