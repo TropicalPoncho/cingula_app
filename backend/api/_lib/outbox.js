@@ -1,4 +1,6 @@
-export const SYNCABLE_TABLES = ['audio_assets', 'geo_triggers', 'geo_paths', 'regions'];
+import { TABLE_SPEC, SYNCABLE_TABLES, REQUIRED } from './spec.js';
+
+export { SYNCABLE_TABLES };
 const OPS = ['insert', 'update', 'delete'];
 
 /** La versión SIEMPRE sale de payload.logical_version. Null si no hay una válida. */
@@ -15,34 +17,51 @@ export function validateOutboxItem(item) {
   if (!OPS.includes(item?.op)) return `unknown op: ${item?.op}`;
   const version = extractVersion(item);
   if (version === null || version < 1) return 'payload.logical_version must be an integer >= 1';
+
+  const { columns } = TABLE_SPEC[item.table_name];
+  const payload = item.payload;
+  for (const key of Object.keys(payload)) {
+    if (!Object.hasOwn(columns, key)) return `unknown column: ${key}`;
+  }
+  if (item.op !== 'delete') {
+    for (const col of REQUIRED[item.table_name]) {
+      if (payload[col] === undefined || payload[col] === null) return `missing required column: ${col}`;
+    }
+    if (payload.uuid !== item.record_uuid) return 'payload.uuid must equal record_uuid';
+  }
   return null;
 }
 
-/** Un statement atómico por item; el llamador los agrupa con sql.transaction([...]). */
+const q = (id) => `"${id}"`;
+
+/**
+ * Un statement atómico por item (sql.query(text, params)); el llamador los agrupa con
+ * sql.transaction([...]). Identificadores SIEMPRE del spec, valores SIEMPRE parametrizados.
+ * Asume que el item ya pasó validateOutboxItem.
+ */
 export function upsertStatement(sql, item) {
+  const t = item.table_name;
+  const table = q(t);
   const version = extractVersion(item);
-  return sql`
-    INSERT INTO synced_entities
-      (table_name, record_uuid, op, current_version, current_payload, current_updated_at, deleted_at)
-    VALUES
-      (${item.table_name}, ${item.record_uuid}, ${item.op}, ${version},
-       ${JSON.stringify(item.payload)}::jsonb, now(),
-       ${item.op === 'delete' ? 'now()' : null}::timestamptz)
-    ON CONFLICT (table_name, record_uuid) DO UPDATE SET
-      previous_version    = CASE WHEN synced_entities.current_version < EXCLUDED.current_version
-                                 THEN synced_entities.current_version    ELSE synced_entities.previous_version    END,
-      previous_payload    = CASE WHEN synced_entities.current_version < EXCLUDED.current_version
-                                 THEN synced_entities.current_payload    ELSE synced_entities.previous_payload    END,
-      previous_updated_at = CASE WHEN synced_entities.current_version < EXCLUDED.current_version
-                                 THEN synced_entities.current_updated_at ELSE synced_entities.previous_updated_at END,
-      current_version     = GREATEST(synced_entities.current_version, EXCLUDED.current_version),
-      current_payload     = CASE WHEN synced_entities.current_version < EXCLUDED.current_version
-                                 THEN EXCLUDED.current_payload    ELSE synced_entities.current_payload    END,
-      current_updated_at  = CASE WHEN synced_entities.current_version < EXCLUDED.current_version
-                                 THEN EXCLUDED.current_updated_at ELSE synced_entities.current_updated_at END,
-      op                  = CASE WHEN synced_entities.current_version < EXCLUDED.current_version
-                                 THEN EXCLUDED.op                 ELSE synced_entities.op                 END,
-      deleted_at          = CASE WHEN synced_entities.current_version < EXCLUDED.current_version
-                                 THEN EXCLUDED.deleted_at         ELSE synced_entities.deleted_at         END
-  `;
+
+  if (item.op === 'delete') {
+    // ponytail: un uuid desconocido es un no-op (se ackea igual); no se inserta tombstone fino.
+    return sql.query(
+      `UPDATE ${table} SET deleted_at = now(), logical_version = $2, updated_at = now() ` +
+        `WHERE uuid = $1 AND ${table}.logical_version < $2`,
+      [item.record_uuid, version],
+    );
+  }
+
+  const { columns } = TABLE_SPEC[t];
+  const cols = Object.keys(item.payload);
+  const params = cols.map((c) => item.payload[c]);
+  const values = cols.map((c, i) => (columns[c] === 'epoch' ? `to_timestamp($${i + 1})` : `$${i + 1}`));
+  const sets = cols.filter((c) => c !== 'uuid').map((c) => `${q(c)} = EXCLUDED.${q(c)}`);
+  return sql.query(
+    `INSERT INTO ${table} (${cols.map(q).join(', ')}) VALUES (${values.join(', ')}) ` +
+      `ON CONFLICT ("uuid") DO UPDATE SET ${sets.join(', ')} ` +
+      `WHERE ${table}."logical_version" < EXCLUDED."logical_version"`,
+    params,
+  );
 }
