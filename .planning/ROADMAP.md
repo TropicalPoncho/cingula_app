@@ -12,7 +12,8 @@ Este milestone blinda primero la integridad de datos ya en el celular (porque ca
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [x] **Phase 1: Blindaje de Datos y Separación Debug/Usuario** - La app nunca pierde datos existentes al fallar la apertura de la DB, las acciones destructivas de debug piden confirmación, y un toggle runtime separa dashboard de usuario final del panel de debug. (completed 2026-08-28)
+- [x] **Phase 1: Blindaje de Datos y Separación Debug/Usuario** - La app nunca pierde datos existentes al fallar la apertura de la DB, las acciones destructivas de debug piden confirmación, y un toggle runtime separa dashboard de usuario final del panel de debug.
+ (completed 2026-08-28)
 - [x] **Phase 2: Backend Real + Push Sync** - Cada escritura local llega a un backend real vía el outbox existente, con push idempotente, reintentos con backoff, autenticación mínima y estado de sync honesto y visible. (completed 2026-09-16)
 - [ ] **Phase 2.1: Modelo de Datos Objetivo y Migración (INSERTED)** - Modelo definitivo (obras, paths, portales, triggers, audios, artistas) con uuid como identidad única y tablas tipadas en el servidor, con migración de todo lo existente sin pérdida de datos.
 - [ ] **Phase 2.2: Subida de Audios a Storage (INSERTED)** - Las grabaciones de campo y versiones finales quedan respaldadas en storage remoto con checksum, subidas de forma resumible y sin arriesgar los archivos locales.
@@ -68,15 +69,27 @@ Plans:
 **Depends on:** Phase 2
 **Success Criteria** (what must be TRUE):
   1. Al abrir la app actualizada sobre una copia de la BD real (77 audios, 70 paths, 459 triggers, 20 regiones), la migración automática deja los mismos datos con uuid como única referencia (70 paths → 70 obras, una por path), y existe un backup con timestamp previo a la migración.
-  2. Ante una discrepancia forzada durante la migración (test), la app vuelve sola al backup y sigue funcionando con los datos anteriores.
+  2. Ante una discrepancia o un error forzado durante la migración (test), la base original queda intacta (nunca se renombra ni se reemplaza por una vacía), existe el backup previo, y la app muestra un error bloqueante en lugar de seguir con datos parciales (el código nuevo no puede correr sobre el esquema viejo).
   3. Neon tiene las entidades en tablas tipadas con los mismos conteos que tenía `synced_entities`; un push nuevo desde el celular migrado actualiza esas tablas de forma idempotente y conserva solo el estado actual + 1 versión anterior.
   4. El progreso de reproducción y el estado local de archivos no generan filas de outbox ni pushes; grabar en el campo crea o usa una obra; no queda código, tabla activa ni test que dependa de `Region`.
   5. Ninguna prueba de migración se corrió contra el celular real.
-**Plans:** 0 plans
-**Ponytail audit**: Requerido como parte del checklist de esta fase antes de marcarla completa (ver PROJECT.md Constraints).
+**Plans:** 12 plans
+**Waves**: 1 → [02.1-01, 02.1-06] · 2 → [02.1-02, 02.1-03, 02.1-04] · 3 → [02.1-05, 02.1-07] · 4 → [02.1-08] · 5 → [02.1-09] · 6 → [02.1-10] · 7 → [02.1-11] · 8 → [02.1-12]
+**Ponytail audit**: Requerido como parte del checklist de esta fase antes de marcarla completa (ver PROJECT.md Constraints) — cubierto por el plan 02.1-11, que invoca la skill `ponytail` sobre el diff de la fase.
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 02.1 to break down)
+- [ ] 02.1-01-PLAN.md — Infra de tests (sqflite_common_ffi), fixture v6 congelado, vectores uuid v5 + cobertura compartidos Dart/JS, pre-flight (MODEL-05, MODEL-08)
+- [ ] 02.1-02-PLAN.md — Backend: tablas tipadas, spec.js, cargador de schema.sql, push/state con change_seq y compuerta schema_version (MODEL-01, MODEL-02, MODEL-03)
+- [ ] 02.1-03-PLAN.md — migrateToV7: esquema v7, copia de datos id→uuid, obras/portales, verificación con EXCEPT (MODEL-01, MODEL-02, MODEL-04, MODEL-05)
+- [ ] 02.1-04-PLAN.md — [compuerta humana] Pre-flight sobre una COPIA de la base real y go/no-go (MODEL-05, MODEL-08)
+- [ ] 02.1-05-PLAN.md — Reconstrucción del outbox, traducción de deletes, reinicio de cursor, renombre legacy, respaldo previo, schema_version en el cliente (MODEL-03, MODEL-05)
+- [ ] 02.1-06-PLAN.md — Eliminación total del código de Región (MODEL-07)
+- [ ] 02.1-07-PLAN.md — Script one-shot de Neon: traducción pura testeada + CLI dry-run/apply/finalize + [compuerta humana] primera corrida contra una rama dev (MODEL-06)
+- [ ] 02.1-08-PLAN.md — Capa de datos por uuid: esquema v7 activo, migración cableada con guarda D-25, data sources y repositorios (MODEL-01, MODEL-02, MODEL-04, MODEL-05)
+- [ ] 02.1-09-PLAN.md — Consumidores y UI por uuid: monitor, grabador, panel, pantalla bloqueante de fallo de migración, árbol en verde (MODEL-01, MODEL-05, MODEL-07)
+- [ ] 02.1-10-PLAN.md — Sección Obra del panel (D-22), cobertura derivada al día, obra en el data browser (MODEL-02, MODEL-07)
+- [ ] 02.1-11-PLAN.md — Auditoría ponytail + revisión SQLite viejo + cierre del mapa de validación (MODEL-02, MODEL-03, MODEL-04, MODEL-07)
+- [ ] 02.1-12-PLAN.md — [compuerta humana] Rama de Neon, ensayo, verificación en emulador, respaldo independiente y corte (MODEL-05, MODEL-06, MODEL-08)
 
 ### Phase 2.2: Subida de Audios a Storage (INSERTED)
 
@@ -135,6 +148,7 @@ Nota de dependencias: la Fase 4 depende solo de la Fase 1 (es arquitectónicamen
 |-------|----------------|--------|-----------|
 | 1. Blindaje de Datos y Separación Debug/Usuario | 4/4 | Complete   | 2026-08-28 |
 | 2. Backend Real + Push Sync | 4/5 | In Progress | - |
+| 2.1 Modelo de Datos Objetivo y Migracion | 0/11 | Planned | - |
 | 3. Sync Bidireccional (Pull) | 0/TBD | Not started | - |
 | 4. Reemplazo de Geofencing Híbrido | 0/TBD | Not started | - |
 | 5. Precarga de Audio + Descarga por Región | 0/TBD | Not started | - |
