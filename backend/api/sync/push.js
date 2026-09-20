@@ -1,6 +1,8 @@
 import { requireApiKey, AUTH_ERROR } from '../_lib/auth.js';
 import { getSql } from '../_lib/db.js';
 import { validateOutboxItem, upsertStatement } from '../_lib/outbox.js';
+import { SCHEMA_VERSION } from '../_lib/spec.js';
+import { currentCursor } from './state.js';
 
 export default async function handler(request, response) {
   if (request.method !== 'POST') {
@@ -8,6 +10,10 @@ export default async function handler(request, response) {
   }
   if (requireApiKey(request)) {
     return response.status(401).json({ error: AUTH_ERROR });
+  }
+
+  if (request.body?.schema_version !== SCHEMA_VERSION) {
+    return response.status(400).json({ error: 'schema_version 2 required' });
   }
 
   const receivedAt = new Date().toISOString();
@@ -35,7 +41,7 @@ export default async function handler(request, response) {
 
   return response.status(200).json({
     ackedIds: outbox.map((item) => item.id),
-    serverCursor: receivedAt,
+    serverCursor: await currentCursor(sql),
     receivedAt,
   });
 }
