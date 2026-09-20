@@ -79,7 +79,7 @@ Plans:
 
 Plans:
 - [x] 02.1-01-PLAN.md — Infra de tests (sqflite_common_ffi), fixture v6 congelado, vectores uuid v5 + cobertura compartidos Dart/JS, pre-flight (MODEL-05, MODEL-08)
-- [ ] 02.1-02-PLAN.md — Backend: tablas tipadas, spec.js, cargador de schema.sql, push/state con change_seq y compuerta schema_version (MODEL-01, MODEL-02, MODEL-03)
+- [x] 02.1-02-PLAN.md — Backend: tablas tipadas, spec.js, cargador de schema.sql, push/state con change_seq y compuerta schema_version (MODEL-01, MODEL-02, MODEL-03)
 - [ ] 02.1-03-PLAN.md — migrateToV7: esquema v7, copia de datos id→uuid, obras/portales, verificación con EXCEPT (MODEL-01, MODEL-02, MODEL-04, MODEL-05)
 - [ ] 02.1-04-PLAN.md — [compuerta humana] Pre-flight sobre una COPIA de la base real y go/no-go (MODEL-05, MODEL-08)
 - [ ] 02.1-05-PLAN.md — Reconstrucción del outbox, traducción de deletes, reinicio de cursor, renombre legacy, respaldo previo, schema_version en el cliente (MODEL-03, MODEL-05)

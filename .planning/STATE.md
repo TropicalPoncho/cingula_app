@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02.1-06-PLAN.md
-last_updated: "2026-09-20T08:26:39.544Z"
+stopped_at: Completed 02.1-02-PLAN.md
+last_updated: "2026-09-20T08:30:03.730Z"
 last_activity: 2026-09-20
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 21
-  completed_plans: 11
+  completed_plans: 12
   percent: 89
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-08-08)
 ## Current Position
 
 Phase: 02.1 (modelo-de-datos-objetivo) — EXECUTING
-Plan: 3 of 12
+Plan: 4 of 12
 Status: Ready to execute
   During setup, a real production bug surfaced on the user's own device: SyncTrigger was
   swallowing push exceptions (only a status enum survived, no message, nowhere) and 8 stale
@@ -78,6 +78,7 @@ Progress: [█████████░] 89%
 | Phase 02 P05 (partial) | ~4.5h | 2/4 tasks | 10 files (incl. live prod fix) |
 | Phase 02.1 P01 | 20min | 3 tasks | 12 files |
 | Phase 02.1 P06 | 20min | 3 tasks | 17 files |
+| Phase 02.1 P02 | 25min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -107,6 +108,7 @@ Recent decisions affecting current work:
 - [Phase 02]: dart_defines.json (gitignored) + .vscode/launch.json now wire --dart-define-from-file for local VS Code runs, mirroring backend/.env's pattern for the Flutter side. 3 stale launch configs pointing at an already-cleaned-up worktree removed.
 - [Phase 02.1]: Node uuid v5 via node:crypto; shared vectors asserted in Dart and Node
 - [Phase 02.1]: Plan 06: Region removed from code; regions table and region_id kept in schema marked legacy-upgrade
+- [Phase 02.1]: Plan 02: entity_prev PK enforces current+1 previous version; spec.js is single source for backend schema
 
 ### Roadmap Evolution
 
@@ -128,6 +130,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-20T08:26:39.539Z
-Stopped at: Completed 02.1-06-PLAN.md
+Last session: 2026-09-20T08:30:03.726Z
+Stopped at: Completed 02.1-02-PLAN.md
 Resume file: None

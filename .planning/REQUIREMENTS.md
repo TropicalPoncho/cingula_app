@@ -27,9 +27,9 @@ Requirements para este milestone. Cada uno mapea a fases del roadmap.
 
 Origen: discuss-phase 2.1 (`.planning/phases/02.1-modelo-de-datos-objetivo/02.1-CONTEXT.md`, decisiones D-01 a D-23).
 
-- [ ] **MODEL-01**: Todas las entidades sincronizables se identifican y se referencian únicamente por uuid, en el celular y en el servidor; no queda ninguna clave foránea entera entre entidades
-- [ ] **MODEL-02**: El modelo contiene obras (`owner_id` nullable, visibilidad `draft|private|public`, `share_token`, cobertura derivada), artistas (`user_id` nullable, muchos a muchos con obras), paths (`kind` `route|portal`, pertenecen a una obra, un audio que suena + grabación cruda opcional), triggers (siempre dentro de un path, ordenados, con `offset_ms` como ancla) y audios (tipo `grabacion|final`, `storage_key` y `checksum` nullable, duración)
-- [ ] **MODEL-03**: El servidor guarda las entidades en tablas tipadas (no en un blob JSONB genérico), mantiene el protocolo de push idempotente con cursor y tombstones, y conserva la regla de estado actual + 1 versión anterior por entidad (SYNC-06 sigue cumplido)
+- [x] **MODEL-01**: Todas las entidades sincronizables se identifican y se referencian únicamente por uuid, en el celular y en el servidor; no queda ninguna clave foránea entera entre entidades
+- [x] **MODEL-02**: El modelo contiene obras (`owner_id` nullable, visibilidad `draft|private|public`, `share_token`, cobertura derivada), artistas (`user_id` nullable, muchos a muchos con obras), paths (`kind` `route|portal`, pertenecen a una obra, un audio que suena + grabación cruda opcional), triggers (siempre dentro de un path, ordenados, con `offset_ms` como ancla) y audios (tipo `grabacion|final`, `storage_key` y `checksum` nullable, duración)
+- [x] **MODEL-03**: El servidor guarda las entidades en tablas tipadas (no en un blob JSONB genérico), mantiene el protocolo de push idempotente con cursor y tombstones, y conserva la regla de estado actual + 1 versión anterior por entidad (SYNC-06 sigue cumplido)
 - [ ] **MODEL-04**: El progreso de reproducción y el estado local de archivos (ruta local, estado de descarga) viven en tablas solo locales que no se sincronizan ni generan filas de outbox
 - [x] **MODEL-05**: La migración del celular corre automática al abrir la app actualizada: backup con timestamp previo, una sola transacción, verificación de conteos y checksums, y vuelta atrás automática al backup ante cualquier discrepancia; no se pierde ningún dato existente (77 audios, 70 paths → 70 obras una por path, 459 triggers, 20 regiones archivadas sin borrar)
 - [ ] **MODEL-06**: Los datos ya subidos a Neon se migran a las tablas tipadas con un script único que traduce ids enteros a uuid a partir de los payloads; `synced_entities` se conserva renombrada hasta verificar que los conteos coinciden
@@ -98,9 +98,9 @@ Reconocidos pero diferidos, no forman parte del roadmap de este milestone.
 | SYNC-06 | Phase 2 | Complete |
 | SYNC-07 | Phase 2 | Complete |
 | SYNC-08 | Phase 2 | Complete |
-| MODEL-01 | Phase 2.1 | Pending |
-| MODEL-02 | Phase 2.1 | Pending |
-| MODEL-03 | Phase 2.1 | Pending |
+| MODEL-01 | Phase 2.1 | Complete |
+| MODEL-02 | Phase 2.1 | Complete |
+| MODEL-03 | Phase 2.1 | Complete |
 | MODEL-04 | Phase 2.1 | Pending |
 | MODEL-05 | Phase 2.1 | Complete |
 | MODEL-06 | Phase 2.1 | Pending |
