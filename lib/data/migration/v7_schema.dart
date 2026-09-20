@@ -4,7 +4,7 @@ import 'package:sqflite/sqflite.dart';
 /// (plan 02.1-08) llaman a [createV7Tables]; nadie repite este DDL.
 ///
 /// REFERENCES documenta y habilita `PRAGMA foreign_key_check`, pero NO se activa
-/// `PRAGMA foreign_keys`: la app nunca lo tuvo encendido y encenderlo cambiaria
+/// el enforcement de claves foraneas: la app nunca lo tuvo encendido y encenderlo cambiaria
 /// el borrado de hoy.
 ///
 /// Compatibilidad: nada posterior a SQLite 3.22 (Android API 21-28 trae 3.8-3.22).
