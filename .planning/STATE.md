@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02.1-02-PLAN.md
-last_updated: "2026-09-20T08:30:03.730Z"
+stopped_at: Completed 02.1-03-PLAN.md
+last_updated: "2026-09-20T08:31:10.683Z"
 last_activity: 2026-09-20
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 21
-  completed_plans: 12
+  completed_plans: 13
   percent: 89
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-08-08)
 ## Current Position
 
 Phase: 02.1 (modelo-de-datos-objetivo) — EXECUTING
-Plan: 4 of 12
+Plan: 5 of 12
 Status: Ready to execute
   During setup, a real production bug surfaced on the user's own device: SyncTrigger was
   swallowing push exceptions (only a status enum survived, no message, nowhere) and 8 stale
@@ -79,6 +79,7 @@ Progress: [█████████░] 89%
 | Phase 02.1 P01 | 20min | 3 tasks | 12 files |
 | Phase 02.1 P06 | 20min | 3 tasks | 17 files |
 | Phase 02.1 P02 | 25min | 3 tasks | 9 files |
+| Phase 02.1 P03 | 25min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -109,6 +110,7 @@ Recent decisions affecting current work:
 - [Phase 02.1]: Node uuid v5 via node:crypto; shared vectors asserted in Dart and Node
 - [Phase 02.1]: Plan 06: Region removed from code; regions table and region_id kept in schema marked legacy-upgrade
 - [Phase 02.1]: Plan 02: entity_prev PK enforces current+1 previous version; spec.js is single source for backend schema
+- [Phase 02.1]: Plan 03: foreign_key_check por tabla nueva; migrateToV7 devuelve reporte
 
 ### Roadmap Evolution
 
@@ -130,6 +132,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-20T08:30:03.726Z
-Stopped at: Completed 02.1-02-PLAN.md
+Last session: 2026-09-20T08:31:10.678Z
+Stopped at: Completed 02.1-03-PLAN.md
 Resume file: None
