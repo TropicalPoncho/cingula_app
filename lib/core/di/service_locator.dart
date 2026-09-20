@@ -167,7 +167,6 @@ Future<void> setupServiceLocator({bool reinitialize = false}) async {
       locationRepository: getIt<LocationRepository>(),
       geoTriggerRepository: getIt<GeoTriggerRepository>(),
       geoPathRepository: getIt<GeoPathRepository>(),
-      regionRepository: getIt<RegionRepository>(),
       audioRepository: getIt<AudioRepository>(),
       playbackGateway: getIt<AudioPlaybackGateway>(),
       geofenceBackgroundService: getIt<GeofenceBackgroundService>(),

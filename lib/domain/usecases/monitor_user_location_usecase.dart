@@ -7,13 +7,11 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../entities/audio_asset.dart';
 import '../entities/geo_path.dart';
 import '../entities/geo_trigger.dart';
-import '../entities/region.dart';
 import '../repositories/audio_playback_gateway.dart';
 import '../repositories/audio_repository.dart';
 import '../repositories/geo_path_repository.dart';
 import '../repositories/geo_trigger_repository.dart';
 import '../repositories/location_repository.dart';
-import '../repositories/region_repository.dart';
 import '../value_objects/coordinate.dart';
 
 /// Caso de uso que observa la ubicación y dispara audios según la zona.
@@ -22,14 +20,12 @@ class MonitorUserLocationUseCase {
     required LocationRepository locationRepository,
     required GeoTriggerRepository geoTriggerRepository,
     required GeoPathRepository geoPathRepository,
-    required RegionRepository regionRepository,
     required AudioRepository audioRepository,
     required AudioPlaybackGateway playbackGateway,
     GeofenceBackgroundService? geofenceBackgroundService,
   })  : _locationRepository = locationRepository,
         _geoTriggerRepository = geoTriggerRepository,
         _geoPathRepository = geoPathRepository,
-        _regionRepository = regionRepository,
         _audioRepository = audioRepository,
         _playbackGateway = playbackGateway,
         _geofenceBackgroundService = geofenceBackgroundService ?? GeofenceBackgroundService();
@@ -37,14 +33,12 @@ class MonitorUserLocationUseCase {
   final LocationRepository _locationRepository;
   final GeoTriggerRepository _geoTriggerRepository;
   final GeoPathRepository _geoPathRepository;
-  final RegionRepository _regionRepository;
   final AudioRepository _audioRepository;
   final AudioPlaybackGateway _playbackGateway;
   final GeofenceBackgroundService _geofenceBackgroundService;
 
   GeoTrigger? _activeTrigger;
   GeoPath? _activePath;
-  Region? _activeRegion;
   bool _isProcessing = false;
   int _outsideCount = 0;
   bool _isRunning = false;
@@ -59,7 +53,7 @@ class MonitorUserLocationUseCase {
     required void Function(AudioAsset? asset) onAudioChanged,
     void Function(String message)? onStatusUpdate,
     void Function(String log)? onLog,
-    void Function(Object? activeRegion, String samplingMode)? onStateChanged,
+    void Function(String samplingMode)? onStateChanged,
   }) async {
     if (_isRunning) return;
 
@@ -71,7 +65,6 @@ class MonitorUserLocationUseCase {
 
     // Pre-cargar geocercas desde repositorios
     final triggers = await _geoTriggerRepository.fetchAll();
-    final regions = await _regionRepository.fetchAll();
 
     // Lectura inicial (sin esperar a eventos) para reaccionar rápido
     try {
@@ -86,7 +79,6 @@ class MonitorUserLocationUseCase {
 
     await _geofenceBackgroundService.start(
       triggers: triggers,
-      regions: regions,
       onLocation: (coordinate) async {
         await _handleCoordinate(
           coordinate,
@@ -94,10 +86,6 @@ class MonitorUserLocationUseCase {
           onStatusUpdate: onStatusUpdate,
           onLog: onLog,
         );
-      },
-      onRegionChange: (region) {
-        _activeRegion = region;
-        onStateChanged?.call(region, region != null ? 'geofence' : 'idle');
       },
       onLog: onLog,
       // Usar el radio específico de cada trigger; activarRadio solo para debug visual.
@@ -120,7 +108,6 @@ class MonitorUserLocationUseCase {
     // Resetear estados
     _activeTrigger = null;
     _activePath = null;
-    _activeRegion = null;
     _outsideCount = 0;
     _isProcessing = false;
     _isRunning = false;
@@ -167,15 +154,10 @@ class MonitorUserLocationUseCase {
         onLog?.call('Lectura ignorada por baja precisión (accuracy > ${LocationConfig.accuracyThresholdMeters}m).');
         return;
       }
-      // Triggers-first: buscar triggers (filtrando por región si aplica) y
+      // Triggers-first: buscar triggers y
       // si el trigger tiene `geoPathId` asociado, usar ese path para reproducir
       // y guardar progreso; en caso contrario reproducir el audio directo del trigger.
-      List<GeoTrigger> triggers = await _geoTriggerRepository.fetchAll();
-      if (_activeRegion != null) {
-        // Filtrar: triggers SIN región asignada (null) O triggers de esta región
-        triggers = triggers.where((t) => t.regionId == null || t.regionId == _activeRegion!.id).toList();
-        onLog?.call('Filtrando triggers: ${triggers.length} candidatos (region_id=null o =${_activeRegion!.id})');
-      }
+      final triggers = await _geoTriggerRepository.fetchAll();
 
       GeoTrigger? bestTrigger;
       double bestTriggerNorm = double.infinity;

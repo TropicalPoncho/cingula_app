@@ -7,10 +7,8 @@ import 'package:cingula_app/domain/repositories/audio_repository.dart';
 import 'package:cingula_app/domain/repositories/geo_path_repository.dart';
 import 'package:cingula_app/domain/repositories/geo_trigger_repository.dart';
 import 'package:cingula_app/domain/repositories/location_repository.dart';
-import 'package:cingula_app/domain/repositories/region_repository.dart';
 import 'package:cingula_app/domain/usecases/monitor_user_location_usecase.dart';
 import 'package:cingula_app/domain/entities/geo_path.dart';
-import 'package:cingula_app/domain/entities/region.dart';
 import 'package:cingula_app/domain/entities/audio_asset.dart';
 import 'package:cingula_app/domain/value_objects/coordinate.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -63,7 +61,6 @@ class _SpyMonitor extends MonitorUserLocationUseCase {
           locationRepository: _NoopLocationRepo(),
           geoTriggerRepository: _NoopGeoTriggerRepo(),
           geoPathRepository: _NoopGeoPathRepo(),
-          regionRepository: _NoopRegionRepo(),
           audioRepository: _NoopAudioRepo(),
           playbackGateway: _NoopPlaybackGateway(),
         );
@@ -127,17 +124,6 @@ class _NoopGeoPathRepo implements GeoPathRepository {
 
   @override
   Future<void> updateAudio({required int pathId, required int audioAssetId}) async {}
-}
-
-class _NoopRegionRepo implements RegionRepository {
-  @override
-  Future<List<Region>> fetchAll() async => [];
-
-  @override
-  Future<Region?> findContaining(Coordinate coordinate) async => null;
-
-  @override
-  Future<int> createRegion({required double latitude, required double longitude, required String name, required double radiusMeters}) async => 1;
 }
 
 class _NoopAudioRepo implements AudioRepository {

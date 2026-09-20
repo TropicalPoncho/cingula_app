@@ -12,7 +12,7 @@ class LocationConfig {
   static const _kMinDistanceFilter = 'loc_minDistanceFilterMeters';
   static const _kActivationRadius = 'loc_activationRadiusMeters';
 
-  /// Polling coarse (segundos) usado cuando no hay regiones activas.
+  /// Polling coarse (segundos) usado cuando no hay ningún trigger cerca.
   static int coarsePollingSeconds = 30;
 
   /// Intervalo objetivo (segundos) para muestreo fino dentro de una región.

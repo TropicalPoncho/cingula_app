@@ -17,10 +17,6 @@ class SeedData {
       batch.insert('geo_paths', path, conflictAlgorithm: ConflictAlgorithm.ignore);
     }
 
-    for (final region in _regions) {
-      batch.insert('regions', region, conflictAlgorithm: ConflictAlgorithm.ignore);
-    }
-
     await batch.commit(noResult: true);
   }
 
@@ -55,7 +51,6 @@ class SeedData {
       'longitude': -58.409156,
       'radius_meters': 10.0,
       'audio_asset_id': 1,
-      'region_id': 1,
       'geo_path_id': 1,
     }
   ];
@@ -69,20 +64,6 @@ class SeedData {
       'tolerance_meters': 20.0,
       'saved_offset_ms': 0,
     },
-  ];
-
-  static const List<Map<String, Object?>> _regions = [
-    {
-      'id': 1,
-      'name': 'Buenos Aires',
-      'center_lat': -34.60,
-      'center_lon': -58.38,
-      'radius_meters': 100000.0,
-      'sample_coarse_seconds': 30,
-      'sample_fine_seconds': 2,
-      'coarse_distance_filter_meters': 500,
-      'fine_distance_filter_meters': 5,
-    }
   ];
 }
 

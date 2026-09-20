@@ -9,8 +9,6 @@ import 'package:cingula_app/domain/repositories/geo_path_repository.dart';
 import 'package:cingula_app/domain/repositories/audio_repository.dart';
 import 'package:cingula_app/domain/repositories/location_repository.dart';
 import 'package:cingula_app/domain/repositories/audio_playback_gateway.dart';
-import 'package:cingula_app/domain/entities/region.dart';
-import 'package:cingula_app/domain/repositories/region_repository.dart';
 
 // Fakes/simple implementations for testing
 class FakeLocationRepository implements LocationRepository {
@@ -56,7 +54,6 @@ class FakeGeoTriggerRepository implements GeoTriggerRepository {
       longitude: (values['longitude'] as double?) ?? 0.0,
       radiusMeters: (values['radius_meters'] as double?) ?? 10.0,
       audioAssetId: (values['audio_asset_id'] as int?) ?? 0,
-      regionId: values['region_id'] as int?,
       geoPathId: values['geo_path_id'] as int?,
     );
     _triggers.add(trig);
@@ -205,17 +202,6 @@ class FakeAudioRepository implements AudioRepository {
   }
 }
 
-class FakeRegionRepository implements RegionRepository {
-  @override
-  Future<List<Region>> fetchAll() async => [];
-
-  @override
-  Future<Region?> findContaining(Coordinate coordinate) async => null;
-
-  @override
-  Future<int> createRegion({required double latitude, required double longitude, required String name, required double radiusMeters}) async => 1;
-}
-
 class RecordingPlaybackGateway implements AudioPlaybackGateway {
   AudioAsset? playedAsset;
   Duration? playedOffset;
@@ -272,7 +258,6 @@ void main() {
       longitude: coord.longitude,
       radiusMeters: 10.0,
       audioAssetId: 1,
-      regionId: 1,
       geoPathId: 1,
     );
 
@@ -303,7 +288,6 @@ void main() {
       locationRepository: locationRepo,
       geoTriggerRepository: triggerRepo,
       geoPathRepository: pathRepo,
-      regionRepository: FakeRegionRepository(),
       audioRepository: audioRepo,
       playbackGateway: playback,
     );
@@ -325,7 +309,6 @@ void main() {
       longitude: coord.longitude,
       radiusMeters: 10.0,
       audioAssetId: 3,
-      regionId: 1,
       geoPathId: null,
     );
 
@@ -348,7 +331,6 @@ void main() {
       locationRepository: locationRepo,
       geoTriggerRepository: triggerRepo,
       geoPathRepository: pathRepo,
-      regionRepository: FakeRegionRepository(),
       audioRepository: audioRepo,
       playbackGateway: playback,
     );
@@ -371,7 +353,6 @@ void main() {
       longitude: inside.longitude,
       radiusMeters: 10.0,
       audioAssetId: 4,
-      regionId: 1,
       geoPathId: 10,
     );
 
@@ -402,7 +383,6 @@ void main() {
       locationRepository: locationRepo,
       geoTriggerRepository: triggerRepo,
       geoPathRepository: pathRepo,
-      regionRepository: FakeRegionRepository(),
       audioRepository: audioRepo,
       playbackGateway: playback,
     );

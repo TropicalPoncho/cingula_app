@@ -20,12 +20,10 @@ class PlaybackNotifier extends ChangeNotifier {
   String? _statusMessage;
   String? _errorMessage;
   final List<String> _logs = [];
-  Object? _activeRegion;
   String _samplingMode = 'coarse';
 
   List<String> get logs => List.unmodifiable(_logs);
 
-  Object? get activeRegion => _activeRegion;
   String get samplingMode => _samplingMode;
 
   AudioAsset? get currentAsset => _currentAsset;
@@ -63,8 +61,7 @@ class PlaybackNotifier extends ChangeNotifier {
     }
   }
 
-  void _handleStateChanged(Object? region, String mode) {
-    _activeRegion = region;
+  void _handleStateChanged(String mode) {
     _samplingMode = mode;
     notifyListeners();
   }
