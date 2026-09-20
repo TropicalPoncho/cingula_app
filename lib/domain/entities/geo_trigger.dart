@@ -12,7 +12,6 @@ class GeoTrigger {
     required this.longitude,
     required this.radiusMeters,
     required this.audioAssetId,
-    this.regionId,
     this.geoPathId,
     this.offsetMs = 0,
     this.uuid,
@@ -37,7 +36,6 @@ class GeoTrigger {
   final double longitude;
   final double radiusMeters;
   final int audioAssetId;
-  final int? regionId;
   /// Si este trigger está asociado a un `GeoPath`, aquí va su id.
   /// Cuando está presente, la app debe usar el path asociado para reproducir
   /// y guardar progreso en lugar de reproducir el audio directo del trigger.

@@ -116,6 +116,7 @@ class AppDatabase {
       );
     ''');
 
+    // legacy-upgrade: no tocar
     await db.execute('''
       CREATE TABLE regions (
         id INTEGER PRIMARY KEY,
@@ -175,6 +176,7 @@ class AppDatabase {
       ''');
     }
 
+    // legacy-upgrade: no tocar
     if (oldVersion < 3) {
       await db.execute('''
         CREATE TABLE IF NOT EXISTS regions (
@@ -211,6 +213,7 @@ class AppDatabase {
       } catch (_) {}
     }
 
+    // legacy-upgrade: no tocar
     if (oldVersion < 4) {
       for (final table in [
         'audio_assets',
@@ -328,17 +331,10 @@ class AppDatabase {
         ) ??
         0;
 
-    final regionsCount =
-        Sqflite.firstIntValue(
-          await _database!.rawQuery('SELECT COUNT(*) FROM regions'),
-        ) ??
-        0;
-
     return {
       'audio_assets': audioCount,
       'geo_triggers': triggersCount,
       'geo_paths': pathsCount,
-      'regions': regionsCount,
     };
   }
 }
