@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02.1-07-PLAN.md (rehearsal partial)
-last_updated: "2026-09-22T00:35:04.579Z"
+stopped_at: Completed 02.1-08-PLAN.md
+last_updated: "2026-09-22T02:12:08.250Z"
 last_activity: 2026-09-22
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 21
-  completed_plans: 16
+  completed_plans: 17
   percent: 89
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-08-08)
 ## Current Position
 
 Phase: 02.1 (modelo-de-datos-objetivo) — EXECUTING
-Plan: 8 of 12
+Plan: 9 of 12
 Status: Ready to execute
   During setup, a real production bug surfaced on the user's own device: SyncTrigger was
   swallowing push exceptions (only a status enum survived, no message, nowhere) and 8 stale
@@ -82,6 +82,7 @@ Progress: [█████████░] 89%
 | Phase 02.1 P03 | 25min | 3 tasks | 3 files |
 | Phase 02.1 P04 | n/a | 3 tasks | 2 files |
 | Phase 02.1 P05 | 15min | 3 tasks | 6 files |
+| Phase 02.1 P08 | 40min | 3 tasks | 29 files |
 
 ## Accumulated Context
 
@@ -115,6 +116,9 @@ Recent decisions affecting current work:
 - [Phase 02.1]: Plan 03: foreign_key_check por tabla nueva; migrateToV7 devuelve reporte
 - [Phase 02.1]: Plan 04: pre-flight GO sobre base real (78/72/462/20); 15 audios huerfanos se migran tal cual
 - [Phase 02.1]: Plan 05: payload del reenvio = SELECT * (tablas v7 == TABLE_SPEC); tablas viejas renombradas legacy_*, nunca borradas
+- [Phase 02.1]: [Phase 02.1 Plan 08]: GeoPathRepositoryImpl.createPath crea una obra draft con el nombre del path cuando falta obraUuid (D-22), inyectando ObraRepository en el repositorio
+- [Phase 02.1]: [Phase 02.1 Plan 08]: sync_outbox/sync_state quedan fuera de v7_schema.dart (su forma no cambia); AppDatabase._onCreate las sigue creando directamente
+- [Phase 02.1]: [Phase 02.1 Plan 08]: debugOnBeforeVerifyV7 (@visibleForTesting) reexpone el hook de migrateToV7 sin agregar un tercer parametro a init(), para no romper la firma exacta que el plan fija por contrato
 
 ### Roadmap Evolution
 
@@ -137,6 +141,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-22T00:34:57.958Z
-Stopped at: Completed 02.1-07-PLAN.md (rehearsal partial)
+Last session: 2026-09-22T02:12:08.245Z
+Stopped at: Completed 02.1-08-PLAN.md
 Resume file: None

@@ -85,7 +85,7 @@ Plans:
 - [x] 02.1-05-PLAN.md — Reconstrucción del outbox, traducción de deletes, reinicio de cursor, renombre legacy, respaldo previo, schema_version en el cliente (MODEL-03, MODEL-05)
 - [x] 02.1-06-PLAN.md — Eliminación total del código de Región (MODEL-07)
 - [x] 02.1-07-PLAN.md — Script one-shot de Neon: traducción pura testeada + CLI dry-run/apply/finalize + [compuerta humana] primera corrida contra una rama dev (MODEL-06)
-- [ ] 02.1-08-PLAN.md — Capa de datos por uuid: esquema v7 activo, migración cableada con guarda D-25, data sources y repositorios (MODEL-01, MODEL-02, MODEL-04, MODEL-05)
+- [x] 02.1-08-PLAN.md — Capa de datos por uuid: esquema v7 activo, migración cableada con guarda D-25, data sources y repositorios (MODEL-01, MODEL-02, MODEL-04, MODEL-05)
 - [ ] 02.1-09-PLAN.md — Consumidores y UI por uuid: monitor, grabador, panel, pantalla bloqueante de fallo de migración, árbol en verde (MODEL-01, MODEL-05, MODEL-07)
 - [ ] 02.1-10-PLAN.md — Sección Obra del panel (D-22), cobertura derivada al día, obra en el data browser (MODEL-02, MODEL-07)
 - [ ] 02.1-11-PLAN.md — Auditoría ponytail + revisión SQLite viejo + cierre del mapa de validación (MODEL-02, MODEL-03, MODEL-04, MODEL-07)
