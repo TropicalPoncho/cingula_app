@@ -4,9 +4,11 @@ import 'package:get_it/get_it.dart';
 import '../../domain/entities/geo_path.dart';
 import '../../domain/entities/geo_trigger.dart';
 import '../../domain/entities/audio_asset.dart';
+import '../../domain/entities/obra.dart';
 import '../../domain/repositories/geo_path_repository.dart';
 import '../../domain/repositories/geo_trigger_repository.dart';
 import '../../domain/repositories/audio_repository.dart';
+import '../../domain/repositories/obra_repository.dart';
 import '../../domain/repositories/audio_playback_gateway.dart';
 import '../../core/services/log_service.dart';
 import '../../data/datasources/local/app_database.dart';
@@ -22,6 +24,7 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
   List<GeoPath> _paths = [];
   List<GeoTrigger> _triggers = [];
   List<AudioAsset> _audios = [];
+  List<Obra> _obras = [];
   bool _loading = true;
   bool _dirty = false;
   final _getIt = GetIt.instance;
@@ -62,15 +65,18 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
       final pathRepo = _getIt<GeoPathRepository>();
       final triggerRepo = _getIt<GeoTriggerRepository>();
       final audioRepo = _getIt<AudioRepository>();
+      final obraRepo = _getIt<ObraRepository>();
 
       final paths = await pathRepo.fetchAll();
       final triggers = await triggerRepo.fetchAll();
       final audios = await audioRepo.fetchAll();
+      final obras = await obraRepo.fetchAll();
       if (mounted) {
         setState(() {
           _paths = paths;
           _triggers = triggers;
           _audios = audios;
+          _obras = obras;
         });
       }
     } catch (e) {
@@ -318,6 +324,14 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
 
   String _short(String uuid) => uuid.length <= 8 ? uuid : uuid.substring(0, 8);
 
+  /// Nombre de la obra por uuid; si no aparece (referencia colgante), el uuid recortado.
+  String _obraNameFor(String obraUuid) {
+    for (final o in _obras) {
+      if (o.uuid == obraUuid) return o.name;
+    }
+    return _short(obraUuid);
+  }
+
   @override
   Widget build(BuildContext context) {
     final pathByUuid = {for (final p in _paths) p.uuid: p};
@@ -344,10 +358,12 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       ElevatedButton.icon(onPressed: _exportDb, icon: const Icon(Icons.upload_file), label: const Text('Exportar BD')),
                       OutlinedButton.icon(onPressed: _showStats, icon: const Icon(Icons.info_outline), label: const Text('Ver contenido BD')),
                       OutlinedButton.icon(onPressed: _cleanupOrphanTriggers, icon: const Icon(Icons.cleaning_services_outlined), label: const Text('Limpiar triggers huérfanos')),
+                      Text('Obras: ${_obras.length}', style: const TextStyle(fontWeight: FontWeight.bold)),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -400,7 +416,7 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
                           .map(
                             (p) => DataRow(cells: [
                               DataCell(Text(_short(p.uuid))),
-                              DataCell(Text(_short(p.obraUuid))),
+                              DataCell(Text(_obraNameFor(p.obraUuid))),
                               DataCell(Text(p.name)),
                               DataCell(Text(_audioNameForPath(p))),
                               DataCell(Text(p.toleranceMeters.toStringAsFixed(1))),
