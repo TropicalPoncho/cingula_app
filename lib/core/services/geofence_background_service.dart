@@ -64,7 +64,7 @@ class GeofenceBackgroundService {
         (t) {
           final radius = overrideTriggerRadiusMeters ?? t.radiusMeters;
           return gf.Geofence(
-            id: 'trigger_${t.id}',
+            id: 'trigger_${t.uuid}',
             latitude: t.latitude,
             longitude: t.longitude,
             radius: [
@@ -73,7 +73,7 @@ class GeofenceBackgroundService {
                 length: radius,
               ),
             ],
-            data: {'type': 'trigger', 'triggerId': t.id, 'audioId': t.audioAssetId},
+            data: {'type': 'trigger', 'triggerUuid': t.uuid},
           );
         },
       ),

@@ -5,17 +5,18 @@ import 'package:cingula_app/domain/value_objects/coordinate.dart';
 void main() {
   test('GeoTriggerModel mapping and contains', () {
     final map = {
-      'id': 2,
+      'uuid': 'trigger-2',
+      'path_uuid': 'path-1',
       'name': 'TriggerTest',
       'description': 'desc',
       'latitude': -34.786151,
       'longitude': -58.409156,
       'radius_meters': 10.0,
-      'audio_asset_id': 1,
     };
 
     final trigger = GeoTriggerModel.fromMap(map);
-    expect(trigger.id, equals(2));
+    expect(trigger.uuid, equals('trigger-2'));
+    expect(trigger.pathUuid, equals('path-1'));
 
     final close = Coordinate(latitude: -34.786151, longitude: -58.409156);
     final far = Coordinate(latitude: -34.800, longitude: -58.420);

@@ -64,8 +64,8 @@ class RecorderService {
   DateTime? _recordingStart;
 
   StreamSubscription<Coordinate>? _sub;
-  int? _currentPathId;
-  int? _currentAudioAssetId;
+  String? _currentPathUuid;
+  String? _currentAudioUuid;
   double _triggerSpacing = 10.0;
   double _triggerRadius = 12.0;
   String _pathName = 'Recorded path';
@@ -77,24 +77,25 @@ class RecorderService {
   bool get isRecording => _sub != null;
   final ValueNotifier<RecordingStatus> recordingStatus = ValueNotifier(const RecordingStatus());
 
-  Future<int?> startRecording({
-    required int audioAssetId,
+  Future<String?> startRecording({
+    required String audioUuid,
+    String? obraUuid,
     String name = 'Recorded path',
     double sampleDistanceMeters = 5.0,
     double spacingMeters = 10.0,
     double triggerRadiusMeters = 12.0,
   }) async {
-    if (isRecording) return _currentPathId;
+    if (isRecording) return _currentPathUuid;
 
     // Mantener CPU despierta durante la grabación para evitar que el SO pause servicios con pantalla apagada.
     await WakelockPlus.enable();
 
-    final audio = await _audioRepo.findById(audioAssetId);
+    final audio = await _audioRepo.findByUuid(audioUuid);
     if (audio == null) {
-      throw StateError('Audio asset not found: $audioAssetId');
+      throw StateError('Audio asset not found: $audioUuid');
     }
 
-    _currentAudioAssetId = audioAssetId;
+    _currentAudioUuid = audioUuid;
     _triggerSpacing = spacingMeters;
     _triggerRadius = triggerRadiusMeters;
     _pathName = name;
@@ -106,24 +107,26 @@ class RecorderService {
     _gpsFilter.reset();
 
     if (_debugLogs) {
-      developer.log('Creating path name="$name" audioAssetId=$audioAssetId spacing=${spacingMeters}m', name: 'RecorderService');
+      developer.log('Creating path name="$name" audioUuid=$audioUuid spacing=${spacingMeters}m', name: 'RecorderService');
       GetIt.instance<LogService>().log('Iniciando grabación: $name (spacing: ${spacingMeters}m)');
     }
 
-    final pathId = await _geoPathRepo.createPath(
+    // Sin obraUuid, GeoPathRepositoryImpl crea una obra draft con el nombre del path (D-22).
+    final pathUuid = await _geoPathRepo.createPath(
       name: name,
-      audioAssetId: audioAssetId,
+      audioUuid: audioUuid,
+      obraUuid: obraUuid,
     );
-    _currentPathId = pathId;
+    _currentPathUuid = pathUuid;
 
     // Crear primer trigger en posición actual
     try {
       var startPos = await _location.currentPosition();
-      
+
       // Aplicar filtro a la posición inicial
       startPos = _gpsFilter.filter(startPos);
 
-      await _createTrigger(startPos, pathId, audioAssetId, 0);
+      await _createTrigger(startPos, pathUuid, 0);
       _lastTriggerPosition = startPos;
       if (_debugLogs) {
         GetIt.instance<LogService>().log('Trigger inicial creado en (${startPos.latitude.toStringAsFixed(6)}, ${startPos.longitude.toStringAsFixed(6)})');
@@ -153,7 +156,7 @@ class RecorderService {
                   ? ((_totalDistance / (_triggerSpacing * (_triggerCount + 1))) * audioDuration).round().clamp(0, audioDuration)
                   : 0;
 
-              await _createTrigger(filteredCoord, _currentPathId!, _currentAudioAssetId!, offsetMs);
+              await _createTrigger(filteredCoord, _currentPathUuid!, offsetMs);
               _lastTriggerPosition = filteredCoord;
 
               if (_debugLogs && _triggerCount % 5 == 0) {
@@ -176,24 +179,23 @@ class RecorderService {
       },
     );
 
-    return pathId;
+    return pathUuid;
   }
 
-  Future<void> _createTrigger(Coordinate position, int pathId, int audioAssetId, int offsetMs) async {
+  Future<void> _createTrigger(Coordinate position, String pathUuid, int offsetMs) async {
     try {
-      final tId = await _triggerRepo.insertTrigger({
+      final tUuid = await _triggerRepo.insertTrigger({
         'name': '$_pathName trigger ${_triggerCount + 1}',
         'description': 'Auto-generated',
         'latitude': position.latitude,
         'longitude': position.longitude,
         'radius_meters': _triggerRadius,
-        'audio_asset_id': audioAssetId,
-        'geo_path_id': pathId,
+        'path_uuid': pathUuid,
         'offset_ms': offsetMs,
       });
       _triggerCount++;
       if (_debugLogs) {
-        developer.log('Trigger #$_triggerCount creado (id=$tId, offset=${offsetMs}ms)', name: 'RecorderService');
+        developer.log('Trigger #$_triggerCount creado (uuid=$tUuid, offset=${offsetMs}ms)', name: 'RecorderService');
       }
     } catch (e) {
       if (_debugLogs) {
@@ -207,10 +209,10 @@ class RecorderService {
     required double spacingMeters,
     double triggerRadiusMeters = 12.0,
   }) async {
-    if (!isRecording || _currentPathId == null) return <GeoTrigger>[];
+    if (!isRecording || _currentPathUuid == null) return <GeoTrigger>[];
 
-    final pathId = _currentPathId!;
-    final audioId = _currentAudioAssetId;
+    final pathUuid = _currentPathUuid!;
+    final audioUuid = _currentAudioUuid;
     Duration? recordedDuration;
     List<GeoTrigger> created = const <GeoTrigger>[];
 
@@ -252,14 +254,14 @@ class RecorderService {
       }
 
       if (_debugLogs) {
-        developer.log('stopRecording: pathId=$pathId triggers creados=$_triggerCount', name: 'RecorderService');
+        developer.log('stopRecording: pathUuid=$pathUuid triggers creados=$_triggerCount', name: 'RecorderService');
         GetIt.instance<LogService>().log('Grabación finalizada: $_triggerCount triggers creados');
       }
 
       // Actualizar duración del audio grabado una vez detenida la captura
-      if (recordedDuration != null && audioId != null) {
+      if (recordedDuration != null && audioUuid != null) {
         try {
-          await _audioRepo.updateDuration(id: audioId, duration: recordedDuration);
+          await _audioRepo.updateDuration(uuid: audioUuid, duration: recordedDuration);
         } catch (e) {
           if (_debugLogs) {
             developer.log('Error actualizando duración del audio grabado: $e', name: 'RecorderService');
@@ -268,15 +270,15 @@ class RecorderService {
       }
 
       // Retornar todos los triggers del path
-      created = await _triggerRepo.fetchByPathId(pathId);
+      created = await _triggerRepo.fetchByPathUuid(pathUuid);
     } catch (e, st) {
       if (_debugLogs) {
         developer.log('Error en stopRecording: $e', name: 'RecorderService', error: e, stackTrace: st);
         GetIt.instance<LogService>().log('Error al frenar la grabación: $e');
       }
     } finally {
-      _currentPathId = null;
-      _currentAudioAssetId = null;
+      _currentPathUuid = null;
+      _currentAudioUuid = null;
       _totalDistance = 0.0;
       _lastTriggerPosition = null;
       _recordingPath = null;
@@ -304,13 +306,14 @@ class RecorderService {
 
   /// Inicia grabación de path creando además un audio grabado por micrófono
   /// y vinculándolo al path recién creado.
-  Future<int?> startRecordingWithMic({
+  Future<String?> startRecordingWithMic({
+    String? obraUuid,
     String name = 'Recorded path',
     double sampleDistanceMeters = 5.0,
     double spacingMeters = 10.0,
     double triggerRadiusMeters = 12.0,
   }) async {
-    if (isRecording) return _currentPathId;
+    if (isRecording) return _currentPathUuid;
 
     final micStatus = await Permission.microphone.request();
     if (!micStatus.isGranted) {
@@ -335,7 +338,7 @@ class RecorderService {
       path: _recordingPath!,
     );
 
-    final audioId = await _audioRepo.insertLocalRecording(
+    final audioUuid = await _audioRepo.insertLocalRecording(
       title: name,
       description: 'Grabado en campo',
       localPath: _recordingPath!,
@@ -362,7 +365,8 @@ class RecorderService {
 
     try {
       return await startRecording(
-        audioAssetId: audioId,
+        audioUuid: audioUuid,
+        obraUuid: obraUuid,
         name: name,
         sampleDistanceMeters: sampleDistanceMeters,
         spacingMeters: spacingMeters,

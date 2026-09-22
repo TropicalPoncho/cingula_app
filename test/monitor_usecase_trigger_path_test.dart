@@ -33,7 +33,8 @@ class FakeGeoTriggerRepository implements GeoTriggerRepository {
   Future<List<GeoTrigger>> fetchAll() async => _triggers;
 
   @override
-  Future<List<GeoTrigger>> fetchByPathId(int pathId) async => _triggers.where((t) => t.geoPathId == pathId).toList(growable: false);
+  Future<List<GeoTrigger>> fetchByPathUuid(String pathUuid) async =>
+      _triggers.where((t) => t.pathUuid == pathUuid).toList(growable: false);
 
   @override
   Future<GeoTrigger?> findMatch(Coordinate coordinate) async {
@@ -44,26 +45,26 @@ class FakeGeoTriggerRepository implements GeoTriggerRepository {
   }
 
   @override
-  Future<int> insertTrigger(Map<String, Object?> values) async {
-    final id = (_triggers.isEmpty) ? 1 : (_triggers.map((t) => t.id).reduce((a, b) => a > b ? a : b) + 1);
+  Future<String> insertTrigger(Map<String, Object?> values) async {
+    final uuid = 'trigger-${_triggers.length + 1}';
     final trig = GeoTrigger(
-      id: id,
+      uuid: uuid,
+      pathUuid: values['path_uuid'] as String,
       name: values['name'] as String? ?? 'gen',
       description: values['description'] as String? ?? '',
       latitude: (values['latitude'] as double?) ?? 0.0,
       longitude: (values['longitude'] as double?) ?? 0.0,
       radiusMeters: (values['radius_meters'] as double?) ?? 10.0,
-      audioAssetId: (values['audio_asset_id'] as int?) ?? 0,
-      geoPathId: values['geo_path_id'] as int?,
+      offsetMs: (values['offset_ms'] as int?) ?? 0,
     );
     _triggers.add(trig);
-    return id;
+    return uuid;
   }
 
   @override
-  Future<int> deleteByAudioAssetId(int audioAssetId) async {
-    final removed = _triggers.where((t) => t.audioAssetId == audioAssetId).toList(growable: false);
-    _triggers.removeWhere((t) => t.audioAssetId == audioAssetId);
+  Future<int> deleteByPathUuid(String pathUuid) async {
+    final removed = _triggers.where((t) => t.pathUuid == pathUuid).toList(growable: false);
+    _triggers.removeWhere((t) => t.pathUuid == pathUuid);
     return removed.length;
   }
 
@@ -74,77 +75,74 @@ class FakeGeoTriggerRepository implements GeoTriggerRepository {
 class FakeGeoPathRepository implements GeoPathRepository {
   FakeGeoPathRepository(this._paths);
   final List<GeoPath> _paths;
+  int saveProgressCalls = 0;
+
   @override
   Future<List<GeoPath>> fetchAll() async => _paths;
 
   @override
-  Future<GeoPath?> fetchById(int id) async {
+  Future<GeoPath?> fetchByUuid(String uuid) async {
     try {
-      return _paths.firstWhere((p) => p.id == id);
+      return _paths.firstWhere((p) => p.uuid == uuid);
     } catch (_) {
       return null;
     }
   }
 
   @override
-  Future<void> saveProgress(int pathId, int offsetMs) async {
-    final idx = _paths.indexWhere((p) => p.id == pathId);
+  Future<void> saveProgress(String pathUuid, int offsetMs) async {
+    saveProgressCalls++;
+    final idx = _paths.indexWhere((p) => p.uuid == pathUuid);
     if (idx == -1) return;
-    _paths[idx] = GeoPath(
-      id: _paths[idx].id,
-      name: _paths[idx].name,
-      audioAssetId: _paths[idx].audioAssetId,
-      toleranceMeters: _paths[idx].toleranceMeters,
-      savedOffsetMs: offsetMs,
-      uuid: _paths[idx].uuid,
-      updatedAt: _paths[idx].updatedAt,
-      deletedAt: _paths[idx].deletedAt,
-      logicalVersion: _paths[idx].logicalVersion,
-    );
+    _paths[idx].savedOffsetMs = offsetMs;
   }
 
   @override
-  Future<int> createPath({required String name, required int audioAssetId, double toleranceMeters = 10.0}) async {
-    final id = (_paths.isEmpty) ? 1 : (_paths.map((p) => p.id).reduce((a, b) => a > b ? a : b) + 1);
-    final newPath = GeoPath(
-      id: id,
+  Future<String> createPath({
+    required String name,
+    String? audioUuid,
+    String? obraUuid,
+    String kind = 'route',
+    double toleranceMeters = 10.0,
+  }) async {
+    final uuid = 'path-${_paths.length + 1}';
+    _paths.add(GeoPath(
+      uuid: uuid,
+      obraUuid: obraUuid ?? 'obra-auto',
       name: name,
-      audioAssetId: audioAssetId,
+      kind: kind,
+      audioUuid: audioUuid,
       toleranceMeters: toleranceMeters,
-    );
-    _paths.add(newPath);
-    return id;
+    ));
+    return uuid;
   }
 
   @override
-  Future<int> deleteByAudioAssetId(int audioAssetId) async {
-    final removed = _paths.where((p) => p.audioAssetId == audioAssetId).toList(growable: false);
-    _paths.removeWhere((p) => p.audioAssetId == audioAssetId);
+  Future<int> deleteByAudioUuid(String audioUuid) async {
+    final removed = _paths.where((p) => p.audioUuid == audioUuid).toList(growable: false);
+    _paths.removeWhere((p) => p.audioUuid == audioUuid);
     return removed.length;
   }
 
   @override
-  Future<int> deleteById(int pathId) async {
-    final removed = _paths.where((p) => p.id == pathId).toList(growable: false);
-    _paths.removeWhere((p) => p.id == pathId);
+  Future<int> deleteByUuid(String pathUuid) async {
+    final removed = _paths.where((p) => p.uuid == pathUuid).toList(growable: false);
+    _paths.removeWhere((p) => p.uuid == pathUuid);
     return removed.length;
   }
 
   @override
-  Future<void> updateAudio({required int pathId, required int audioAssetId}) async {
-    final idx = _paths.indexWhere((p) => p.id == pathId);
+  Future<void> updateAudio({required String pathUuid, required String audioUuid}) async {
+    final idx = _paths.indexWhere((p) => p.uuid == pathUuid);
     if (idx == -1) return;
-    final existing = _paths[idx];
     _paths[idx] = GeoPath(
-      id: existing.id,
-      name: existing.name,
-      audioAssetId: audioAssetId,
-      toleranceMeters: existing.toleranceMeters,
-      savedOffsetMs: existing.savedOffsetMs,
-      uuid: existing.uuid,
-      updatedAt: existing.updatedAt,
-      deletedAt: existing.deletedAt,
-      logicalVersion: existing.logicalVersion,
+      uuid: _paths[idx].uuid,
+      obraUuid: _paths[idx].obraUuid,
+      name: _paths[idx].name,
+      kind: _paths[idx].kind,
+      audioUuid: audioUuid,
+      toleranceMeters: _paths[idx].toleranceMeters,
+      savedOffsetMs: _paths[idx].savedOffsetMs,
     );
   }
 }
@@ -157,46 +155,38 @@ class FakeAudioRepository implements AudioRepository {
   Future<List<AudioAsset>> fetchAll() async => _assets;
 
   @override
-  Future<AudioAsset?> findById(int id) async {
+  Future<AudioAsset?> findByUuid(String uuid) async {
     try {
-      return _assets.firstWhere((a) => a.id == id);
+      return _assets.firstWhere((a) => a.uuid == uuid);
     } catch (_) {
       return null;
     }
   }
 
   @override
-  Future<int> insertLocalRecording({
+  Future<String> insertLocalRecording({
     required String title,
     required String description,
     required String localPath,
     required Duration duration,
   }) async {
-    final id = (_assets.isEmpty) ? 1 : (_assets.map((a) => a.id).reduce((a, b) => a > b ? a : b) + 1);
-    final asset = AudioAsset(
-      id: id,
-      title: title,
-      artist: 'Field Recording',
-      description: description,
-      duration: duration,
-      localPath: localPath,
-    );
-    _assets.add(asset);
-    return id;
+    final uuid = 'audio-${_assets.length + 1}';
+    _assets.add(AudioAsset(uuid: uuid, title: title, description: description, duration: duration, localPath: localPath));
+    return uuid;
   }
 
   @override
-  Future<void> updateDuration({required int id, required Duration duration}) async {
-    final idx = _assets.indexWhere((a) => a.id == id);
+  Future<void> updateDuration({required String uuid, required Duration duration}) async {
+    final idx = _assets.indexWhere((a) => a.uuid == uuid);
     if (idx == -1) return;
     final existing = _assets[idx];
     _assets[idx] = AudioAsset(
-      id: existing.id,
+      uuid: existing.uuid,
       title: existing.title,
-      artist: existing.artist,
       description: existing.description,
       duration: duration,
       localPath: existing.localPath,
+      kind: existing.kind,
       remoteUrl: existing.remoteUrl,
     );
   }
@@ -247,32 +237,32 @@ class RecordingPlaybackGateway implements AudioPlaybackGateway {
 }
 
 void main() {
-  test('executeSingleCheck: trigger with geoPathId plays associated path via playFrom', () async {
-  final coord = Coordinate(latitude: -34.786151, longitude: -58.409156, accuracyMeters: 5.0);
+  test('executeSingleCheck: trigger de un path route reproduce via playFrom', () async {
+    final coord = Coordinate(latitude: -34.786151, longitude: -58.409156, accuracyMeters: 5.0);
+
+    final path = GeoPath(
+      uuid: 'path-1',
+      obraUuid: 'obra-1',
+      name: 'P1',
+      kind: 'route',
+      audioUuid: 'audio-2',
+      toleranceMeters: 20.0,
+      savedOffsetMs: 0,
+    );
 
     final trigger = GeoTrigger(
-      id: 1,
+      uuid: 'trigger-1',
+      pathUuid: 'path-1',
       name: 'T1',
       description: 'd',
       latitude: coord.latitude,
       longitude: coord.longitude,
       radiusMeters: 10.0,
-      audioAssetId: 1,
-      geoPathId: 1,
-    );
-
-    final path = GeoPath(
-      id: 1,
-      name: 'P1',
-      audioAssetId: 2,
-      toleranceMeters: 20.0,
-      savedOffsetMs: 0,
     );
 
     final audioAsset = AudioAsset(
-      id: 2,
+      uuid: 'audio-2',
       title: 'path-audio',
-      artist: 'artist',
       description: 'desc',
       duration: Duration(seconds: 30),
       localPath: 'assets/audio/x.mp3',
@@ -295,35 +285,46 @@ void main() {
     await usecase.executeSingleCheck();
 
     expect(playback.playFromCalled, isTrue);
-    expect(playback.playedAsset?.id, equals(audioAsset.id));
+    expect(playback.playedAsset?.uuid, equals(audioAsset.uuid));
   });
 
-  test('executeSingleCheck: trigger without geoPathId plays trigger audio via play', () async {
-  final coord = Coordinate(latitude: -34.786151, longitude: -58.409156, accuracyMeters: 5.0);
+  test('un path kind=portal arranca en 0 y no guarda progreso al salir', () async {
+    final inside = Coordinate(latitude: -34.786151, longitude: -58.409156, accuracyMeters: 5.0);
+    final outside = Coordinate(latitude: -34.700000, longitude: -58.300000, accuracyMeters: 5.0);
 
+    final path = GeoPath(
+      uuid: 'path-portal',
+      obraUuid: 'obra-portal',
+      name: 'Portal 1',
+      kind: 'portal',
+      audioUuid: 'audio-3',
+      toleranceMeters: 20.0,
+      savedOffsetMs: 0,
+    );
+
+    // offsetMs != 0 a propósito: un portal debe ignorarlo y arrancar en 0.
     final trigger = GeoTrigger(
-      id: 2,
-      name: 'T2',
+      uuid: 'trigger-portal',
+      pathUuid: 'path-portal',
+      name: 'T-portal',
       description: 'd',
-      latitude: coord.latitude,
-      longitude: coord.longitude,
+      latitude: inside.latitude,
+      longitude: inside.longitude,
       radiusMeters: 10.0,
-      audioAssetId: 3,
-      geoPathId: null,
+      offsetMs: 5000,
     );
 
     final audioAsset = AudioAsset(
-      id: 3,
-      title: 'trigger-audio',
-      artist: 'artist',
+      uuid: 'audio-3',
+      title: 'portal-audio',
       description: 'desc',
       duration: Duration(seconds: 20),
-      localPath: 'assets/audio/t.mp3',
+      localPath: 'assets/audio/portal.mp3',
     );
 
-    final locationRepo = FakeLocationRepository(coord);
+    final locationRepo = FakeLocationRepository(inside);
     final triggerRepo = FakeGeoTriggerRepository([trigger]);
-    final pathRepo = FakeGeoPathRepository([]);
+    final pathRepo = FakeGeoPathRepository([path]);
     final audioRepo = FakeAudioRepository([audioAsset]);
     final playback = RecordingPlaybackGateway();
 
@@ -336,38 +337,57 @@ void main() {
     );
 
     await usecase.executeSingleCheck();
+    expect(playback.playFromCalled, isTrue);
+    expect(playback.playedOffset, equals(Duration.zero));
 
-    expect(playback.playCalled, isTrue);
-    expect(playback.playedAsset?.id, equals(audioAsset.id));
+    // Salir de la zona (tres checks fuera) no debe guardar progreso: el
+    // portal siempre vuelve a arrancar en 0.
+    playback.currentPositionValue = const Duration(seconds: 5);
+    playback.resetFlags();
+    locationRepo.coord = outside;
+    await usecase.executeSingleCheck();
+    await usecase.executeSingleCheck();
+    await usecase.executeSingleCheck();
+
+    expect(playback.pauseCalled, isTrue);
+    expect(pathRepo.saveProgressCalls, equals(0));
+
+    // Re-entrar: vuelve a arrancar en 0, no en el offset del trigger ni en
+    // ningún progreso guardado.
+    playback.resetFlags();
+    locationRepo.coord = inside;
+    await usecase.executeSingleCheck();
+    expect(playback.playFromCalled, isTrue);
+    expect(playback.playedOffset, equals(Duration.zero));
   });
 
-  test('resume from saved offset when re-entering path', () async {
+  test('resume from saved offset when re-entering a route path', () async {
     final inside = Coordinate(latitude: -34.786151, longitude: -58.409156, accuracyMeters: 5.0);
     final outside = Coordinate(latitude: -34.700000, longitude: -58.300000, accuracyMeters: 5.0);
 
+    final path = GeoPath(
+      uuid: 'path-resume',
+      obraUuid: 'obra-resume',
+      name: 'P-resume',
+      kind: 'route',
+      audioUuid: 'audio-4',
+      toleranceMeters: 20.0,
+      savedOffsetMs: 0,
+    );
+
     final trigger = GeoTrigger(
-      id: 3,
+      uuid: 'trigger-resume',
+      pathUuid: 'path-resume',
       name: 'T-path',
       description: 'path trigger',
       latitude: inside.latitude,
       longitude: inside.longitude,
       radiusMeters: 10.0,
-      audioAssetId: 4,
-      geoPathId: 10,
-    );
-
-    final path = GeoPath(
-      id: 10,
-      name: 'P-resume',
-      audioAssetId: 4,
-      toleranceMeters: 20.0,
-      savedOffsetMs: 0,
     );
 
     final audioAsset = AudioAsset(
-      id: 4,
+      uuid: 'audio-4',
       title: 'path-audio-resume',
-      artist: 'artist',
       description: 'desc',
       duration: Duration(seconds: 60),
       localPath: 'assets/audio/resume.mp3',
@@ -400,7 +420,7 @@ void main() {
     await usecase.executeSingleCheck();
     await usecase.executeSingleCheck();
     expect(playback.pauseCalled, isTrue);
-    final savedPath = await pathRepo.fetchById(path.id);
+    final savedPath = await pathRepo.fetchByUuid(path.uuid);
     expect(savedPath?.savedOffsetMs, equals(12000));
 
     // Re-enter: should resume from saved offset.

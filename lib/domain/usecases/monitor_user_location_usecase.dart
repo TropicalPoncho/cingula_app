@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import '../../core/services/geofence_background_service.dart';
 import '../../core/utils/gps_filter.dart';
@@ -37,12 +37,14 @@ class MonitorUserLocationUseCase {
   final AudioPlaybackGateway _playbackGateway;
   final GeofenceBackgroundService _geofenceBackgroundService;
 
-  GeoTrigger? _activeTrigger;
+  // Todos los triggers pertenecen a un path (los sueltos se volvieron portales
+  // en la migración v7); no hace falta trackear un trigger activo aparte del
+  // path activo.
   GeoPath? _activePath;
   bool _isProcessing = false;
   int _outsideCount = 0;
   bool _isRunning = false;
-  
+
   // Filtro GPS para mejorar precisión
   final WeightedMovingAverageFilter _gpsFilter = WeightedMovingAverageFilter(windowSize: 3);
 
@@ -106,7 +108,6 @@ class MonitorUserLocationUseCase {
     await WakelockPlus.disable();
 
     // Resetear estados
-    _activeTrigger = null;
     _activePath = null;
     _outsideCount = 0;
     _isProcessing = false;
@@ -142,7 +143,7 @@ class MonitorUserLocationUseCase {
     try {
       // Filtrar coordenada para reducir ruido GPS
       final filteredCoordinate = _gpsFilter.filter(coordinate);
-      
+
       // Emitir lectura detallada (mostrar original vs filtrada)
       onLog?.call('Lectura: lat=${coordinate.latitude.toStringAsFixed(6)}, lon=${coordinate.longitude.toStringAsFixed(6)}, accuracy=${coordinate.accuracyMeters?.toStringAsFixed(1)}m');
       if ((filteredCoordinate.latitude - coordinate.latitude).abs() > 0.00001 || (filteredCoordinate.longitude - coordinate.longitude).abs() > 0.00001) {
@@ -154,9 +155,7 @@ class MonitorUserLocationUseCase {
         onLog?.call('Lectura ignorada por baja precisión (accuracy > ${LocationConfig.accuracyThresholdMeters}m).');
         return;
       }
-      // Triggers-first: buscar triggers y
-      // si el trigger tiene `geoPathId` asociado, usar ese path para reproducir
-      // y guardar progreso; en caso contrario reproducir el audio directo del trigger.
+      // Todo trigger pertenece a un path (D-28: los sueltos son portales).
       final triggers = await _geoTriggerRepository.fetchAll();
 
       GeoTrigger? bestTrigger;
@@ -166,7 +165,7 @@ class MonitorUserLocationUseCase {
         final effectiveRadius = t.radiusMeters;
         final d = t.distanceTo(filteredCoordinate);
         final norm = effectiveRadius > 0 ? (d / effectiveRadius) : double.infinity;
-        onLog?.call('  Trigger id=${t.id} name=${t.name}: dist=${d.toStringAsFixed(1)}m radius=${effectiveRadius.toStringAsFixed(1)}m norm=${norm.toStringAsFixed(2)}');
+        onLog?.call('  Trigger uuid=${t.uuid} name=${t.name}: dist=${d.toStringAsFixed(1)}m radius=${effectiveRadius.toStringAsFixed(1)}m norm=${norm.toStringAsFixed(2)}');
         if (norm < bestTriggerNorm) {
           bestTrigger = t;
           bestTriggerNorm = norm;
@@ -175,28 +174,33 @@ class MonitorUserLocationUseCase {
       }
 
       final triggerCandidate = (bestTrigger != null && bestTriggerNorm <= 1.0);
-      
+
       if (bestTrigger != null) {
-        onLog?.call('Mejor trigger: id=${bestTrigger.id} norm=${bestTriggerNorm.toStringAsFixed(2)} dist=${bestTriggerDist.toStringAsFixed(1)}m ${triggerCandidate ? "\u2705 ACTIVADO" : "\u274c fuera de rango"}');
+        onLog?.call('Mejor trigger: uuid=${bestTrigger.uuid} norm=${bestTriggerNorm.toStringAsFixed(2)} dist=${bestTriggerDist.toStringAsFixed(1)}m ${triggerCandidate ? "✅ ACTIVADO" : "❌ fuera de rango"}');
       } else {
         onLog?.call('No hay triggers en esta área');
       }
 
       if (!triggerCandidate) {
         onLog?.call('⛔ No hay trigger activo (norm > 1.0 o no hay triggers)');
-        onLog?.call('Estado actual: activePath=${_activePath?.id} activeTrigger=${_activeTrigger?.id} outsideCount=$_outsideCount');
+        onLog?.call('Estado actual: activePath=${_activePath?.uuid} outsideCount=$_outsideCount');
         // No hay ningún trigger: mantener/pause/stop como antes
         if (_activePath != null) {
           _outsideCount++;
           if (_outsideCount >= 3) {
-            final position = await _playbackGateway.currentPosition();
-            if (position != null) {
-              // Limitar el offset al total del audio si se puede obtener.
-              var saveMs = position.inMilliseconds;
-              final asset = await _audioRepository.findById(_activePath!.audioAssetId);
-              final totalMs = asset?.duration.inMilliseconds;
-              if (totalMs != null && saveMs > totalMs) saveMs = totalMs;
-              await _geoPathRepository.saveProgress(_activePath!.id, saveMs);
+            // Un portal arranca siempre en 0 y no tiene progreso que guardar
+            // (es el comportamiento que hoy tienen los triggers sueltos).
+            if (_activePath!.kind != 'portal') {
+              final position = await _playbackGateway.currentPosition();
+              if (position != null) {
+                // Limitar el offset al total del audio si se puede obtener.
+                var saveMs = position.inMilliseconds;
+                final audioUuid = _activePath!.audioUuid;
+                final asset = audioUuid != null ? await _audioRepository.findByUuid(audioUuid) : null;
+                final totalMs = asset?.duration.inMilliseconds;
+                if (totalMs != null && saveMs > totalMs) saveMs = totalMs;
+                await _geoPathRepository.saveProgress(_activePath!.uuid, saveMs);
+              }
             }
             await _playbackGateway.pause();
             _activePath = null;
@@ -206,103 +210,72 @@ class MonitorUserLocationUseCase {
             // que retrasen la detección del trigger al volver al path.
             _gpsFilter.reset();
           }
-        } else if (_activeTrigger != null) {
-          _activeTrigger = null;
-          await _playbackGateway.stop();
-          onAudioChanged(null);
-          onStatusUpdate?.call('Fuera de zonas con audio asignado.');
         }
         return;
       }
 
       // Tenemos un trigger a ejecutar - resetear contador de salida
       _outsideCount = 0;
-      
+
       final match = bestTrigger;
-      
-      // Si el trigger ya estaba activo, no reiniciamos
-      if (_activeTrigger?.id == match.id) {
-        onLog?.call('Mismo trigger activo (id=${match.id}), manteniendo reproducción');
-        final asset = await _audioRepository.findById(match.audioAssetId);
-        if (asset != null) {
-          onAudioChanged(asset); // Refresca UI con el nombre/obra aunque siga el mismo trigger
-          onStatusUpdate?.call('Reproduciendo zona: ${match.name}');
-        }
+
+      final path = await _geoPathRepository.fetchByUuid(match.pathUuid);
+      if (path == null) {
+        onStatusUpdate?.call('Path asociado (uuid=${match.pathUuid}) no encontrado.');
         return;
       }
 
-      // Si el trigger está asociado a un path, intentamos obtenerlo y usarlo
-      if (match.geoPathId != null) {
-        final path = await _geoPathRepository.fetchById(match.geoPathId!);
-        if (path == null) {
-          onStatusUpdate?.call('Path asociado (id=${match.geoPathId}) no encontrado.');
-          return;
-        }
-
-        // Path geometry is modelled by triggers; we resume playback using any
-        // saved offset on the path if present, otherwise start from zero.
-        onLog?.call('Trigger->Path match triggerId=${match.id} pathId=${path.id} (using saved offset ${path.savedOffsetMs}ms)');
-
-        // Si ya estamos reproduciendo el mismo path, no hacer nada
-        if (_activePath?.id == path.id) {
-          onLog?.call('Mismo path activo (id=${path.id}), manteniendo reproducción');
-          onStatusUpdate?.call('Reproduciendo camino: ${path.name}');
-          return;
-        }
-
-        final asset = await _audioRepository.findById(path.audioAssetId);
-        if (asset == null) {
-          onStatusUpdate?.call('Audio ${path.audioAssetId} no encontrado.');
-          return;
-        }
-
-    final totalMs = asset.duration.inMilliseconds;
-
-    // Prefer saved progress; if reset to 0 we start desde el inicio ignorando offset del trigger.
-    // Solo usamos offset del trigger si no se ha hecho reset (savedMs > 0).
-    final triggerOffsetMs = match.offsetMs;
-    final savedMs = path.savedOffsetMs;
-    final effectiveOffsetMs = (savedMs == 0)
-      ? 0
-      : (triggerOffsetMs > 0 ? triggerOffsetMs : savedMs);
-    final startOffset = Duration(milliseconds: effectiveOffsetMs);
-
-    // Si el offset guardado quedó al final del audio, considerar el camino completado y no reproducir.
-    if (totalMs > 0 && startOffset.inMilliseconds >= totalMs - 500) {
-      onLog?.call('Camino completado (offset=${startOffset.inMilliseconds}ms >= total=${totalMs}ms), no se reproduce.');
-      await _geoPathRepository.saveProgress(path.id, totalMs);
-      _activePath = null;
-      _activeTrigger = null;
-      onAudioChanged(null);
-      onStatusUpdate?.call('Camino completado: ${path.name}');
-      return;
-    }
-    onLog?.call('Iniciando reproducción desde offset=${startOffset.inSeconds}s (triggerMs=$triggerOffsetMs savedMs=$savedMs)');
-    await _playbackGateway.playFrom(asset, startOffset);
-      _activePath = path;
-      onLog?.call('Path activado: id=${path.id} offset=${startOffset.inMilliseconds}ms');
-        _activeTrigger = null;
-        onAudioChanged(asset);
-      onStatusUpdate?.call('Reproduciendo camino: ${path.name}');
+      // Si ya estamos reproduciendo el mismo path, no hacer nada.
+      if (_activePath?.uuid == path.uuid) {
+        onLog?.call('Mismo path activo (uuid=${path.uuid}), manteniendo reproducción');
+        onStatusUpdate?.call('Reproduciendo camino: ${path.name}');
         return;
       }
 
-      // Trigger sin path asociado: reproducir su audio directamente
-      onLog?.call('Trigger match id=${match.id} dist=${bestTriggerDist.toStringAsFixed(1)}m radius=${match.radiusMeters}m');
-      final asset = await _audioRepository.findById(match.audioAssetId);
+      final audioUuid = path.audioUuid;
+      if (audioUuid == null) {
+        onStatusUpdate?.call('Path "${path.name}" no tiene audio asignado.');
+        return;
+      }
+
+      final asset = await _audioRepository.findByUuid(audioUuid);
       if (asset == null) {
-        onStatusUpdate?.call('Audio ${match.audioAssetId} no encontrado en la base local.');
+        onStatusUpdate?.call('Audio $audioUuid no encontrado.');
         return;
       }
-      await _playbackGateway.play(asset);
-      _activeTrigger = match;
-      _activePath = null;
+
+      final totalMs = asset.duration.inMilliseconds;
+      final isPortal = path.kind == 'portal';
+
+      // Un portal arranca siempre en 0 (D-03: es el comportamiento que hoy
+      // tienen los triggers sueltos). Un route prefiere el progreso guardado;
+      // si se reseteó a 0 arranca desde el inicio ignorando el offset del trigger.
+      final triggerOffsetMs = match.offsetMs;
+      final savedMs = path.savedOffsetMs;
+      final effectiveOffsetMs = isPortal
+          ? 0
+          : (savedMs == 0 ? 0 : (triggerOffsetMs > 0 ? triggerOffsetMs : savedMs));
+      final startOffset = Duration(milliseconds: effectiveOffsetMs);
+
+      // Si el offset guardado quedó al final del audio, considerar el camino completado y no reproducir.
+      // No aplica a portales: siempre arrancan en 0.
+      if (!isPortal && totalMs > 0 && startOffset.inMilliseconds >= totalMs - 500) {
+        onLog?.call('Camino completado (offset=${startOffset.inMilliseconds}ms >= total=${totalMs}ms), no se reproduce.');
+        await _geoPathRepository.saveProgress(path.uuid, totalMs);
+        _activePath = null;
+        onAudioChanged(null);
+        onStatusUpdate?.call('Camino completado: ${path.name}');
+        return;
+      }
+      onLog?.call('Iniciando reproducción desde offset=${startOffset.inSeconds}s (triggerMs=$triggerOffsetMs savedMs=$savedMs isPortal=$isPortal)');
+      await _playbackGateway.playFrom(asset, startOffset);
+      _activePath = path;
+      onLog?.call('Path activado: uuid=${path.uuid} offset=${startOffset.inMilliseconds}ms');
       onAudioChanged(asset);
-      onStatusUpdate?.call('Reproduciendo zona: ${match.name}');
+      onStatusUpdate?.call('Reproduciendo camino: ${path.name}');
       return;
     } finally {
       _isProcessing = false;
     }
   }
 }
-

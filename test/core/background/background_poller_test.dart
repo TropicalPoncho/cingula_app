@@ -18,7 +18,7 @@ class _FakeGeoTriggerRepository implements GeoTriggerRepository {
   _FakeGeoTriggerRepository(this._list);
 
   @override
-  Future<int> deleteByAudioAssetId(int audioAssetId) async => 0;
+  Future<int> deleteByPathUuid(String pathUuid) async => 0;
 
   @override
   Future<int> deleteOrphaned() async => 0;
@@ -27,13 +27,14 @@ class _FakeGeoTriggerRepository implements GeoTriggerRepository {
   Future<List<GeoTrigger>> fetchAll() async => _list;
 
   @override
-  Future<List<GeoTrigger>> fetchByPathId(int pathId) async => _list.where((t) => t.geoPathId == pathId).toList();
+  Future<List<GeoTrigger>> fetchByPathUuid(String pathUuid) async =>
+      _list.where((t) => t.pathUuid == pathUuid).toList();
 
   @override
   Future<GeoTrigger?> findMatch(Coordinate coordinate) async => null;
 
   @override
-  Future<int> insertTrigger(Map<String, Object?> values) async => 1;
+  Future<String> insertTrigger(Map<String, Object?> values) async => 'trigger-generated';
 }
 
 class _FakeLocationRepository implements LocationRepository {
@@ -85,7 +86,7 @@ class _NoopLocationRepo implements LocationRepository {
 
 class _NoopGeoTriggerRepo implements GeoTriggerRepository {
   @override
-  Future<int> deleteByAudioAssetId(int audioAssetId) async => 0;
+  Future<int> deleteByPathUuid(String pathUuid) async => 0;
 
   @override
   Future<int> deleteOrphaned() async => 0;
@@ -94,36 +95,42 @@ class _NoopGeoTriggerRepo implements GeoTriggerRepository {
   Future<List<GeoTrigger>> fetchAll() async => [];
 
   @override
-  Future<List<GeoTrigger>> fetchByPathId(int pathId) async => [];
+  Future<List<GeoTrigger>> fetchByPathUuid(String pathUuid) async => [];
 
   @override
   Future<GeoTrigger?> findMatch(Coordinate coordinate) async => null;
 
   @override
-  Future<int> insertTrigger(Map<String, Object?> values) async => 1;
+  Future<String> insertTrigger(Map<String, Object?> values) async => 'trigger-generated';
 }
 
 class _NoopGeoPathRepo implements GeoPathRepository {
   @override
-  Future<int> createPath({required String name, required int audioAssetId, double toleranceMeters = 10.0}) async => 1;
+  Future<String> createPath({
+    required String name,
+    String? audioUuid,
+    String? obraUuid,
+    String kind = 'route',
+    double toleranceMeters = 10.0,
+  }) async => 'path-generated';
 
   @override
-  Future<int> deleteByAudioAssetId(int audioAssetId) async => 0;
+  Future<int> deleteByAudioUuid(String audioUuid) async => 0;
 
   @override
-  Future<int> deleteById(int pathId) async => 0;
+  Future<int> deleteByUuid(String pathUuid) async => 0;
 
   @override
   Future<List<GeoPath>> fetchAll() async => [];
 
   @override
-  Future<GeoPath?> fetchById(int id) async => null;
+  Future<GeoPath?> fetchByUuid(String uuid) async => null;
 
   @override
-  Future<void> saveProgress(int pathId, int offsetMs) async {}
+  Future<void> saveProgress(String pathUuid, int offsetMs) async {}
 
   @override
-  Future<void> updateAudio({required int pathId, required int audioAssetId}) async {}
+  Future<void> updateAudio({required String pathUuid, required String audioUuid}) async {}
 }
 
 class _NoopAudioRepo implements AudioRepository {
@@ -131,18 +138,18 @@ class _NoopAudioRepo implements AudioRepository {
   Future<List<AudioAsset>> fetchAll() async => [];
 
   @override
-  Future<AudioAsset?> findById(int id) async => null;
+  Future<AudioAsset?> findByUuid(String uuid) async => null;
 
   @override
-  Future<int> insertLocalRecording({
+  Future<String> insertLocalRecording({
     required String title,
     required String description,
     required String localPath,
     required Duration duration,
-  }) async => 1;
+  }) async => 'audio-generated';
 
   @override
-  Future<void> updateDuration({required int id, required Duration duration}) async {}
+  Future<void> updateDuration({required String uuid, required Duration duration}) async {}
 }
 
 class _NoopPlaybackGateway implements AudioPlaybackGateway {
@@ -173,13 +180,13 @@ void main() {
 
     // create a trigger exactly at origin -> nearest = 0
     final trigger = GeoTrigger(
-      id: 1,
+      uuid: 'trigger-1',
+      pathUuid: 'path-1',
       name: 't',
       description: '',
       latitude: 0.0,
       longitude: 0.0,
       radiusMeters: 10.0,
-      audioAssetId: 1,
     );
     final triggerRepo = _FakeGeoTriggerRepository([trigger]);
 
