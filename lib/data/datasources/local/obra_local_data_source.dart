@@ -4,7 +4,8 @@ import 'sync_local_data_source.dart';
 import '../../migration/cover.dart';
 import '../../models/obra_model.dart';
 
-/// Acceso a `obras`. `artistas`/`obra_artistas` existen vacías y sin consumidor en 2.1.
+/// Acceso a `obras`. Las tablas de coautoría del backend (ver TABLE_SPEC) existen
+/// vacías y sin consumidor en 2.1.
 class ObraLocalDataSource {
   ObraLocalDataSource(this._database, this._sync);
 

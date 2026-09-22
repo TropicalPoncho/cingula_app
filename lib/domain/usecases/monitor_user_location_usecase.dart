@@ -55,7 +55,6 @@ class MonitorUserLocationUseCase {
     required void Function(AudioAsset? asset) onAudioChanged,
     void Function(String message)? onStatusUpdate,
     void Function(String log)? onLog,
-    void Function(String samplingMode)? onStateChanged,
   }) async {
     if (_isRunning) return;
 

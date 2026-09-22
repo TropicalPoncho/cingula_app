@@ -20,11 +20,8 @@ class PlaybackNotifier extends ChangeNotifier {
   String? _statusMessage;
   String? _errorMessage;
   final List<String> _logs = [];
-  String _samplingMode = 'coarse';
 
   List<String> get logs => List.unmodifiable(_logs);
-
-  String get samplingMode => _samplingMode;
 
   AudioAsset? get currentAsset => _currentAsset;
   bool get isMonitoring => _isMonitoring;
@@ -49,7 +46,6 @@ class PlaybackNotifier extends ChangeNotifier {
         onAudioChanged: _handleAudioChanged,
         onStatusUpdate: _handleStatusUpdate,
         onLog: _addLog,
-        onStateChanged: _handleStateChanged,
       );
       _statusMessage = 'Monitoreo activo';
     } catch (error) {
@@ -59,11 +55,6 @@ class PlaybackNotifier extends ChangeNotifier {
     } finally {
       notifyListeners();
     }
-  }
-
-  void _handleStateChanged(String mode) {
-    _samplingMode = mode;
-    notifyListeners();
   }
 
   void _addLog(String? log) {
