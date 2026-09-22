@@ -1,22 +1,36 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../../migration/db_backup.dart';
+import '../../migration/v7_migration.dart';
+import '../../migration/v7_schema.dart';
 import 'db_recovery.dart';
 import 'seed_data.dart';
 
 /// Gestiona la instancia de SQLite y crea tablas iniciales.
 class AppDatabase {
   static const _dbName = 'cingula.db';
-  static const _dbVersion = 6;
+  static const _dbVersion = 7;
 
   Database? _database;
 
   /// Registro del último evento de recuperación de base (null si no hubo).
   /// La UI lo lee una vez tras el primer frame y lo limpia (ver plan 01-03).
   DatabaseRecoveryEvent? lastRecoveryEvent;
+
+  /// Ruta del respaldo tomado ANTES de migrar a v7 (null si no hubo migración
+  /// en este `init()`), para el aviso D-19/D-26.
+  String? lastBackupPath;
+
+  /// Costura de test para forzar el camino de "discrepancia de verificación"
+  /// (D-25) a través de `init()`, sin exponer nada nuevo en su firma: reusa
+  /// el mismo hook `onBeforeVerify` que ya expone `migrateToV7`.
+  @visibleForTesting
+  Future<void> Function(DatabaseExecutor db)? debugOnBeforeVerifyV7;
 
   Database get database {
     final db = _database;
@@ -27,19 +41,27 @@ class AppDatabase {
   }
 
   /// Abre o crea el archivo de base de datos en almacenamiento seguro.
-  Future<void> init() async {
+  /// [dbPath] y [factory] existen SOLO para poder probar `init()` sin
+  /// dispositivo: por defecto son `getApplicationDocumentsDirectory()` + el
+  /// `databaseFactory` global, exactamente el comportamiento de hoy.
+  Future<void> init({String? dbPath, DatabaseFactory? factory}) async {
     if (_database != null) return;
 
-    final directory = await getApplicationDocumentsDirectory();
-    final path = p.join(directory.path, _dbName);
+    final f = factory ?? databaseFactory;
+    final path = dbPath ?? p.join((await getApplicationDocumentsDirectory()).path, _dbName);
 
     try {
-      _database = await openDatabase(
+      // Respaldo tomado ANTES de abrir en v7: `onUpgrade` no puede copiar de
+      // forma segura la base que tiene abierta.
+      lastBackupPath = await backupBeforeMigration(path, DateTime.now(), factory: f);
+      _database = await f.openDatabase(
         path,
-        version: _dbVersion,
-        onCreate: _onCreate,
-        onUpgrade: _onUpgrade,
+        options: OpenDatabaseOptions(version: _dbVersion, onCreate: _onCreate, onUpgrade: _onUpgrade),
       );
+    } on MigrationException {
+      rethrow; // NO entra al camino de "BD corrupta": la base sana no se toca.
+    } on BackupFailedException {
+      rethrow; // sin respaldo confiable no se migra.
     } catch (e) {
       stderr.writeln(
         'Database init failed: $e. Renombrando el archivo existente y arrancando en limpio...',
@@ -48,11 +70,9 @@ class AppDatabase {
       // no arrancar antes que destruir datos del usuario (DATA-01).
       final backupPath = await renameCorruptDatabase(path, DateTime.now());
 
-      _database = await openDatabase(
+      _database = await f.openDatabase(
         path,
-        version: _dbVersion,
-        onCreate: _onCreate,
-        onUpgrade: _onUpgrade,
+        options: OpenDatabaseOptions(version: _dbVersion, onCreate: _onCreate, onUpgrade: _onUpgrade),
       );
 
       if (backupPath != null) {
@@ -62,79 +82,14 @@ class AppDatabase {
   }
 
   Future<void> _onCreate(Database db, int version) async {
-    await db.execute('''
-      CREATE TABLE audio_assets (
-        id INTEGER PRIMARY KEY,
-        title TEXT NOT NULL,
-        artist TEXT NOT NULL,
-        description TEXT NOT NULL,
-        duration_seconds INTEGER NOT NULL,
-        local_path TEXT NOT NULL,
-        remote_url TEXT,
-        uuid TEXT,
-        updated_at INTEGER,
-        deleted_at INTEGER,
-        logical_version INTEGER
-      );
-    ''');
+    await createV7Tables(db);
+    await _createSyncTables(db);
+    await SeedData.seed(db);
+  }
 
-    await db.execute('''
-      CREATE TABLE geo_triggers (
-        id INTEGER PRIMARY KEY,
-        name TEXT NOT NULL,
-        description TEXT NOT NULL,
-        latitude REAL NOT NULL,
-        longitude REAL NOT NULL,
-        radius_meters REAL NOT NULL,
-        audio_asset_id INTEGER NOT NULL,
-        geo_path_id INTEGER,
-        offset_ms INTEGER NOT NULL DEFAULT 0,
-        region_id INTEGER,
-        uuid TEXT,
-        updated_at INTEGER,
-        deleted_at INTEGER,
-        logical_version INTEGER,
-        FOREIGN KEY(audio_asset_id) REFERENCES audio_assets(id),
-        FOREIGN KEY(geo_path_id) REFERENCES geo_paths(id),
-        FOREIGN KEY(region_id) REFERENCES regions(id)
-      );
-    ''');
-
-    await db.execute('''
-      CREATE TABLE geo_paths (
-        id INTEGER PRIMARY KEY,
-        name TEXT NOT NULL,
-        points TEXT NOT NULL,
-        audio_asset_id INTEGER NOT NULL,
-        tolerance_meters REAL NOT NULL DEFAULT 10.0,
-        saved_offset_ms INTEGER NOT NULL DEFAULT 0,
-        uuid TEXT,
-        updated_at INTEGER,
-        deleted_at INTEGER,
-        logical_version INTEGER,
-        FOREIGN KEY(audio_asset_id) REFERENCES audio_assets(id)
-      );
-    ''');
-
-    // legacy-upgrade: no tocar
-    await db.execute('''
-      CREATE TABLE regions (
-        id INTEGER PRIMARY KEY,
-        name TEXT NOT NULL,
-        center_lat REAL NOT NULL,
-        center_lon REAL NOT NULL,
-        radius_meters REAL NOT NULL,
-        sample_coarse_seconds INTEGER NOT NULL DEFAULT 30,
-        sample_fine_seconds INTEGER NOT NULL DEFAULT 2,
-        coarse_distance_filter_meters INTEGER DEFAULT 500,
-        fine_distance_filter_meters INTEGER DEFAULT 5,
-        uuid TEXT,
-        updated_at INTEGER,
-        deleted_at INTEGER,
-        logical_version INTEGER
-      );
-    ''');
-
+  /// sync_outbox/sync_state no cambian de forma en este plan (no son parte del
+  /// esquema nuevo de entidades en `v7_schema.dart`): se crean tal cual venían.
+  Future<void> _createSyncTables(Database db) async {
     await db.execute('''
       CREATE TABLE sync_outbox (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -157,11 +112,10 @@ class AppDatabase {
         device_id TEXT
       );
     ''');
-
-    await SeedData.seed(db);
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    // legacy-upgrade: no tocar (camino que lleva una base vieja hasta v6).
     if (oldVersion < 2) {
       await db.execute('''
         CREATE TABLE IF NOT EXISTS geo_paths (
@@ -236,6 +190,7 @@ class AppDatabase {
       }
     }
 
+    // legacy-upgrade: no tocar
     if (oldVersion < 5) {
       try {
         await db.execute('''
@@ -265,10 +220,28 @@ class AppDatabase {
       } catch (_) {}
     }
 
+    // legacy-upgrade: no tocar
     if (oldVersion < 6) {
       try {
         await db.execute('ALTER TABLE sync_outbox ADD COLUMN next_attempt_at INTEGER;');
       } catch (_) {}
+    }
+
+    if (oldVersion < 7) {
+      try {
+        // ignore: invalid_use_of_visible_for_testing_member
+        await migrateToV7(db, onBeforeVerify: debugOnBeforeVerifyV7);
+      } on MigrationException {
+        rethrow; // ya viene normalizada.
+      } catch (e) {
+        // D-25: CUALQUIER otro fallo tiene que llegar a init() como MigrationException.
+        // Si sale crudo, el catch genérico de init() lo trata como "BD corrupta", renombra
+        // una base SANA y arranca vacía: exactamente el escenario que esta fase existe para
+        // evitar.
+        throw MigrationException('Falló la migración v6→v7', cause: e);
+      }
+      // NO envolver en db.transaction(): sqflite ya corre onUpgrade dentro de una
+      // transacción exclusiva, y esa transacción es la que revierte todo si esto lanza.
     }
   }
 
@@ -315,26 +288,33 @@ class AppDatabase {
 
     final audioCount =
         Sqflite.firstIntValue(
-          await _database!.rawQuery('SELECT COUNT(*) FROM audio_assets'),
+          await _database!.rawQuery('SELECT COUNT(*) FROM audios'),
         ) ??
         0;
 
-    final triggersCount =
+    final obraCount =
         Sqflite.firstIntValue(
-          await _database!.rawQuery('SELECT COUNT(*) FROM geo_triggers'),
+          await _database!.rawQuery('SELECT COUNT(*) FROM obras'),
         ) ??
         0;
 
     final pathsCount =
         Sqflite.firstIntValue(
-          await _database!.rawQuery('SELECT COUNT(*) FROM geo_paths'),
+          await _database!.rawQuery('SELECT COUNT(*) FROM paths'),
+        ) ??
+        0;
+
+    final triggersCount =
+        Sqflite.firstIntValue(
+          await _database!.rawQuery('SELECT COUNT(*) FROM triggers'),
         ) ??
         0;
 
     return {
-      'audio_assets': audioCount,
-      'geo_triggers': triggersCount,
-      'geo_paths': pathsCount,
+      'audios': audioCount,
+      'obras': obraCount,
+      'paths': pathsCount,
+      'triggers': triggersCount,
     };
   }
 }

@@ -1,69 +1,84 @@
-﻿import 'package:sqflite/sqflite.dart';
+import 'package:sqflite/sqflite.dart';
 
 /// Datos iniciales para que la app funcione offline desde el arranque.
+///
+/// Corre dentro de `_onCreate` (instalación limpia): sin `enqueueOutbox`, igual
+/// que antes. Los uuid son literales fijos (no generados) para que una
+/// instalación limpia y un celular migrado nunca puedan chocar (D-32).
 class SeedData {
+  static const _audioMilPuertasUuid = '00000000-0000-4000-8000-000000000001';
+  static const _audioOleajeUuid = '00000000-0000-4000-8000-000000000002';
+  static const _obraUuid = '00000000-0000-4000-8000-000000000010';
+  static const _pathUuid = '00000000-0000-4000-8000-000000000020';
+  static const _triggerUuid = '00000000-0000-4000-8000-000000000030';
+
   static Future<void> seed(Database db) async {
+    final nowSec = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final batch = db.batch();
 
-    for (final asset in _audioAssets) {
-      batch.insert('audio_assets', asset, conflictAlgorithm: ConflictAlgorithm.ignore);
-    }
-
-    for (final trigger in _geoTriggers) {
-      batch.insert('geo_triggers', trigger, conflictAlgorithm: ConflictAlgorithm.ignore);
-    }
-
-    for (final path in _geoPaths) {
-      batch.insert('geo_paths', path, conflictAlgorithm: ConflictAlgorithm.ignore);
-    }
-
-    await batch.commit(noResult: true);
-  }
-
-  static const List<Map<String, Object?>> _audioAssets = [
-    {
-      'id': 1,
+    batch.insert('audios', {
+      'uuid': _audioMilPuertasUuid,
+      'kind': 'grabacion',
       'title': 'Mil Puertas',
-      'artist': 'Vel',
       'description': 'Poema de vel: Mil Puertas.',
       'duration_seconds': 89,
+      'updated_at': nowSec,
+      'logical_version': 1,
+    }, conflictAlgorithm: ConflictAlgorithm.ignore);
+    batch.insert('audio_local', {
+      'audio_uuid': _audioMilPuertasUuid,
       'local_path': 'assets/audio/mil_puertas.wav',
       'remote_url': 'https://example.com/audio/bosque_tropical.mp3',
-    },
-    {
-      'id': 2,
+    }, conflictAlgorithm: ConflictAlgorithm.ignore);
+
+    batch.insert('audios', {
+      'uuid': _audioOleajeUuid,
+      'kind': 'grabacion',
       'title': 'Oleaje marino',
-      'artist': 'Equipo Cingula',
       'description': 'Sonido de olas suaves para acompañar paseos costeros.',
       'duration_seconds': 150,
+      'updated_at': nowSec,
+      'logical_version': 1,
+    }, conflictAlgorithm: ConflictAlgorithm.ignore);
+    batch.insert('audio_local', {
+      'audio_uuid': _audioOleajeUuid,
       // Reutilizamos el asset existente hasta que se agregue el mp3 final.
       'local_path': 'assets/audio/mil_puertas.wav',
       'remote_url': 'https://example.com/audio/oleaje_marino.mp3',
-    },
-  ];
+    }, conflictAlgorithm: ConflictAlgorithm.ignore);
 
-  static const List<Map<String, Object?>> _geoTriggers = [
-    {
-      'id': 1,
+    batch.insert('obras', {
+      'uuid': _obraUuid,
+      'name': 'Paseo costero demo',
+      'visibility': 'draft',
+      'updated_at': nowSec,
+      'logical_version': 1,
+    }, conflictAlgorithm: ConflictAlgorithm.ignore);
+
+    batch.insert('paths', {
+      'uuid': _pathUuid,
+      'obra_uuid': _obraUuid,
+      'kind': 'route',
+      'name': 'Paseo costero demo',
+      'audio_uuid': _audioOleajeUuid,
+      'tolerance_meters': 20.0,
+      'updated_at': nowSec,
+      'logical_version': 1,
+    }, conflictAlgorithm: ConflictAlgorithm.ignore);
+
+    batch.insert('triggers', {
+      'uuid': _triggerUuid,
+      'path_uuid': _pathUuid,
+      'position': 0,
       'name': 'Malecón Guayaquil',
       'description': 'Zona principal del malecón',
       'latitude': -34.786151,
       'longitude': -58.409156,
       'radius_meters': 10.0,
-      'audio_asset_id': 1,
-      'geo_path_id': 1,
-    }
-  ];
+      'updated_at': nowSec,
+      'logical_version': 1,
+    }, conflictAlgorithm: ConflictAlgorithm.ignore);
 
-  static const List<Map<String, Object?>> _geoPaths = [
-    {
-      'id': 1,
-      'name': 'Paseo costero demo',
-      'points': '[{"lat": -2.1900, "lon": -79.8860}, {"lat": -2.1895, "lon": -79.8850}]',
-      'audio_asset_id': 2,
-      'tolerance_meters': 20.0,
-      'saved_offset_ms': 0,
-    },
-  ];
+    await batch.commit(noResult: true);
+  }
 }
-
