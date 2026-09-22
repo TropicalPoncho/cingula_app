@@ -88,7 +88,7 @@ Plans:
 - [x] 02.1-08-PLAN.md — Capa de datos por uuid: esquema v7 activo, migración cableada con guarda D-25, data sources y repositorios (MODEL-01, MODEL-02, MODEL-04, MODEL-05)
 - [x] 02.1-09-PLAN.md — Consumidores y UI por uuid: monitor, grabador, panel, pantalla bloqueante de fallo de migración, árbol en verde (MODEL-01, MODEL-05, MODEL-07)
 - [x] 02.1-10-PLAN.md — Sección Obra del panel (D-22), cobertura derivada al día, obra en el data browser (MODEL-02, MODEL-07)
-- [ ] 02.1-11-PLAN.md — Auditoría ponytail + revisión SQLite viejo + cierre del mapa de validación (MODEL-02, MODEL-03, MODEL-04, MODEL-07)
+- [x] 02.1-11-PLAN.md — Auditoría ponytail + revisión SQLite viejo + cierre del mapa de validación (MODEL-02, MODEL-03, MODEL-04, MODEL-07)
 - [ ] 02.1-12-PLAN.md — [compuerta humana] Rama de Neon, ensayo, verificación en emulador, respaldo independiente y corte (MODEL-05, MODEL-06, MODEL-08)
 
 ### Phase 2.2: Subida de Audios a Storage (INSERTED)

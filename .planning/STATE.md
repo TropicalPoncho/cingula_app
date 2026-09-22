@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02.1-10-PLAN.md
-last_updated: "2026-09-22T02:45:17.206Z"
+stopped_at: Completed 02.1-11-PLAN.md
+last_updated: "2026-09-22T02:57:22.456Z"
 last_activity: 2026-09-22
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 21
-  completed_plans: 19
+  completed_plans: 20
   percent: 89
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-08-08)
 ## Current Position
 
 Phase: 02.1 (modelo-de-datos-objetivo) — EXECUTING
-Plan: 11 of 12
+Plan: 12 of 12
 Status: Ready to execute
   During setup, a real production bug surfaced on the user's own device: SyncTrigger was
   swallowing push exceptions (only a status enum survived, no message, nowhere) and 8 stale
@@ -85,6 +85,7 @@ Progress: [█████████░] 89%
 | Phase 02.1 P08 | 40min | 3 tasks | 29 files |
 | Phase 02.1 P09 | 25min | 2 tasks | 13 files |
 | Phase 02.1 P10 | 35min | 3 tasks | 10 files |
+| Phase 02.1 P11 | 35min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -125,6 +126,8 @@ Recent decisions affecting current work:
 - [Phase 02.1]: [Phase 02.1 Plan 09]: aviso de respaldo exitoso (D-19/D-26) implementado en home_page_impl.dart via AppDatabase.lastBackupPath, mismo patron one-shot que lastRecoveryEvent
 - [Phase 02.1]: [Phase 02.1 Plan 10]: GeoTriggerLocalDataSource.onObraTouched (closure opcional) cablea insert/deleteByPathUuid/deleteOrphaned a ObraRepository.refreshCover, evitando dependencia circular directa entre data sources
 - [Phase 02.1]: [Phase 02.1 Plan 10]: GeoPathLocalDataSource.deleteByUuid no dispara refreshCover (borra triggers por SQL directo, fuera del files_modified de este plan) -- diferido, no arreglado
+- [Phase 02.1]: [Phase 02.1 Plan 11]: ponytail audit borro la cadena onStateChanged/samplingMode (MonitorUserLocationUseCase -> PlaybackNotifier), ya senalada como candidata en 02.1-06-SUMMARY.md
+- [Phase 02.1]: [Phase 02.1 Plan 11]: MODEL-06 se deja explicitamente en Pending en 02.1-VALIDATION.md; el gap de ~117 filas sin title/name en Neon no se fuerza a verde
 
 ### Roadmap Evolution
 
@@ -147,6 +150,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-22T02:45:17.201Z
-Stopped at: Completed 02.1-10-PLAN.md
+Last session: 2026-09-22T02:57:22.445Z
+Stopped at: Completed 02.1-11-PLAN.md
 Resume file: None
