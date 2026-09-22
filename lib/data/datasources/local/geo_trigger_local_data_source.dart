@@ -5,10 +5,25 @@ import '../../models/geo_trigger_model.dart';
 
 /// Acceso directo a la tabla `triggers`.
 class GeoTriggerLocalDataSource {
-  GeoTriggerLocalDataSource(this._database, this._sync);
+  GeoTriggerLocalDataSource(this._database, this._sync, {this.onObraTouched});
 
   final Database _database;
   final SyncLocalDataSource _sync;
+
+  /// Se invoca con el obra_uuid afectado tras insertar/borrar triggers, para que la
+  /// cobertura de la obra se mantenga al día (D-16/D-29). Nullable: en tests que no
+  /// necesitan cobertura, y para evitar una dependencia circular directa con
+  /// ObraLocalDataSource, se cablea desde service_locator.dart a ObraRepository.refreshCover.
+  final Future<void> Function(String obraUuid)? onObraTouched;
+
+  Future<void> _touchObraForPath(String pathUuid) async {
+    if (onObraTouched == null) return;
+    final rows = await _database.query('paths', columns: ['obra_uuid'], where: 'uuid = ?', whereArgs: [pathUuid], limit: 1);
+    if (rows.isEmpty) return;
+    final obraUuid = rows.first['obra_uuid'] as String?;
+    if (obraUuid == null) return;
+    await onObraTouched!(obraUuid);
+  }
 
   Future<List<GeoTriggerModel>> getAll() async {
     final rows = await _database.query('triggers');
@@ -26,9 +41,14 @@ class GeoTriggerLocalDataSource {
   }
 
   Future<int> _deleteWhere(String where, List<Object?> args) async {
-    final rows = await _database.query('triggers', columns: ['uuid', 'logical_version'], where: where, whereArgs: args);
+    final rows = await _database.query('triggers', columns: ['uuid', 'logical_version', 'path_uuid'], where: where, whereArgs: args);
     final deleted = await _database.delete('triggers', where: where, whereArgs: args);
     await _sync.enqueueDeletes('triggers', rows);
+    // Una sola llamada por path afectado, no por trigger.
+    final pathUuids = rows.map((r) => r['path_uuid'] as String).toSet();
+    for (final pathUuid in pathUuids) {
+      await _touchObraForPath(pathUuid);
+    }
     return deleted;
   }
 
@@ -51,6 +71,7 @@ class GeoTriggerLocalDataSource {
     await _database.insert('triggers', stamped);
     final uuid = stamped['uuid'] as String;
     await _sync.enqueueOutbox(tableName: 'triggers', recordUuid: uuid, op: 'insert', payload: stamped);
+    await _touchObraForPath(pathUuid);
     return uuid;
   }
 }

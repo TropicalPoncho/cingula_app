@@ -29,6 +29,9 @@ class _FakeObraRepository implements ObraRepository {
     _obras.add(Obra(uuid: uuid, name: name));
     return uuid;
   }
+
+  @override
+  Future<void> refreshCover(String obraUuid) async {}
 }
 
 void main() {

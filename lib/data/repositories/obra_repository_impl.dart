@@ -17,4 +17,7 @@ class ObraRepositoryImpl implements ObraRepository {
 
   @override
   Future<String> createDraft(String name) => _local.createDraft(name);
+
+  @override
+  Future<void> refreshCover(String obraUuid) => _local.refreshCover(obraUuid);
 }

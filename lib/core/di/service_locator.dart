@@ -102,7 +102,13 @@ Future<void> setupServiceLocator({bool reinitialize = false}) async {
     () => AudioLocalDataSource(database.database, getIt<SyncLocalDataSource>()),
   );
   getIt.registerLazySingleton<GeoTriggerLocalDataSource>(
-    () => GeoTriggerLocalDataSource(database.database, getIt<SyncLocalDataSource>()),
+    // onObraTouched se resuelve perezosamente (closure) para no forzar la instanciación
+    // de ObraRepository antes de que quede registrado más abajo.
+    () => GeoTriggerLocalDataSource(
+      database.database,
+      getIt<SyncLocalDataSource>(),
+      onObraTouched: (obraUuid) => getIt<ObraRepository>().refreshCover(obraUuid),
+    ),
   );
   getIt.registerLazySingleton<GeoPathLocalDataSource>(
     () => GeoPathLocalDataSource(database.database, getIt<SyncLocalDataSource>()),
