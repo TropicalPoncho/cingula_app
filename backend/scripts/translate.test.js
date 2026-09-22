@@ -86,6 +86,55 @@ test('logical_version nulo -> 1 con advertencia; audio del trigger suelto resuel
   assert.equal(portal.audio_uuid, 'a0000000-0000-4000-8000-000000000003');
 });
 
+test('columnas NOT NULL DEFAULT en schema.sql: null explicito se completa con el default, no rompe el insert', () => {
+  const { tables } = translate(rows);
+  // Rec 3 (fixture) no manda description ni duration_seconds.
+  const rec3 = tables.audios.find((a) => a.uuid.endsWith('03'));
+  assert.equal(rec3.description, '');
+  assert.equal(rec3.duration_seconds, 0);
+  const noTolerance = {
+    table_name: 'geo_paths', record_uuid: 'dddddddd-0000-4000-8000-000000000001', op: 'insert',
+    current_version: 1, current_updated_at: '2026-01-01T00:00:00Z',
+    current_payload: { id: 60, uuid: 'dddddddd-0000-4000-8000-000000000001', name: 'Sin tolerancia', logical_version: 1, updated_at: 1 },
+  };
+  const { tables: t2 } = translate([...rows, noTolerance]);
+  const p = t2.paths.find((x) => x.uuid === 'dddddddd-0000-4000-8000-000000000001');
+  assert.equal(p.tolerance_meters, 10.0);
+});
+
+test('content override: completa title/name faltante', () => {
+  const noName = {
+    table_name: 'geo_paths', record_uuid: 'cccccccc-0000-4000-8000-000000000001', op: 'insert',
+    current_version: 1, current_updated_at: '2026-01-01T00:00:00Z',
+    current_payload: { id: 50, uuid: 'cccccccc-0000-4000-8000-000000000001', tolerance_meters: 5, logical_version: 1, updated_at: 1 },
+  };
+  const rowsWithGap = [...rows, noName];
+  const overrides2 = { 'cccccccc-0000-4000-8000-000000000001': 'Nombre real' };
+  const { tables, warnings } = translate(rowsWithGap, {}, overrides2);
+  const p = tables.paths.find((x) => x.uuid === 'cccccccc-0000-4000-8000-000000000001');
+  assert.equal(p.name, 'Nombre real');
+  assert.ok(!warnings.some((w) => /content override/.test(w)));
+});
+
+test('content override: NO pisa un title/name que ya existe, y avisa', () => {
+  const contentOverrides = { 'a0000000-0000-4000-8000-000000000001': 'Otro titulo' };
+  const { tables, warnings } = translate(rows, {}, contentOverrides);
+  const a = tables.audios.find((x) => x.uuid === 'a0000000-0000-4000-8000-000000000001');
+  assert.equal(a.title, 'Rec 1'); // valor original del fixture, sin pisar
+  assert.ok(warnings.some((w) => /content override.*ignorado/.test(w) && w.includes('a0000000-0000-4000-8000-000000000001')));
+});
+
+test('sin content override para una fila con title/name faltante: sigue fallando validacion (fail-safe sin cambios)', () => {
+  const noName = {
+    table_name: 'geo_paths', record_uuid: 'cccccccc-0000-4000-8000-000000000002', op: 'insert',
+    current_version: 1, current_updated_at: '2026-01-01T00:00:00Z',
+    current_payload: { id: 51, uuid: 'cccccccc-0000-4000-8000-000000000002', tolerance_meters: 5, logical_version: 1, updated_at: 1 },
+  };
+  const { tables } = translate([...rows, noName]);
+  const p = tables.paths.find((x) => x.uuid === 'cccccccc-0000-4000-8000-000000000002');
+  assert.equal(p.name, null); // no hay override: sigue nulo, la validacion de outbox lo rechaza aguas abajo
+});
+
 test('no filtra columnas locales', () => {
   const { tables } = translate(rows);
   for (const [t, list] of Object.entries(tables)) {

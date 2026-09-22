@@ -11,6 +11,10 @@ import { translate } from './translate.js';
 // Ids de SQLite reutilizados (delete+recreate) que un humano ya resolvió a mano mirando la copia
 // local de la BD del celular. Ver 02.1-NEON-REHEARSAL.md.
 const overrides = JSON.parse(readFileSync(new URL('./id_overrides.json', import.meta.url), 'utf8'));
+// uuid -> title/name real, para filas de synced_entities donde ambas versiones retenidas perdieron
+// el campo (pushes parciales del cliente v6 viejo + retención actual+1). Mismo origen (copia local
+// de la BD del celular), mecanismo separado: nunca pisa un valor ya presente. Ver 02.1-NEON-REHEARSAL.md.
+const contentOverrides = JSON.parse(readFileSync(new URL('./content_overrides.json', import.meta.url), 'utf8'));
 
 const args = process.argv.slice(2);
 const apply = args.includes('--apply');
@@ -43,7 +47,7 @@ if (finalize) {
 const rows = await sql.query('SELECT * FROM synced_entities');
 let result;
 try {
-  result = translate(rows, overrides);
+  result = translate(rows, overrides, contentOverrides);
 } catch (e) {
   console.error('ABORTA:', e.message);
   process.exit(1);

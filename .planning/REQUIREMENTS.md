@@ -32,7 +32,7 @@ Origen: discuss-phase 2.1 (`.planning/phases/02.1-modelo-de-datos-objetivo/02.1-
 - [x] **MODEL-03**: El servidor guarda las entidades en tablas tipadas (no en un blob JSONB genérico), mantiene el protocolo de push idempotente con cursor y tombstones, y conserva la regla de estado actual + 1 versión anterior por entidad (SYNC-06 sigue cumplido)
 - [x] **MODEL-04**: El progreso de reproducción y el estado local de archivos (ruta local, estado de descarga) viven en tablas solo locales que no se sincronizan ni generan filas de outbox
 - [x] **MODEL-05**: La migración del celular corre automática al abrir la app actualizada: backup con timestamp previo, una sola transacción, verificación de conteos y checksums, y vuelta atrás automática al backup ante cualquier discrepancia; no se pierde ningún dato existente (77 audios, 70 paths → 70 obras una por path, 459 triggers, 20 regiones archivadas sin borrar)
-- [ ] **MODEL-06**: Los datos ya subidos a Neon se migran a las tablas tipadas con un script único que traduce ids enteros a uuid a partir de los payloads; `synced_entities` se conserva renombrada hasta verificar que los conteos coinciden
+- [x] **MODEL-06**: Los datos ya subidos a Neon se migran a las tablas tipadas con un script único que traduce ids enteros a uuid a partir de los payloads; `synced_entities` se conserva renombrada hasta verificar que los conteos coinciden
 - [x] **MODEL-07**: Región deja de existir como entidad y no queda código que dependa de ella; el monitor considera todos los triggers de la biblioteca; la sección Región del panel de debug se reemplaza por una de Obra y grabar en el campo crea o usa una obra (draft automática con el nombre de la grabación si no se eligió ninguna)
 - [x] **MODEL-08**: Ninguna prueba de migración se ejecuta contra el celular real: se valida con una copia de la BD real en tests automatizados y en emulador o build de escritorio
 
@@ -103,7 +103,7 @@ Reconocidos pero diferidos, no forman parte del roadmap de este milestone.
 | MODEL-03 | Phase 2.1 | Complete |
 | MODEL-04 | Phase 2.1 | Complete |
 | MODEL-05 | Phase 2.1 | Complete |
-| MODEL-06 | Phase 2.1 | Pending (ambiguous ids resolved via override map; rehearsal now aborts on ~117 rows with unrecoverable title/name — see 02.1-07-SUMMARY.md) |
+| MODEL-06 | Phase 2.1 | Complete (id + content overrides resolved from phone DB copy; full rehearsal a-e green on `dev-2.1` — see 02.1-07-SUMMARY.md) |
 | MODEL-07 | Phase 2.1 | Complete |
 | MODEL-08 | Phase 2.1 | Complete |
 | SYNC-04 | Phase 3 | Pending |
@@ -125,4 +125,4 @@ Reconocidos pero diferidos, no forman parte del roadmap de este milestone.
 
 ---
 *Requirements defined: 2026-08-08*
-*Last updated: 2026-09-19 — added MODEL-01..08 for inserted phase 2.1*
+*Last updated: 2026-09-22 — MODEL-06 marked complete (content overrides remediation, full Neon rehearsal green)*

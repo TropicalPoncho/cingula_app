@@ -50,11 +50,42 @@ export function buildIdMap(rows, overrides = {}) {
   return { map, ambiguous, resolved };
 }
 
-// Solo las claves del spec (el generador de SQL rechaza cualquier otra); faltantes = null.
-const pick = (t, src) =>
-  Object.fromEntries(Object.keys(TABLE_SPEC[t].columns).map((c) => [c, src[c] ?? null]));
+// Columnas NOT NULL DEFAULT <valor> en schema.sql que REQUIRED (spec.js) no exige a proposito
+// (no son criticas como title/name): un push viejo/parcial puede faltarlas, y un null explicito
+// rompe el INSERT (constraint) aunque pase validateOutboxItem. Mismo valor que el DEFAULT del
+// schema, asi un --apply nunca aborta por una columna que Postgres habria completado solo.
+const COLUMN_DEFAULTS = {
+  audios: { description: '', duration_seconds: 0 },
+  paths: { tolerance_meters: 10.0 },
+  triggers: { description: '', offset_ms: 0 },
+};
 
-export function translate(rows, overrides = {}) {
+// Solo las claves del spec (el generador de SQL rechaza cualquier otra); faltantes = default o null.
+const pick = (t, src) =>
+  Object.fromEntries(Object.keys(TABLE_SPEC[t].columns).map(
+    (c) => [c, src[c] ?? COLUMN_DEFAULTS[t]?.[c] ?? null],
+  ));
+
+// Que campo de contenido completa un content override, por tabla origen (ver content_overrides.json).
+const CONTENT_FIELD = { audio_assets: 'title', geo_paths: 'name' };
+
+/**
+ * uuid -> valor real de title/name, leído de la copia local del celular (ver content_overrides.json).
+ * Completa SOLO si el campo falta en el payload (undefined o null); un valor ya presente manda
+ * siempre y el override sobrante se reporta en warnings (fail-safe: nunca pisa un dato real).
+ */
+function applyContentOverride(table, p, contentOverrides, warnings) {
+  const field = CONTENT_FIELD[table];
+  const value = field && contentOverrides[p.uuid];
+  if (!field || value == null) return;
+  if (p[field] == null) {
+    p[field] = value;
+  } else {
+    warnings.push(`${table} ${p.uuid}: content override para ${field} ignorado, ya tiene valor`);
+  }
+}
+
+export function translate(rows, overrides = {}, contentOverrides = {}) {
   const { map, ambiguous, resolved } = buildIdMap(rows, overrides);
   if (ambiguous.length) {
     throw new Error(
@@ -102,6 +133,7 @@ export function translate(rows, overrides = {}) {
       p.logical_version = 1;
     }
     p.updated_at ??= epoch(r.current_updated_at);
+    applyContentOverride(r.table_name, p, contentOverrides, warnings);
     ents[r.table_name].push(p);
   }
 
