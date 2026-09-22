@@ -50,3 +50,6 @@ app.*.map.json
 # Copias de la BD real: NUNCA se commitean (MODEL-08)
 *.db
 .local-db/
+
+# Volcados de synced_entities del script de migracion (datos reales)
+backend/scripts/dump-*.json
