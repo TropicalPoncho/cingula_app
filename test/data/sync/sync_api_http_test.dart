@@ -48,6 +48,7 @@ void main() {
       expect(decoded.containsKey('outbox'), isTrue);
       expect(decoded.containsKey('cursor'), isTrue);
       expect(decoded.containsKey('deviceId'), isTrue);
+      expect(decoded['schema_version'], 2);
     });
 
     test('el array outbox del body es idéntico al que se pasó', () async {

@@ -28,7 +28,8 @@ class SyncApiHttp implements SyncApi {
       response = await _client.post(
         ApiConfig.syncPushUri(),
         headers: _headers,
-        body: jsonEncode({'outbox': outbox, 'cursor': cursor, 'deviceId': deviceId}),
+        // compuerta del corte (D-20): el backend nuevo rechaza con 400 cualquier body sin esto; no hay protocolo dual
+        body: jsonEncode({'schema_version': 2, 'outbox': outbox, 'cursor': cursor, 'deviceId': deviceId}),
       );
     } catch (e) {
       // Sin respuesta = no llegamos al servidor: transitorio por definición.
