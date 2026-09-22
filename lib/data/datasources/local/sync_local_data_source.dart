@@ -65,6 +65,30 @@ class SyncLocalDataSource {
     onOutboxEnqueued?.call();
   }
 
+  /// Aplica [changes] a la fila [uuid] de [table], sube la versión y encola la FILA COMPLETA
+  /// (el backend exige las columnas requeridas también en los updates).
+  Future<void> updateAndEnqueue(String table, String uuid, Map<String, Object?> changes) async {
+    final rows = await _database.query(table, where: 'uuid = ?', whereArgs: [uuid], limit: 1);
+    if (rows.isEmpty) return;
+    final row = {...rows.first, ...changes};
+    final values = withUpdateMetadata(row);
+    await _database.update(table, values, where: 'uuid = ?', whereArgs: [uuid]);
+    await enqueueOutbox(tableName: table, recordUuid: uuid, op: 'update', payload: values);
+  }
+
+  /// Encola el borrado (hard delete local) de las filas [rows] (uuid + logical_version) de [table].
+  Future<void> enqueueDeletes(String table, List<Map<String, Object?>> rows) async {
+    for (final row in rows) {
+      final uuid = row['uuid'] as String;
+      await enqueueOutbox(
+        tableName: table,
+        recordUuid: uuid,
+        op: 'delete',
+        payload: {'uuid': uuid, 'logical_version': ((row['logical_version'] as int?) ?? 0) + 1},
+      );
+    }
+  }
+
   /// Lee el outbox ordenado por creación, limita resultados y los devuelve con payload ya decodificado.
   Future<List<Map<String, Object?>>> readOutbox({int limit = 50}) async {
     final rows = await _database.query(

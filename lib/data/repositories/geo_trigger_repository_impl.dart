@@ -1,4 +1,4 @@
-﻿import '../../domain/entities/geo_trigger.dart';
+import '../../domain/entities/geo_trigger.dart';
 import '../../domain/repositories/geo_trigger_repository.dart';
 import '../../domain/value_objects/coordinate.dart';
 import '../datasources/local/geo_trigger_local_data_source.dart';
@@ -29,23 +29,19 @@ class GeoTriggerRepositoryImpl implements GeoTriggerRepository {
   }
 
   @override
-  Future<int> insertTrigger(Map<String, Object?> values) async {
-    final id = await _localDataSource.insertTrigger(values);
+  Future<String> insertTrigger(Map<String, Object?> values) async {
+    final uuid = await _localDataSource.insertTrigger(values);
     _cache = null;
-    return id;
+    return uuid;
   }
 
   @override
-  Future<List<GeoTrigger>> fetchByPathId(int pathId) async {
-    final rows = await _localDataSource.fetchByPathId(pathId);
-    // invalidate cache when fetching fresh
-    _cache = null;
-    return rows;
-  }
+  Future<List<GeoTrigger>> fetchByPathUuid(String pathUuid) =>
+      _localDataSource.fetchByPathUuid(pathUuid);
 
   @override
-  Future<int> deleteByAudioAssetId(int audioAssetId) async {
-    final deleted = await _localDataSource.deleteByAudioAssetId(audioAssetId);
+  Future<int> deleteByPathUuid(String pathUuid) async {
+    final deleted = await _localDataSource.deleteByPathUuid(pathUuid);
     _cache = null;
     return deleted;
   }
@@ -57,4 +53,3 @@ class GeoTriggerRepositoryImpl implements GeoTriggerRepository {
     return deleted;
   }
 }
-

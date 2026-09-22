@@ -7,6 +7,7 @@ import '../../data/datasources/local/app_database.dart';
 import '../../data/datasources/local/audio_local_data_source.dart';
 import '../../data/datasources/local/geo_trigger_local_data_source.dart';
 import '../../data/datasources/local/geo_path_local_data_source.dart';
+import '../../data/datasources/local/obra_local_data_source.dart';
 import '../../data/datasources/local/sync_local_data_source.dart';
 import '../../data/sync/sync_api.dart';
 import '../../data/sync/sync_client.dart';
@@ -18,10 +19,12 @@ import '../../data/repositories/audio_playback_gateway_impl.dart';
 import '../../data/repositories/audio_repository_impl.dart';
 import '../../data/repositories/geo_trigger_repository_impl.dart';
 import '../../data/repositories/geo_path_repository_impl.dart';
+import '../../data/repositories/obra_repository_impl.dart';
 import '../../data/repositories/location_repository_impl.dart';
 import '../../domain/repositories/audio_playback_gateway.dart';
 import '../../domain/repositories/audio_repository.dart';
 import '../../domain/repositories/geo_trigger_repository.dart';
+import '../../domain/repositories/obra_repository.dart';
 import '../../domain/repositories/location_repository.dart';
 import '../../domain/usecases/monitor_user_location_usecase.dart';
 import '../../domain/usecases/run_sync_usecase.dart';
@@ -104,6 +107,9 @@ Future<void> setupServiceLocator({bool reinitialize = false}) async {
   getIt.registerLazySingleton<GeoPathLocalDataSource>(
     () => GeoPathLocalDataSource(database.database, getIt<SyncLocalDataSource>()),
   );
+  getIt.registerLazySingleton<ObraLocalDataSource>(
+    () => ObraLocalDataSource(database.database, getIt<SyncLocalDataSource>()),
+  );
 
   // Repositorios de lectura apoyados en los data sources preparados.
   getIt.registerLazySingleton<AudioRepository>(
@@ -116,9 +122,15 @@ Future<void> setupServiceLocator({bool reinitialize = false}) async {
       localDataSource: getIt<GeoTriggerLocalDataSource>(),
     ),
   );
+  getIt.registerLazySingleton<ObraRepository>(
+    () => ObraRepositoryImpl(
+      localDataSource: getIt<ObraLocalDataSource>(),
+    ),
+  );
   getIt.registerLazySingleton<GeoPathRepository>(
     () => GeoPathRepositoryImpl(
       localDataSource: getIt<GeoPathLocalDataSource>(),
+      obraRepository: getIt<ObraRepository>(),
     ),
   );
   getIt.registerLazySingleton<LocationRepository>(

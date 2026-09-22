@@ -1,12 +1,9 @@
-﻿import 'package:sqflite/sqflite.dart';
+import 'package:sqflite/sqflite.dart';
 
 import 'sync_local_data_source.dart';
 import '../../models/geo_trigger_model.dart';
 
-/// Próxima versión lógica para un borrado, misma regla que SyncLocalDataSource.withUpdateMetadata.
-int _nextDeleteVersion(Object? current) => ((current as int?) ?? 0) + 1;
-
-/// Acceso directo a la tabla de geozonas configuradas.
+/// Acceso directo a la tabla `triggers`.
 class GeoTriggerLocalDataSource {
   GeoTriggerLocalDataSource(this._database, this._sync);
 
@@ -14,91 +11,46 @@ class GeoTriggerLocalDataSource {
   final SyncLocalDataSource _sync;
 
   Future<List<GeoTriggerModel>> getAll() async {
-    final rows = await _database.query('geo_triggers');
+    final rows = await _database.query('triggers');
     return rows.map(GeoTriggerModel.fromMap).toList(growable: false);
   }
 
-  Future<List<GeoTriggerModel>> fetchByPathId(int pathId) async {
-    final rows = await _database.query('geo_triggers', where: 'geo_path_id = ?', whereArgs: [pathId]);
-    return rows.map(GeoTriggerModel.fromMap).toList(growable: false);
-  }
-
-  /// Borra triggers cuyo geo_path_id apunta a paths inexistentes.
-  Future<int> deleteOrphaned() async {
-    // Capturar UUIDs de huérfanos antes de borrar para encolar outbox.
-    final rows = await _database.rawQuery(
-      'SELECT uuid, logical_version FROM geo_triggers WHERE geo_path_id IS NOT NULL AND geo_path_id NOT IN (SELECT id FROM geo_paths)',
-    );
-
-    final deleted = await _database.delete(
-      'geo_triggers',
-      where: 'geo_path_id IS NOT NULL AND geo_path_id NOT IN (SELECT id FROM geo_paths)',
-    );
-
-    for (final row in rows) {
-      final uuid = row['uuid'] as String?;
-      if (uuid != null) {
-        await _sync.enqueueOutbox(
-          tableName: 'geo_triggers',
-          recordUuid: uuid,
-          op: 'delete',
-          payload: {
-            'reason': 'orphan_geo_path',
-            'uuid': uuid,
-            'logical_version': _nextDeleteVersion(row['logical_version']),
-          },
-        );
-      }
-    }
-
-    return deleted;
-  }
-
-  /// Borra todos los triggers asociados a un audioAssetId y devuelve el número de filas borradas.
-  Future<int> deleteByAudioAssetId(int audioAssetId) async {
-    // Capture UUIDs before deleting so we can enqueue delete events.
+  Future<List<GeoTriggerModel>> fetchByPathUuid(String pathUuid) async {
     final rows = await _database.query(
-      'geo_triggers',
-      columns: ['uuid', 'logical_version'],
-      where: 'audio_asset_id = ?',
-      whereArgs: [audioAssetId],
+      'triggers',
+      where: 'path_uuid = ?',
+      whereArgs: [pathUuid],
+      orderBy: 'position',
     );
+    return rows.map(GeoTriggerModel.fromMap).toList(growable: false);
+  }
 
-    final deleted = await _database.delete('geo_triggers', where: 'audio_asset_id = ?', whereArgs: [audioAssetId]);
-
-    for (final row in rows) {
-      final uuid = row['uuid'] as String?;
-      if (uuid != null) {
-        await _sync.enqueueOutbox(
-          tableName: 'geo_triggers',
-          recordUuid: uuid,
-          op: 'delete',
-          payload: {
-            'audio_asset_id': audioAssetId,
-            'uuid': uuid,
-            'logical_version': _nextDeleteVersion(row['logical_version']),
-          },
-        );
-      }
-    }
-
+  Future<int> _deleteWhere(String where, List<Object?> args) async {
+    final rows = await _database.query('triggers', columns: ['uuid', 'logical_version'], where: where, whereArgs: args);
+    final deleted = await _database.delete('triggers', where: where, whereArgs: args);
+    await _sync.enqueueDeletes('triggers', rows);
     return deleted;
   }
 
-  /// Inserta un nuevo trigger y devuelve el id insertado.
-  Future<int> insertTrigger(Map<String, Object?> values) async {
-    final stamped = _sync.withInsertMetadata(values);
-    final id = await _database.insert('geo_triggers', stamped);
-    await _sync.enqueueOutbox(
-      tableName: 'geo_triggers',
-      recordUuid: stamped['uuid'] as String,
-      op: 'insert',
-      payload: {
-        ...stamped,
-        'id': id,
-      },
-    );
-    return id;
+  /// Borra triggers cuyo path_uuid apunta a paths inexistentes.
+  Future<int> deleteOrphaned() =>
+      _deleteWhere('path_uuid NOT IN (SELECT uuid FROM paths)', const []);
+
+  Future<int> deleteByPathUuid(String pathUuid) => _deleteWhere('path_uuid = ?', [pathUuid]);
+
+  /// Inserta un trigger y devuelve su uuid. [values] trae path_uuid, name, description,
+  /// latitude, longitude, radius_meters y opcionalmente offset_ms.
+  Future<String> insertTrigger(Map<String, Object?> values) async {
+    final pathUuid = values['path_uuid'] as String;
+    final next = Sqflite.firstIntValue(await _database.rawQuery(
+          'SELECT COALESCE(MAX(position), -1) + 1 FROM triggers WHERE path_uuid = ?',
+          [pathUuid],
+        )) ??
+        0;
+    final stamped = _sync.withInsertMetadata({...values, 'position': next});
+    await _database.insert('triggers', stamped);
+    final uuid = stamped['uuid'] as String;
+    await _sync.enqueueOutbox(tableName: 'triggers', recordUuid: uuid, op: 'insert', payload: stamped);
+    return uuid;
   }
 }
-

@@ -2,13 +2,12 @@ import 'package:sqflite/sqflite.dart';
 
 import 'sync_local_data_source.dart';
 import '../../models/geo_path_model.dart';
-// GeoPathLocalDataSource no longer handles storing raw point arrays. Path
-// geometry is modelled by GeoTriggers that reference geo_path_id.
 
-/// Próxima versión lógica para un borrado, misma regla que SyncLocalDataSource.withUpdateMetadata.
-int _nextDeleteVersion(Object? current) => ((current as int?) ?? 0) + 1;
+const _select = 'SELECT paths.*, path_progress.saved_offset_ms '
+    'FROM paths LEFT JOIN path_progress ON paths.uuid = path_progress.path_uuid';
 
-/// Acceso a la tabla `geo_paths`.
+/// Acceso a `paths` (sincronizada) y `path_progress` (solo local).
+/// La geometría son los triggers.
 class GeoPathLocalDataSource {
   GeoPathLocalDataSource(this._database, this._sync);
 
@@ -16,179 +15,74 @@ class GeoPathLocalDataSource {
   final SyncLocalDataSource _sync;
 
   Future<List<GeoPathModel>> getAll() async {
-    final rows = await _database.query('geo_paths');
+    final rows = await _database.rawQuery(_select);
     return rows.map(GeoPathModel.fromMap).toList(growable: false);
   }
-  /// Inserta un nuevo geo path y devuelve el id insertado.
-  Future<int> insertPath(Map<String, Object?> values) async {
+
+  /// Inserta un path y devuelve su uuid. [values] debe traer obra_uuid y name.
+  Future<String> insertPath(Map<String, Object?> values) async {
     final stamped = _sync.withInsertMetadata(values);
-    final id = await _database.insert('geo_paths', stamped);
-    await _sync.enqueueOutbox(
-      tableName: 'geo_paths',
-      recordUuid: stamped['uuid'] as String,
-      op: 'insert',
-      payload: {
-        ...stamped,
-        'id': id,
-      },
-    );
-    return id;
+    await _database.insert('paths', stamped);
+    final uuid = stamped['uuid'] as String;
+    await _sync.enqueueOutbox(tableName: 'paths', recordUuid: uuid, op: 'insert', payload: stamped);
+    return uuid;
   }
 
-  Future<void> saveProgress(int pathId, int offsetMs) async {
-    final existing = await _database.query(
-      'geo_paths',
-      columns: ['uuid', 'logical_version'],
-      where: 'id = ?',
-      whereArgs: [pathId],
-      limit: 1,
-    );
-    final existingUuid = existing.isNotEmpty ? existing.first['uuid'] as String? : null;
-    final existingVersion = existing.isNotEmpty ? existing.first['logical_version'] as int? : null;
-
-    final values = _sync.withUpdateMetadata({
-      'uuid': existingUuid ?? _sync.newUuid(),
-      'logical_version': existingVersion,
-      'saved_offset_ms': offsetMs,
-    });
-
-    await _database.update(
-      'geo_paths',
-      values,
-      where: 'id = ?',
-      whereArgs: [pathId],
-    );
-
-    await _sync.enqueueOutbox(
-      tableName: 'geo_paths',
-      recordUuid: values['uuid'] as String,
-      op: 'update',
-      payload: {
-        ...values,
-        'id': pathId,
+  /// SOLO path_progress: no toca `paths` ni el outbox (D-10: con varios usuarios el
+  /// progreso de uno pisaría el del otro).
+  Future<void> saveProgress(String pathUuid, int offsetMs) async {
+    await _database.insert(
+      'path_progress',
+      {
+        'path_uuid': pathUuid,
+        'saved_offset_ms': offsetMs,
+        'updated_at': DateTime.now().millisecondsSinceEpoch ~/ 1000,
       },
+      conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
-  Future<void> updateAudio({required int pathId, required int audioAssetId}) async {
-    final existing = await _database.query(
-      'geo_paths',
-      columns: ['uuid', 'logical_version'],
-      where: 'id = ?',
-      whereArgs: [pathId],
-      limit: 1,
-    );
-    final existingUuid = existing.isNotEmpty ? existing.first['uuid'] as String? : null;
-    final existingVersion = existing.isNotEmpty ? existing.first['logical_version'] as int? : null;
+  Future<void> updateAudio({required String pathUuid, required String audioUuid}) =>
+      _sync.updateAndEnqueue('paths', pathUuid, {'audio_uuid': audioUuid});
 
-    final values = _sync.withUpdateMetadata({
-      'uuid': existingUuid ?? _sync.newUuid(),
-      'logical_version': existingVersion,
-      'audio_asset_id': audioAssetId,
-    });
-
-    await _database.update(
-      'geo_paths',
-      values,
-      where: 'id = ?',
-      whereArgs: [pathId],
-    );
-
-    await _sync.enqueueOutbox(
-      tableName: 'geo_paths',
-      recordUuid: values['uuid'] as String,
-      op: 'update',
-      payload: {
-        ...values,
-        'id': pathId,
-      },
-    );
-  }
-
-  /// Borra paths (metadata) asociados a un audio y devuelve el número de filas borradas.
-  Future<int> deleteByAudioAssetId(int audioAssetId) async {
+  /// Borra los paths que usan [audioUuid] (y su progreso); devuelve las filas borradas.
+  Future<int> deleteByAudioUuid(String audioUuid) async {
     final rows = await _database.query(
-      'geo_paths',
+      'paths',
       columns: ['uuid', 'logical_version'],
-      where: 'audio_asset_id = ?',
-      whereArgs: [audioAssetId],
+      where: 'audio_uuid = ?',
+      whereArgs: [audioUuid],
     );
-
-    final deleted = await _database.delete('geo_paths', where: 'audio_asset_id = ?', whereArgs: [audioAssetId]);
-
     for (final row in rows) {
-      final uuid = row['uuid'] as String?;
-      if (uuid != null) {
-        await _sync.enqueueOutbox(
-          tableName: 'geo_paths',
-          recordUuid: uuid,
-          op: 'delete',
-          payload: {
-            'audio_asset_id': audioAssetId,
-            'uuid': uuid,
-            'logical_version': _nextDeleteVersion(row['logical_version']),
-          },
-        );
-      }
+      await _database.delete('path_progress', where: 'path_uuid = ?', whereArgs: [row['uuid']]);
     }
-
+    final deleted = await _database.delete('paths', where: 'audio_uuid = ?', whereArgs: [audioUuid]);
+    await _sync.enqueueDeletes('paths', rows);
     return deleted;
   }
 
-  /// Borra un path por id y también elimina triggers asociados para mantener consistencia.
-  Future<int> deleteById(int pathId) async {
-    // Capturamos UUID del path y de los triggers asociados antes de borrar.
-    final pathRows = await _database.query(
-      'geo_paths',
-      columns: ['uuid', 'logical_version'],
-      where: 'id = ?',
-      whereArgs: [pathId],
-      limit: 1,
-    );
+  /// Borra un path, sus triggers y su progreso. Devuelve path + triggers borrados.
+  Future<int> deleteByUuid(String pathUuid) async {
     final triggerRows = await _database.query(
-      'geo_triggers',
+      'triggers',
       columns: ['uuid', 'logical_version'],
-      where: 'geo_path_id = ?',
-      whereArgs: [pathId],
+      where: 'path_uuid = ?',
+      whereArgs: [pathUuid],
+    );
+    final pathRows = await _database.query(
+      'paths',
+      columns: ['uuid', 'logical_version'],
+      where: 'uuid = ?',
+      whereArgs: [pathUuid],
     );
 
-    final deletedTriggers = await _database.delete('geo_triggers', where: 'geo_path_id = ?', whereArgs: [pathId]);
-    final deletedPaths = await _database.delete('geo_paths', where: 'id = ?', whereArgs: [pathId]);
+    final deletedTriggers = await _database.delete('triggers', where: 'path_uuid = ?', whereArgs: [pathUuid]);
+    await _database.delete('path_progress', where: 'path_uuid = ?', whereArgs: [pathUuid]);
+    final deletedPaths = await _database.delete('paths', where: 'uuid = ?', whereArgs: [pathUuid]);
 
-    // Enqueue delete events for triggers first, then path.
-    for (final row in triggerRows) {
-      final uuid = row['uuid'] as String?;
-      if (uuid != null) {
-        await _sync.enqueueOutbox(
-          tableName: 'geo_triggers',
-          recordUuid: uuid,
-          op: 'delete',
-          payload: {
-            'geo_path_id': pathId,
-            'uuid': uuid,
-            'logical_version': _nextDeleteVersion(row['logical_version']),
-          },
-        );
-      }
-    }
-
-    if (pathRows.isNotEmpty) {
-      final uuid = pathRows.first['uuid'] as String?;
-      if (uuid != null) {
-        await _sync.enqueueOutbox(
-          tableName: 'geo_paths',
-          recordUuid: uuid,
-          op: 'delete',
-          payload: {
-            'id': pathId,
-            'uuid': uuid,
-            'logical_version': _nextDeleteVersion(pathRows.first['logical_version']),
-          },
-        );
-      }
-    }
-
-    // Devuelve total borrado (path + triggers) para fines informativos.
+    // Triggers primero, después el path.
+    await _sync.enqueueDeletes('triggers', triggerRows);
+    await _sync.enqueueDeletes('paths', pathRows);
     return deletedPaths + deletedTriggers;
   }
 }

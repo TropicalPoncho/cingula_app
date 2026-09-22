@@ -1,14 +1,18 @@
 import '../../domain/entities/geo_path.dart';
 import '../../domain/repositories/geo_path_repository.dart';
-// Path geometry is modelled via GeoTriggers; no coordinate imports needed here.
+import '../../domain/repositories/obra_repository.dart';
 import '../datasources/local/geo_path_local_data_source.dart';
 
 /// Implementación en memoria apoyada en el data source local.
 class GeoPathRepositoryImpl implements GeoPathRepository {
-  GeoPathRepositoryImpl({required GeoPathLocalDataSource localDataSource})
-      : _local = localDataSource;
+  GeoPathRepositoryImpl({
+    required GeoPathLocalDataSource localDataSource,
+    required ObraRepository obraRepository,
+  })  : _local = localDataSource,
+        _obras = obraRepository;
 
   final GeoPathLocalDataSource _local;
+  final ObraRepository _obras;
   List<GeoPath>? _cache;
 
   @override
@@ -17,56 +21,59 @@ class GeoPathRepositoryImpl implements GeoPathRepository {
     return _cache!;
   }
 
-  // findMatch removed: matching is performed against GeoTriggers instead.
-
   @override
-  Future<GeoPath?> fetchById(int id) async {
+  Future<GeoPath?> fetchByUuid(String uuid) async {
     final paths = await fetchAll();
     try {
-      return paths.firstWhere((p) => p.id == id);
+      return paths.firstWhere((p) => p.uuid == uuid);
     } catch (_) {
       return null;
     }
   }
 
   @override
-  Future<int> createPath({required String name, required int audioAssetId, double toleranceMeters = 10.0}) async {
-    final values = {
+  Future<String> createPath({
+    required String name,
+    String? audioUuid,
+    String? obraUuid,
+    String kind = 'route',
+    double toleranceMeters = 10.0,
+  }) async {
+    // D-22: si no se eligió ninguna obra, se crea una draft con el nombre del path.
+    final resolvedObraUuid = obraUuid ?? await _obras.createDraft(name);
+    final uuid = await _local.insertPath({
+      'obra_uuid': resolvedObraUuid,
+      'kind': kind,
       'name': name,
-      // keep points empty for compatibility
-      'points': '[]',
-      'audio_asset_id': audioAssetId,
+      'audio_uuid': audioUuid,
       'tolerance_meters': toleranceMeters,
-    };
-    final id = await _local.insertPath(values);
+    });
     _cache = null;
-    return id;
+    return uuid;
   }
-  // updatePoints removed: geometry persisted as triggers.
 
   @override
-  Future<void> saveProgress(int pathId, int offsetMs) async {
-    await _local.saveProgress(pathId, offsetMs);
-    // Invalidate cache so future reads get updated value
+  Future<void> saveProgress(String pathUuid, int offsetMs) async {
+    await _local.saveProgress(pathUuid, offsetMs);
     _cache = null;
   }
 
   @override
-  Future<void> updateAudio({required int pathId, required int audioAssetId}) async {
-    await _local.updateAudio(pathId: pathId, audioAssetId: audioAssetId);
+  Future<void> updateAudio({required String pathUuid, required String audioUuid}) async {
+    await _local.updateAudio(pathUuid: pathUuid, audioUuid: audioUuid);
     _cache = null;
   }
 
   @override
-  Future<int> deleteByAudioAssetId(int audioAssetId) async {
-    final deleted = await _local.deleteByAudioAssetId(audioAssetId);
+  Future<int> deleteByAudioUuid(String audioUuid) async {
+    final deleted = await _local.deleteByAudioUuid(audioUuid);
     _cache = null;
     return deleted;
   }
 
   @override
-  Future<int> deleteById(int pathId) async {
-    final deleted = await _local.deleteById(pathId);
+  Future<int> deleteByUuid(String pathUuid) async {
+    final deleted = await _local.deleteByUuid(pathUuid);
     _cache = null;
     return deleted;
   }
