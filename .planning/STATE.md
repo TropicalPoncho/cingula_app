@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02.1-04-PLAN.md
-last_updated: "2026-09-22T00:26:38.966Z"
+stopped_at: Completed 02.1-05-PLAN.md
+last_updated: "2026-09-22T00:30:28.072Z"
 last_activity: 2026-09-22
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 21
-  completed_plans: 14
+  completed_plans: 15
   percent: 89
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-08-08)
 ## Current Position
 
 Phase: 02.1 (modelo-de-datos-objetivo) — EXECUTING
-Plan: 6 of 12
+Plan: 7 of 12
 Status: Ready to execute
   During setup, a real production bug surfaced on the user's own device: SyncTrigger was
   swallowing push exceptions (only a status enum survived, no message, nowhere) and 8 stale
@@ -81,6 +81,7 @@ Progress: [█████████░] 89%
 | Phase 02.1 P02 | 25min | 3 tasks | 9 files |
 | Phase 02.1 P03 | 25min | 3 tasks | 3 files |
 | Phase 02.1 P04 | n/a | 3 tasks | 2 files |
+| Phase 02.1 P05 | 15min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -113,6 +114,7 @@ Recent decisions affecting current work:
 - [Phase 02.1]: Plan 02: entity_prev PK enforces current+1 previous version; spec.js is single source for backend schema
 - [Phase 02.1]: Plan 03: foreign_key_check por tabla nueva; migrateToV7 devuelve reporte
 - [Phase 02.1]: Plan 04: pre-flight GO sobre base real (78/72/462/20); 15 audios huerfanos se migran tal cual
+- [Phase 02.1]: Plan 05: payload del reenvio = SELECT * (tablas v7 == TABLE_SPEC); tablas viejas renombradas legacy_*, nunca borradas
 
 ### Roadmap Evolution
 
@@ -134,6 +136,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-22T00:26:38.957Z
-Stopped at: Completed 02.1-04-PLAN.md
+Last session: 2026-09-22T00:30:28.064Z
+Stopped at: Completed 02.1-05-PLAN.md
 Resume file: None
