@@ -1,12 +1,12 @@
-﻿import '../entities/audio_asset.dart';
+import '../entities/audio_asset.dart';
 
 /// Contrato para acceder y sincronizar metadatos de audios.
 abstract class AudioRepository {
   Future<List<AudioAsset>> fetchAll();
-  Future<AudioAsset?> findById(int id);
+  Future<AudioAsset?> findByUuid(String uuid);
 
-  /// Inserta un nuevo audio grabado localmente y retorna su id.
-  Future<int> insertLocalRecording({
+  /// Inserta un nuevo audio grabado localmente y retorna su uuid.
+  Future<String> insertLocalRecording({
     required String title,
     required String description,
     required String localPath,
@@ -14,6 +14,5 @@ abstract class AudioRepository {
   });
 
   /// Actualiza la duración de un audio ya almacenado (útil al cerrar la grabación).
-  Future<void> updateDuration({required int id, required Duration duration});
+  Future<void> updateDuration({required String uuid, required Duration duration});
 }
-

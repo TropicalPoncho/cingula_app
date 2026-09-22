@@ -1,53 +1,60 @@
-﻿import '../../domain/entities/audio_asset.dart';
+import '../../domain/entities/audio_asset.dart';
+import 'sync_meta.dart';
 
-/// Mapea filas SQLite al modelo de dominio de audio.
+/// Fila de `audios` (+ `audio_local` vía JOIN) -> dominio.
 class AudioAssetModel extends AudioAsset {
   AudioAssetModel({
-    required super.id,
+    required super.uuid,
     required super.title,
-    required super.artist,
     required super.description,
     required super.duration,
     required super.localPath,
+    super.kind,
     super.remoteUrl,
-    super.uuid,
+    super.storageKey,
+    super.checksum,
     super.updatedAt,
     super.deletedAt,
     super.logicalVersion,
   });
 
   factory AudioAssetModel.fromMap(Map<String, Object?> map) {
-    final seconds = map['duration_seconds'] as int;
     final remoteUrl = map['remote_url'] as String?;
-    final updatedAtSec = map['updated_at'] as int?;
-    final deletedAtSec = map['deleted_at'] as int?;
     return AudioAssetModel(
-      id: map['id'] as int,
+      uuid: map['uuid'] as String,
+      kind: (map['kind'] as String?) ?? 'grabacion',
       title: map['title'] as String,
-      artist: map['artist'] as String,
-      description: map['description'] as String,
-      duration: Duration(seconds: seconds),
-      localPath: map['local_path'] as String,
-      remoteUrl:
-          remoteUrl == null || remoteUrl.isEmpty ? null : Uri.parse(remoteUrl),
-      uuid: map['uuid'] as String?,
-      updatedAt: updatedAtSec != null ? DateTime.fromMillisecondsSinceEpoch(updatedAtSec * 1000) : null,
-      deletedAt: deletedAtSec != null ? DateTime.fromMillisecondsSinceEpoch(deletedAtSec * 1000) : null,
+      description: (map['description'] as String?) ?? '',
+      duration: Duration(seconds: (map['duration_seconds'] as int?) ?? 0),
+      // audio_local puede faltar (audio sin archivo en este dispositivo)
+      localPath: (map['local_path'] as String?) ?? '',
+      remoteUrl: remoteUrl == null || remoteUrl.isEmpty ? null : Uri.parse(remoteUrl),
+      storageKey: map['storage_key'] as String?,
+      checksum: map['checksum'] as String?,
+      updatedAt: dateFromSeconds(map['updated_at']),
+      deletedAt: dateFromSeconds(map['deleted_at']),
       logicalVersion: map['logical_version'] as int?,
     );
   }
 
+  /// SOLO columnas de `audios` (lo que se sincroniza).
   Map<String, Object?> toMap() => {
-        'id': id,
+        'uuid': uuid,
+        'kind': kind,
         'title': title,
-        'artist': artist,
         'description': description,
         'duration_seconds': duration.inSeconds,
+        'storage_key': storageKey,
+        'checksum': checksum,
+        'updated_at': secondsFromDate(updatedAt),
+        'deleted_at': secondsFromDate(deletedAt),
+        'logical_version': logicalVersion,
+      };
+
+  /// Columnas de `audio_local` (solo local).
+  Map<String, Object?> toLocalMap() => {
+        'audio_uuid': uuid,
         'local_path': localPath,
         'remote_url': remoteUrl?.toString(),
-        'uuid': uuid,
-        'updated_at': updatedAt != null ? updatedAt!.millisecondsSinceEpoch ~/ 1000 : null,
-        'deleted_at': deletedAt != null ? deletedAt!.millisecondsSinceEpoch ~/ 1000 : null,
-        'logical_version': logicalVersion,
       };
 }

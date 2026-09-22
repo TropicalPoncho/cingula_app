@@ -1,55 +1,50 @@
-﻿import '../../domain/entities/geo_trigger.dart';
+import '../../domain/entities/geo_trigger.dart';
+import 'sync_meta.dart';
 
-/// Traduce registros de geozonas a la entidad de dominio.
+/// Traduce registros de `triggers` a la entidad de dominio.
 class GeoTriggerModel extends GeoTrigger {
   GeoTriggerModel({
-    required super.id,
+    required super.uuid,
+    required super.pathUuid,
     required super.name,
     required super.description,
     required super.latitude,
     required super.longitude,
     required super.radiusMeters,
-    required super.audioAssetId,
-    super.geoPathId,
+    super.position,
     super.offsetMs,
-    super.uuid,
     super.updatedAt,
     super.deletedAt,
     super.logicalVersion,
   });
 
-  factory GeoTriggerModel.fromMap(Map<String, Object?> map) {
-    return GeoTriggerModel(
-      id: map['id'] as int,
-      name: map['name'] as String,
-      description: map['description'] as String,
-      latitude: (map['latitude'] as num).toDouble(),
-      longitude: (map['longitude'] as num).toDouble(),
-      radiusMeters: (map['radius_meters'] as num).toDouble(),
-      audioAssetId: map['audio_asset_id'] as int,
-      geoPathId: (map['geo_path_id'] as int?),
-      offsetMs: (map['offset_ms'] as int?) ?? 0,
-      uuid: map['uuid'] as String?,
-      updatedAt: (map['updated_at'] as int?) != null ? DateTime.fromMillisecondsSinceEpoch((map['updated_at'] as int) * 1000) : null,
-      deletedAt: (map['deleted_at'] as int?) != null ? DateTime.fromMillisecondsSinceEpoch((map['deleted_at'] as int) * 1000) : null,
-      logicalVersion: map['logical_version'] as int?,
-    );
-  }
+  factory GeoTriggerModel.fromMap(Map<String, Object?> map) => GeoTriggerModel(
+        uuid: map['uuid'] as String,
+        pathUuid: map['path_uuid'] as String,
+        position: (map['position'] as int?) ?? 0,
+        name: map['name'] as String,
+        description: (map['description'] as String?) ?? '',
+        latitude: (map['latitude'] as num).toDouble(),
+        longitude: (map['longitude'] as num).toDouble(),
+        radiusMeters: (map['radius_meters'] as num).toDouble(),
+        offsetMs: (map['offset_ms'] as int?) ?? 0,
+        updatedAt: dateFromSeconds(map['updated_at']),
+        deletedAt: dateFromSeconds(map['deleted_at']),
+        logicalVersion: map['logical_version'] as int?,
+      );
 
   Map<String, Object?> toMap() => {
-        'id': id,
+        'uuid': uuid,
+        'path_uuid': pathUuid,
+        'position': position,
         'name': name,
         'description': description,
         'latitude': latitude,
         'longitude': longitude,
         'radius_meters': radiusMeters,
-    'audio_asset_id': audioAssetId,
-    'geo_path_id': geoPathId,
-    'offset_ms': offsetMs,
-        'uuid': uuid,
-        'updated_at': updatedAt != null ? updatedAt!.millisecondsSinceEpoch ~/ 1000 : null,
-        'deleted_at': deletedAt != null ? deletedAt!.millisecondsSinceEpoch ~/ 1000 : null,
+        'offset_ms': offsetMs,
+        'updated_at': secondsFromDate(updatedAt),
+        'deleted_at': secondsFromDate(deletedAt),
         'logical_version': logicalVersion,
       };
 }
-

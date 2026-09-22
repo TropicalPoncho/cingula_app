@@ -1,47 +1,47 @@
-import 'dart:convert';
-
 import '../../domain/entities/geo_path.dart';
+import 'sync_meta.dart';
 
 class GeoPathModel extends GeoPath {
   GeoPathModel({
-    required super.id,
+    required super.uuid,
+    required super.obraUuid,
     required super.name,
-    required super.audioAssetId,
+    super.kind,
+    super.audioUuid,
+    super.grabacionUuid,
     super.toleranceMeters,
     super.savedOffsetMs,
-    super.uuid,
     super.updatedAt,
     super.deletedAt,
     super.logicalVersion,
   });
 
-  factory GeoPathModel.fromMap(Map<String, Object?> map) {
-    return GeoPathModel(
-      id: (map['id'] as int),
-      name: (map['name'] as String),
-      audioAssetId: (map['audio_asset_id'] as int),
-      toleranceMeters: ((map['tolerance_meters'] as num?)?.toDouble() ?? 10.0),
-      savedOffsetMs: (map['saved_offset_ms'] as int?) ?? 0,
-      uuid: map['uuid'] as String?,
-      updatedAt: (map['updated_at'] as int?) != null ? DateTime.fromMillisecondsSinceEpoch((map['updated_at'] as int) * 1000) : null,
-      deletedAt: (map['deleted_at'] as int?) != null ? DateTime.fromMillisecondsSinceEpoch((map['deleted_at'] as int) * 1000) : null,
-      logicalVersion: map['logical_version'] as int?,
-    );
-  }
+  /// `saved_offset_ms` viene del LEFT JOIN con path_progress (0 si no hay fila).
+  factory GeoPathModel.fromMap(Map<String, Object?> map) => GeoPathModel(
+        uuid: map['uuid'] as String,
+        obraUuid: map['obra_uuid'] as String,
+        kind: (map['kind'] as String?) ?? 'route',
+        name: map['name'] as String,
+        audioUuid: map['audio_uuid'] as String?,
+        grabacionUuid: map['grabacion_uuid'] as String?,
+        toleranceMeters: (map['tolerance_meters'] as num?)?.toDouble() ?? 10.0,
+        savedOffsetMs: (map['saved_offset_ms'] as int?) ?? 0,
+        updatedAt: dateFromSeconds(map['updated_at']),
+        deletedAt: dateFromSeconds(map['deleted_at']),
+        logicalVersion: map['logical_version'] as int?,
+      );
 
-  Map<String, Object?> toMap() {
-    return {
-      'id': id,
-      'name': name,
-      // keep points column for compatibility but write empty array
-      'points': json.encode([]),
-      'audio_asset_id': audioAssetId,
-      'tolerance_meters': toleranceMeters,
-      'saved_offset_ms': savedOffsetMs,
-      'uuid': uuid,
-      'updated_at': updatedAt != null ? updatedAt!.millisecondsSinceEpoch ~/ 1000 : null,
-      'deleted_at': deletedAt != null ? deletedAt!.millisecondsSinceEpoch ~/ 1000 : null,
-      'logical_version': logicalVersion,
-    };
-  }
+  /// SOLO columnas de `paths`: el progreso es local y no se sincroniza.
+  Map<String, Object?> toMap() => {
+        'uuid': uuid,
+        'obra_uuid': obraUuid,
+        'kind': kind,
+        'name': name,
+        'audio_uuid': audioUuid,
+        'grabacion_uuid': grabacionUuid,
+        'tolerance_meters': toleranceMeters,
+        'updated_at': secondsFromDate(updatedAt),
+        'deleted_at': secondsFromDate(deletedAt),
+        'logical_version': logicalVersion,
+      };
 }

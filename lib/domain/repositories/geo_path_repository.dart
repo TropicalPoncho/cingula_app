@@ -1,23 +1,24 @@
 import '../entities/geo_path.dart';
-// GeoPathRepository works with path metadata only; geometry is modelled via triggers.
 
 /// Interfaz para consultar caminos configurados y guardar progreso.
+/// La geometría se modela con triggers.
 abstract class GeoPathRepository {
   Future<List<GeoPath>> fetchAll();
-  /// Recupera un `GeoPath` por su id.
-  Future<GeoPath?> fetchById(int id);
+  Future<GeoPath?> fetchByUuid(String uuid);
 
-  Future<void> saveProgress(int pathId, int offsetMs);
+  /// Solo path_progress (local): no encola outbox.
+  Future<void> saveProgress(String pathUuid, int offsetMs);
 
-  /// Actualiza el audio asociado a un path existente.
-  Future<void> updateAudio({required int pathId, required int audioAssetId});
+  Future<void> updateAudio({required String pathUuid, required String audioUuid});
 
-  /// Crea un nuevo GeoPath (metadata) y devuelve el id insertado.
-  Future<int> createPath({
+  /// Crea un path y devuelve su uuid. Sin [obraUuid] crea una obra draft con el nombre del path.
+  Future<String> createPath({
     required String name,
-    required int audioAssetId,
+    String? audioUuid,
+    String? obraUuid,
+    String kind = 'route',
     double toleranceMeters = 10.0,
   });
-  Future<int> deleteByAudioAssetId(int audioAssetId);
-  Future<int> deleteById(int pathId);
+  Future<int> deleteByAudioUuid(String audioUuid);
+  Future<int> deleteByUuid(String pathUuid);
 }
