@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02.1-05-PLAN.md
-last_updated: "2026-09-22T00:30:28.072Z"
+stopped_at: Completed 02.1-07-PLAN.md (rehearsal partial)
+last_updated: "2026-09-22T00:35:04.579Z"
 last_activity: 2026-09-22
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 21
-  completed_plans: 15
+  completed_plans: 16
   percent: 89
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-08-08)
 ## Current Position
 
 Phase: 02.1 (modelo-de-datos-objetivo) — EXECUTING
-Plan: 7 of 12
+Plan: 8 of 12
 Status: Ready to execute
   During setup, a real production bug surfaced on the user's own device: SyncTrigger was
   swallowing push exceptions (only a status enum survived, no message, nowhere) and 8 stale
@@ -133,9 +133,10 @@ None yet.
 - Phase 02: 02-05 Task 3 (7-case structured end-to-end verification against the real Neon+Vercel deploy) and Task 4 (close 02-VALIDATION.md) are deferred -- user chose to stop for the night after ~4.5 hours including significant live production debugging (see 02-05-SUMMARY.md). Not a failure: the backend is live, tested, and actively receiving real data (1186-row historical backlog successfully synced during this session). Caso 1 (SYNC-01), Caso 4 (SYNC-07), Caso 5 (SYNC-08), and Caso 7 (data regression) all have strong informal evidence from tonight's session; Caso 2 (kill-mid-push dedup), Caso 3 (offline+backoff), and Caso 6 (2-version window) remain fully untested. Steps to close: 02-05-PLAN.md Task 3's `<how-to-verify>`, 7 numbered cases, then Task 4.
 - Phase 02: minor UI bug found in passing (unrelated to sync) -- `RenderFlex overflowed by 55 pixels` in `lib/presentation/widgets/trigger_map.dart:275`, seen in the device console during tonight's session. Not fixed, not blocking, cosmetic only.
 - Phase 02: the "Reparar deletes viejos" debug-panel button (added in commit 5e0c4da) did not appear on the user's device after a VS Code hot-restart during tonight's session; root cause not confirmed (suspected stale/cached build, matching the session's recurring theme -- try `flutter clean` first when revisiting). The underlying repair was applied successfully via direct on-device file repair instead, so this is a UI-visibility follow-up, not a blocker for the fix itself.
+- 02.1-07: migrate_v2 dry-run on Neon dev branch aborts on ambiguous ids (geo_triggers:42,43; geo_paths:11,12); decide policy before 02.1-12
 
 ## Session Continuity
 
-Last session: 2026-09-22T00:30:28.064Z
-Stopped at: Completed 02.1-05-PLAN.md
+Last session: 2026-09-22T00:34:57.958Z
+Stopped at: Completed 02.1-07-PLAN.md (rehearsal partial)
 Resume file: None
