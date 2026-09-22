@@ -103,7 +103,7 @@ Reconocidos pero diferidos, no forman parte del roadmap de este milestone.
 | MODEL-03 | Phase 2.1 | Complete |
 | MODEL-04 | Phase 2.1 | Complete |
 | MODEL-05 | Phase 2.1 | Complete |
-| MODEL-06 | Phase 2.1 | Pending (rehearsal aborted on ambiguous ids) |
+| MODEL-06 | Phase 2.1 | Pending (ambiguous ids resolved via override map; rehearsal now aborts on ~117 rows with unrecoverable title/name — see 02.1-07-SUMMARY.md) |
 | MODEL-07 | Phase 2.1 | Complete |
 | MODEL-08 | Phase 2.1 | Complete |
 | SYNC-04 | Phase 3 | Pending |

@@ -28,6 +28,24 @@ test('ambiguedad: buildIdMap la reporta y translate aborta nombrando el caso', (
   assert.throws(() => translate(ambiguousRows), /audio_assets:1/);
 });
 
+test('ambiguedad sin override para esa clave: sigue abortando aunque haya overrides de otras claves', () => {
+  assert.throws(() => translate(ambiguousRows, { 'geo_paths:99': 'x' }), /audio_assets:1/);
+});
+
+test('ambiguedad con override: resuelve y reporta los uuid descartados en skipped', () => {
+  const overrides = { 'audio_assets:1': 'a0000000-0000-4000-8000-000000000001' };
+  const { ambiguous, resolved } = buildIdMap(ambiguousRows, overrides);
+  assert.equal(ambiguous.length, 0);
+  assert.equal(resolved.length, 1);
+  assert.deepEqual(resolved[0].discarded, ['a0000000-0000-4000-8000-0000000000ff']);
+  const { tables, skipped } = translate(ambiguousRows, overrides);
+  assert.ok(tables.audios.some((a) => a.uuid === 'a0000000-0000-4000-8000-000000000001'));
+  const s = skipped.find((x) => x.record_uuid === 'a0000000-0000-4000-8000-0000000000ff');
+  assert.ok(s, 'uuid descartado listado en skipped');
+  assert.equal(s.table_name, 'audio_assets');
+  assert.match(s.reason, /audio_assets:1/);
+});
+
 test('conteos y uuid de obra compartido con el celular', () => {
   const { tables, counts } = translate(rows);
   assert.equal(tables.audios.length, 3);

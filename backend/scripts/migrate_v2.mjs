@@ -2,11 +2,15 @@
 // Uso (desde backend/): node scripts/migrate_v2.mjs [--url=<...>] [--apply] [--finalize]
 // Sin flags es DRY-RUN: no escribe una sola fila.
 import { neon } from '@neondatabase/serverless';
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, readFileSync } from 'node:fs';
 import { TABLE_SPEC } from '../api/_lib/spec.js';
 import { upsertStatement, validateOutboxItem } from '../api/_lib/outbox.js';
 import { applySchema } from '../api/_lib/schema_loader.js';
 import { translate } from './translate.js';
+
+// Ids de SQLite reutilizados (delete+recreate) que un humano ya resolvió a mano mirando la copia
+// local de la BD del celular. Ver 02.1-NEON-REHEARSAL.md.
+const overrides = JSON.parse(readFileSync(new URL('./id_overrides.json', import.meta.url), 'utf8'));
 
 const args = process.argv.slice(2);
 const apply = args.includes('--apply');
@@ -39,7 +43,7 @@ if (finalize) {
 const rows = await sql.query('SELECT * FROM synced_entities');
 let result;
 try {
-  result = translate(rows);
+  result = translate(rows, overrides);
 } catch (e) {
   console.error('ABORTA:', e.message);
   process.exit(1);

@@ -8,11 +8,15 @@ import { computeCover } from '../api/_lib/cover.js';
 const isTomb = (r) => r.op === 'delete';
 const epoch = (d) => Math.floor(new Date(d).getTime() / 1000);
 
-/** 'tabla:id' -> uuid. Los payloads vivos mandan; previous solo completa lo que falta. */
-export function buildIdMap(rows) {
+/**
+ * 'tabla:id' -> uuid. Los payloads vivos mandan; previous solo completa lo que falta.
+ * `overrides`: { 'tabla:id': uuid } para ids reutilizados por SQLite (delete+recreate) donde el
+ * humano ya confirmó a mano cuál uuid es el vivo (ver id_overrides.json). Sin override para una
+ * clave ambigua, esa clave sigue abortando (fail-safe, no fail-silent).
+ */
+export function buildIdMap(rows, overrides = {}) {
   const map = new Map();
   const seen = new Map(); // key -> Set(uuid) de payloads vivos
-  const ambiguous = [];
   const add = (table, p, live) => {
     if (p?.id == null || !p.uuid) return;
     const key = `${table}:${p.id}`;
@@ -27,21 +31,31 @@ export function buildIdMap(rows) {
   };
   for (const r of rows) if (!isTomb(r)) add(r.table_name, r.current_payload, true);
   for (const r of rows) add(r.table_name, r.previous_payload, false);
+  const ambiguous = [];
+  const resolved = [];
   for (const [key, s] of seen) {
     if (s.size > 1) {
       const i = key.indexOf(':');
-      ambiguous.push({ table: key.slice(0, i), id: key.slice(i + 1), uuids: [...s] });
+      const table = key.slice(0, i);
+      const id = key.slice(i + 1);
+      const override = overrides[key];
+      if (override && s.has(override)) {
+        map.set(key, override);
+        resolved.push({ table, id, uuid: override, discarded: [...s].filter((u) => u !== override) });
+      } else {
+        ambiguous.push({ table, id, uuids: [...s] });
+      }
     }
   }
-  return { map, ambiguous };
+  return { map, ambiguous, resolved };
 }
 
 // Solo las claves del spec (el generador de SQL rechaza cualquier otra); faltantes = null.
 const pick = (t, src) =>
   Object.fromEntries(Object.keys(TABLE_SPEC[t].columns).map((c) => [c, src[c] ?? null]));
 
-export function translate(rows) {
-  const { map, ambiguous } = buildIdMap(rows);
+export function translate(rows, overrides = {}) {
+  const { map, ambiguous, resolved } = buildIdMap(rows, overrides);
   if (ambiguous.length) {
     throw new Error(
       'ids ambiguos: ' + ambiguous.map((a) => `${a.table}:${a.id} -> ${a.uuids.join(', ')}`).join('; '),
@@ -51,6 +65,15 @@ export function translate(rows) {
   const skipped = [];
   const warnings = [];
   const source = {};
+  for (const r of resolved) {
+    for (const uuid of r.discarded) {
+      skipped.push({
+        table_name: r.table,
+        record_uuid: uuid,
+        reason: `id ambiguo: uuid descartado por override, ver ${r.table}:${r.id}`,
+      });
+    }
+  }
 
   // Estado efectivo de cada entidad (tombstone reconstruido desde previous_payload).
   const ents = { audio_assets: [], geo_paths: [], geo_triggers: [] };
