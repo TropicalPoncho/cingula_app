@@ -17,6 +17,8 @@ import '../../../../domain/entities/geo_trigger.dart';
 import '../../../../domain/repositories/audio_repository.dart';
 import '../../../../domain/repositories/geo_path_repository.dart';
 import '../../../../domain/repositories/geo_trigger_repository.dart';
+import '../../../../domain/repositories/obra_repository.dart';
+import 'obra_section.dart';
 import '../../../../data/datasources/local/sync_local_data_source.dart';
 import '../../../../data/sync/sync_client.dart';
 import '../../../../data/sync/sync_trigger.dart';
@@ -36,6 +38,7 @@ class _DiagnosticsPanelState extends State<DiagnosticsPanel> {
   bool _loaded = false;
   List<AudioAsset> _audioAssets = [];
   String? _selectedAudioUuid;
+  String? _selectedObraUuid;
   bool _recordNewAudio = false;
   final double _recSampleDistance = 5.0;
   bool _isRecording = false;
@@ -154,6 +157,11 @@ class _DiagnosticsPanelState extends State<DiagnosticsPanel> {
           const SizedBox(height: 8),
           _loaded
               ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  ObraSection(
+                    repository: getIt<ObraRepository>(),
+                    selectedUuid: _selectedObraUuid,
+                    onObraSelected: (u) => setState(() => _selectedObraUuid = u),
+                  ),
                   ExpansionTile(
                     initiallyExpanded: true,
                     title: const Text('Panel: Path + audio'),
@@ -236,6 +244,7 @@ class _DiagnosticsPanelState extends State<DiagnosticsPanel> {
                                     final spacing = math.max(1.0, radius - 2.0);
                                     if (_recordNewAudio) {
                                       await getIt<RecorderService>().startRecordingWithMic(
+                                        obraUuid: _selectedObraUuid,
                                         name: pathName,
                                         sampleDistanceMeters: _recSampleDistance,
                                         spacingMeters: spacing,
@@ -253,6 +262,7 @@ class _DiagnosticsPanelState extends State<DiagnosticsPanel> {
                                       }
                                       await getIt<RecorderService>().startRecording(
                                         audioUuid: _selectedAudioUuid!,
+                                        obraUuid: _selectedObraUuid,
                                         name: pathName,
                                         sampleDistanceMeters: _recSampleDistance,
                                         spacingMeters: spacing,
