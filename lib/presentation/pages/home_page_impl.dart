@@ -25,7 +25,10 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _showRecoveryBannerIfNeeded());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showRecoveryBannerIfNeeded();
+      _showMigrationBackupBannerIfNeeded();
+    });
   }
 
   Future<void> _toggleMode() async {
@@ -74,6 +77,31 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
+        actions: [
+          TextButton(
+            onPressed: messenger.hideCurrentMaterialBanner,
+            child: const Text('Entendido'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// D-19/D-26: si hubo migración v6→v7, avisar dónde quedó el respaldo.
+  /// Descartar el aviso ES "confirmar" el respaldo -- no hay ninguna acción
+  /// de borrarlo (feedback_no_destructive_automation). One-shot, mismo
+  /// patrón que el banner de recuperación de arriba.
+  void _showMigrationBackupBannerIfNeeded() {
+    final db = getIt<AppDatabase>();
+    final backupPath = db.lastBackupPath;
+    if (backupPath == null || !mounted) return;
+    db.lastBackupPath = null;
+
+    final fileName = backupPath.split(RegExp(r'[/\\]')).last;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showMaterialBanner(
+      MaterialBanner(
+        content: Text('Datos migrados; respaldo en $fileName'),
         actions: [
           TextButton(
             onPressed: messenger.hideCurrentMaterialBanner,

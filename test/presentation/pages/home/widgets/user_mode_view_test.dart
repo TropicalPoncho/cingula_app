@@ -7,9 +7,8 @@ import 'package:cingula_app/presentation/pages/home/widgets/user_mode_view.dart'
 
 void main() {
   const asset = AudioAsset(
-    id: 1,
+    uuid: 'audio-1',
     title: 'Chelenko',
-    artist: 'Cingula',
     description: 'Test',
     duration: Duration(minutes: 3),
     localPath: 'assets/audio/Chelenko.mp3',

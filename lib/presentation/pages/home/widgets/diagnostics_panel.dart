@@ -35,7 +35,7 @@ class DiagnosticsPanel extends StatefulWidget {
 class _DiagnosticsPanelState extends State<DiagnosticsPanel> {
   bool _loaded = false;
   List<AudioAsset> _audioAssets = [];
-  int? _selectedAudioId;
+  String? _selectedAudioUuid;
   bool _recordNewAudio = false;
   final double _recSampleDistance = 5.0;
   bool _isRecording = false;
@@ -99,7 +99,7 @@ class _DiagnosticsPanelState extends State<DiagnosticsPanel> {
     try {
       _audioAssets = await getIt<AudioRepository>().fetchAll();
       if (_audioAssets.isNotEmpty) {
-        _selectedAudioId = _audioAssets.first.id;
+        _selectedAudioUuid = _audioAssets.first.uuid;
       }
     } catch (_) {}
     setState(() => _loaded = true);
@@ -180,10 +180,10 @@ class _DiagnosticsPanelState extends State<DiagnosticsPanel> {
                           opacity: _recordNewAudio ? 0.45 : 1.0,
                           child: _audioAssets.isEmpty
                               ? const Text('No hay audios disponibles')
-                              : DropdownButton<int>(
-                                  value: _selectedAudioId,
-                                  items: _audioAssets.map((a) => DropdownMenuItem(value: a.id, child: Text(a.title))).toList(growable: false),
-                                  onChanged: (v) => setState(() => _selectedAudioId = v),
+                              : DropdownButton<String>(
+                                  value: _selectedAudioUuid,
+                                  items: _audioAssets.map((a) => DropdownMenuItem(value: a.uuid, child: Text(a.title))).toList(growable: false),
+                                  onChanged: (v) => setState(() => _selectedAudioUuid = v),
                                 ),
                         ),
                       ),
@@ -242,7 +242,7 @@ class _DiagnosticsPanelState extends State<DiagnosticsPanel> {
                                         triggerRadiusMeters: radius,
                                       );
                                     } else {
-                                      if (_selectedAudioId == null) {
+                                      if (_selectedAudioUuid == null) {
                                         setState(() => _isRecording = false);
                                         if (mounted) {
                                           ScaffoldMessenger.of(context).showSnackBar(
@@ -252,7 +252,7 @@ class _DiagnosticsPanelState extends State<DiagnosticsPanel> {
                                         return;
                                       }
                                       await getIt<RecorderService>().startRecording(
-                                        audioAssetId: _selectedAudioId!,
+                                        audioUuid: _selectedAudioUuid!,
                                         name: pathName,
                                         sampleDistanceMeters: _recSampleDistance,
                                         spacingMeters: spacing,

@@ -95,7 +95,7 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
     if (confirm != true) return;
 
     try {
-      final deleted = await _getIt<GeoPathRepository>().deleteById(path.id);
+      final deleted = await _getIt<GeoPathRepository>().deleteByUuid(path.uuid);
       _dirty = true;
       await _load();
       if (mounted) {
@@ -152,7 +152,7 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
     }
 
     try {
-      final id = await _getIt<AudioRepository>().insertLocalRecording(
+      final uuid = await _getIt<AudioRepository>().insertLocalRecording(
         title: title,
         description: 'Asset manual',
         localPath: path,
@@ -162,7 +162,7 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
       await _load();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Audio agregado (id: $id)')),
+          SnackBar(content: Text('Audio agregado (uuid: $uuid)')),
         );
       }
     } catch (e) {
@@ -172,7 +172,7 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
 
   Future<void> _resetPathProgress(GeoPath path) async {
     try {
-      await _getIt<GeoPathRepository>().saveProgress(path.id, 0);
+      await _getIt<GeoPathRepository>().saveProgress(path.uuid, 0);
       _dirty = true;
       await _load();
       if (mounted) {
@@ -197,11 +197,13 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('🎵 Audio assets: ${stats['audio_assets']}'),
+            Text('🎵 Audios: ${stats['audios']}'),
             const SizedBox(height: 8),
-            Text('📍 Triggers: ${stats['geo_triggers']}'),
+            Text('🎭 Obras: ${stats['obras']}'),
             const SizedBox(height: 8),
-            Text('🛤️  Paths: ${stats['geo_paths']}'),
+            Text('📍 Triggers: ${stats['triggers']}'),
+            const SizedBox(height: 8),
+            Text('🛤️  Paths: ${stats['paths']}'),
           ],
         ),
         actions: [
@@ -212,9 +214,11 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
   }
 
   String _audioNameForPath(GeoPath path) {
+    final audioUuid = path.audioUuid;
+    if (audioUuid == null) return 'Sin audio asignado';
     // Evitar orElse de firstWhere por diferencias de tipo en fakes/modelos.
     for (final a in _audios) {
-      if (a.id == path.audioAssetId) {
+      if (a.uuid == audioUuid) {
         return a.title;
       }
     }
@@ -224,7 +228,8 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
   Future<void> _playPathAudio(GeoPath path) async {
     final audioRepo = _getIt<AudioRepository>();
     final gateway = _getIt<AudioPlaybackGateway>();
-    final audio = await audioRepo.findById(path.audioAssetId);
+    final audioUuid = path.audioUuid;
+    final audio = audioUuid == null ? null : await audioRepo.findByUuid(audioUuid);
     if (audio == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -259,7 +264,7 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
       return;
     }
 
-    int selectedAudioId = path.audioAssetId;
+    String? selectedAudioUuid = path.audioUuid ?? _audios.first.uuid;
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -267,14 +272,14 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
         return StatefulBuilder(
           builder: (ctx, setStateDialog) => AlertDialog(
             title: const Text('Cambiar audio del path'),
-            content: DropdownButton<int>(
-              value: selectedAudioId,
+            content: DropdownButton<String>(
+              value: selectedAudioUuid,
               items: _audios
-                  .map((a) => DropdownMenuItem<int>(value: a.id, child: Text(a.title)))
+                  .map((a) => DropdownMenuItem<String>(value: a.uuid, child: Text(a.title)))
                   .toList(growable: false),
               onChanged: (v) {
                 if (v != null) {
-                  setStateDialog(() => selectedAudioId = v);
+                  setStateDialog(() => selectedAudioUuid = v);
                 }
               },
             ),
@@ -287,17 +292,17 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
       },
     );
 
-    if (confirmed != true || selectedAudioId == path.audioAssetId) return;
+    if (confirmed != true || selectedAudioUuid == path.audioUuid) return;
 
     try {
-      await _getIt<GeoPathRepository>().updateAudio(pathId: path.id, audioAssetId: selectedAudioId);
+      await _getIt<GeoPathRepository>().updateAudio(pathUuid: path.uuid, audioUuid: selectedAudioUuid!);
       _dirty = true;
       await _load();
       if (mounted) {
         // Evitar orElse de firstWhere por diferencias de tipo en fakes/modelos (ver _audioNameForPath).
         var newAudioTitle = 'audio';
         for (final a in _audios) {
-          if (a.id == selectedAudioId) {
+          if (a.uuid == selectedAudioUuid) {
             newAudioTitle = a.title;
             break;
           }
@@ -311,9 +316,11 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
     }
   }
 
+  String _short(String uuid) => uuid.length <= 8 ? uuid : uuid.substring(0, 8);
+
   @override
   Widget build(BuildContext context) {
-    final pathById = {for (final p in _paths) p.id: p};
+    final pathByUuid = {for (final p in _paths) p.uuid: p};
 
     return WillPopScope(
       onWillPop: () async {
@@ -379,12 +386,12 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
                     scrollDirection: Axis.horizontal,
                     child: DataTable(
                       columns: const [
-                        DataColumn(label: Text('id')),
+                        DataColumn(label: Text('uuid')),
+                        DataColumn(label: Text('obra')),
                         DataColumn(label: Text('name')),
                         DataColumn(label: Text('audio')),
                         DataColumn(label: Text('tolerance')),
                         DataColumn(label: Text('offset_ms')),
-                        DataColumn(label: Text('uuid')),
                         DataColumn(label: Text('updated_at')),
                         DataColumn(label: Text('vlog')),
                         DataColumn(label: Text('acciones')),
@@ -392,12 +399,12 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
                       rows: _paths
                           .map(
                             (p) => DataRow(cells: [
-                              DataCell(Text('${p.id}')),
+                              DataCell(Text(_short(p.uuid))),
+                              DataCell(Text(_short(p.obraUuid))),
                               DataCell(Text(p.name)),
                               DataCell(Text(_audioNameForPath(p))),
                               DataCell(Text(p.toleranceMeters.toStringAsFixed(1))),
                               DataCell(Text('${p.savedOffsetMs}')),
-                              DataCell(Text(p.uuid ?? '-')),
                               DataCell(Text(_fmt(p.updatedAt))),
                               DataCell(Text('${p.logicalVersion ?? '-'}')),
                               DataCell(
@@ -436,28 +443,26 @@ class _DataBrowserPageState extends State<DataBrowserPage> {
                     scrollDirection: Axis.horizontal,
                     child: DataTable(
                       columns: const [
-                        DataColumn(label: Text('id')),
+                        DataColumn(label: Text('uuid')),
                         DataColumn(label: Text('lat')),
                         DataColumn(label: Text('lon')),
                         DataColumn(label: Text('radius')),
                         DataColumn(label: Text('offset_ms')),
-                        DataColumn(label: Text('audio')),
                         DataColumn(label: Text('path name')),
-                        DataColumn(label: Text('uuid')),
+                        DataColumn(label: Text('path_uuid')),
                         DataColumn(label: Text('updated_at')),
                         DataColumn(label: Text('vlog')),
                       ],
                       rows: _triggers
                           .map(
                             (t) => DataRow(cells: [
-                              DataCell(Text('${t.id}')),
+                              DataCell(Text(_short(t.uuid))),
                               DataCell(Text(t.latitude.toStringAsFixed(6))),
                               DataCell(Text(t.longitude.toStringAsFixed(6))),
                               DataCell(Text(t.radiusMeters.toStringAsFixed(1))),
                               DataCell(Text('${t.offsetMs}')),
-                              DataCell(Text('${t.audioAssetId}')),
-                              DataCell(Text(pathById[t.geoPathId]?.name ?? '-')),
-                              DataCell(Text(t.uuid ?? '-')),
+                              DataCell(Text(pathByUuid[t.pathUuid]?.name ?? '-')),
+                              DataCell(Text(_short(t.pathUuid))),
                               DataCell(Text(_fmt(t.updatedAt))),
                               DataCell(Text('${t.logicalVersion ?? '-'}')),
                             ]),
