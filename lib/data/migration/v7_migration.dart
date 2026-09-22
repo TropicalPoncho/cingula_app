@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
@@ -192,6 +194,105 @@ Future<Map<String, Object?>> migrateToV7(
   // 5. verificacion
   final report = await _verify(db, before, portals);
   report['portalsFromDangling'] = portalsFromDangling;
+
+  // 6. outbox: reenvio completo (D-31). El backend nuevo habla otro protocolo,
+  // asi que la cola vieja no se puede drenar; se archiva y se reconstruye.
+  final deviceId = (await db.rawQuery('SELECT device_id FROM sync_state WHERE id = 1'))
+      .map((r) => r['device_id'] as String?)
+      .firstOrNull;
+  final legacyDeletes = await db.rawQuery(
+      "SELECT table_name, record_uuid, payload FROM sync_outbox WHERE op = 'delete' ORDER BY id");
+  await db.execute('ALTER TABLE sync_outbox RENAME TO legacy_sync_outbox');
+  await db.execute('''
+CREATE TABLE sync_outbox (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  table_name TEXT NOT NULL,
+  record_uuid TEXT NOT NULL,
+  op TEXT NOT NULL,
+  payload TEXT,
+  device_id TEXT,
+  created_at INTEGER NOT NULL,
+  attempt_count INTEGER NOT NULL DEFAULT 0,
+  next_attempt_at INTEGER
+)''');
+
+  // Orden de rank del spec: padres antes que hijos. Las tablas sincronizables
+  // de v7 tienen exactamente las columnas de TABLE_SPEC (audio_local y
+  // path_progress son locales y no se recorren), asi que SELECT * es el payload.
+  const resendTables = ['audios', 'artistas', 'obras', 'obra_artistas', 'paths', 'triggers'];
+  var expectedResend = 0;
+  for (var i = 0; i < resendTables.length; i++) {
+    final t = resendTables[i];
+    for (final r in await db.rawQuery('SELECT * FROM $t')) {
+      expectedResend++;
+      await db.insert('sync_outbox', {
+        'table_name': t,
+        'record_uuid': r['uuid'],
+        'op': 'insert',
+        'payload': jsonEncode(r),
+        'device_id': deviceId,
+        'created_at': nowSec + i,
+        'attempt_count': 0,
+        'next_attempt_at': null,
+      });
+    }
+  }
+  final resent = await _count(db, "SELECT COUNT(*) FROM sync_outbox WHERE op = 'insert'");
+  report['outboxResend'] = resent;
+  if (resent != expectedResend) {
+    throw MigrationException('reenvio: esperado $expectedResend, hay $resent',
+        report: Map.of(report));
+  }
+  for (final t in resendTables) {
+    if (await _count(
+            db,
+            "SELECT COUNT(*) FROM sync_outbox o WHERE o.op = 'insert' AND o.table_name = '$t' "
+            'AND o.record_uuid NOT IN (SELECT uuid FROM $t)') >
+        0) {
+      throw MigrationException('reenvio: record_uuid inexistente en $t',
+          report: Map.of(report));
+    }
+  }
+
+  // Un reenvio completo no puede expresar un tombstone: los deletes pendientes
+  // se traducen. Los de 'regions' se descartan (la entidad ya no existe, D-16).
+  const deleteTable = {
+    'audio_assets': 'audios',
+    'geo_paths': 'paths',
+    'geo_triggers': 'triggers',
+  };
+  var translated = 0;
+  for (final r in legacyDeletes) {
+    final target = deleteTable[r['table_name']];
+    if (target == null) continue; // 'regions'
+    var version = 1;
+    try {
+      final p = jsonDecode(r['payload'] as String? ?? '{}');
+      if (p is Map && p['logical_version'] is int) version = p['logical_version'] as int;
+    } catch (_) {}
+    await db.insert('sync_outbox', {
+      'table_name': target,
+      'record_uuid': r['record_uuid'],
+      'op': 'delete',
+      'payload': jsonEncode({'uuid': r['record_uuid'], 'logical_version': version}),
+      'device_id': deviceId,
+      'created_at': nowSec + resendTables.length,
+      'attempt_count': 0,
+      'next_attempt_at': null,
+    });
+    translated++;
+  }
+  report['outboxDeletesTranslated'] = translated;
+
+  // 7. el cursor viejo es un timestamp ISO; el protocolo nuevo usa change_seq.
+  await db.execute('UPDATE sync_state SET server_cursor = NULL WHERE id = 1');
+
+  // 8. archivado: las cuatro juntas y en el mismo paso (un RENAME reescribe las
+  // REFERENCES de las hermanas). Nunca se borra nada.
+  await db.execute('ALTER TABLE audio_assets RENAME TO legacy_audio_assets');
+  await db.execute('ALTER TABLE geo_paths RENAME TO legacy_geo_paths');
+  await db.execute('ALTER TABLE geo_triggers RENAME TO legacy_geo_triggers');
+  await db.execute('ALTER TABLE regions RENAME TO legacy_regions');
   return report;
 }
 

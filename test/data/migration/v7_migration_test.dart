@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:cingula_app/data/migration/ids.dart';
@@ -65,11 +66,16 @@ void main() {
     expect(await _n(db, 'audio_local'), 77);
     expect(await _n(db, 'path_progress'), 70);
     expect(await _n(db, 'path_progress', 'WHERE saved_offset_ms > 0'), 6);
-    // tablas viejas intactas
-    expect(await _n(db, 'audio_assets'), 77);
-    expect(await _n(db, 'geo_paths'), 70);
-    expect(await _n(db, 'geo_triggers'), 459);
-    expect(await _n(db, 'regions'), 20);
+    // tablas viejas archivadas con sus conteos originales
+    expect(await _n(db, 'legacy_audio_assets'), 77);
+    expect(await _n(db, 'legacy_geo_paths'), 70);
+    expect(await _n(db, 'legacy_geo_triggers'), 459);
+    expect(await _n(db, 'legacy_regions'), 20);
+    expect(await _n(db, 'legacy_sync_outbox'), 6);
+    expect(
+        await db.rawQuery("SELECT name FROM sqlite_master WHERE name IN "
+            "('audio_assets','geo_paths','geo_triggers','regions')"),
+        isEmpty);
     expect(report['portalsFromDangling'], 0);
     // ruta de asset intacta
     expect(await _n(db, 'audio_local', "WHERE local_path LIKE 'assets/%'"), 3);
@@ -83,6 +89,37 @@ void main() {
     // ids deterministicos
     final p = (await db.query('paths', where: "kind='route'", limit: 1)).first;
     expect(p['obra_uuid'], obraUuidForPath(p['uuid'] as String));
+    await db.close();
+  });
+
+  test('outbox: reenvio completo ordenado, deletes traducidos, cursor NULL', () async {
+    final db = await _upgrade(await _seed(null));
+    expect(await _n(db, 'sync_outbox', "WHERE op = 'insert'"), 706);
+    expect(await _n(db, 'sync_outbox'), 708);
+    expect(await _n(db, 'sync_outbox', 'WHERE attempt_count != 0 OR next_attempt_at IS NOT NULL'), 0);
+    expect(await _n(db, 'sync_outbox', "WHERE table_name = 'regions'"), 0);
+    // padres antes que hijos
+    final order = (await db.rawQuery("SELECT table_name FROM sync_outbox WHERE op = 'insert' ORDER BY id"))
+        .map((r) => r['table_name'] as String)
+        .toList();
+    const rank = ['audios', 'artistas', 'obras', 'obra_artistas', 'paths', 'triggers'];
+    final idx = order.map(rank.indexOf).toList();
+    expect(idx, [...idx]..sort());
+    // payload = columnas del spec, uuid == record_uuid
+    final a = (await db.query('sync_outbox', where: "table_name = 'audios' AND op = 'insert'", limit: 1)).first;
+    final p = jsonDecode(a['payload'] as String) as Map;
+    expect(p['uuid'], a['record_uuid']);
+    expect(p.keys.toSet(), {
+      'uuid', 'kind', 'title', 'description', 'duration_seconds', 'storage_key',
+      'checksum', 'updated_at', 'deleted_at', 'logical_version'
+    });
+    expect(a['device_id'], 'dev-synthetic');
+    // deletes
+    final dt = (await db.query('sync_outbox', where: "op = 'delete' AND table_name = 'triggers'")).single;
+    expect(jsonDecode(dt['payload'] as String),
+        {'uuid': dt['record_uuid'], 'logical_version': 3});
+    expect(await _n(db, 'sync_outbox', "WHERE op = 'delete' AND table_name = 'audios'"), 1);
+    expect((await db.query('sync_state')).single['server_cursor'], isNull);
     await db.close();
   });
 
