@@ -219,7 +219,7 @@ CREATE TABLE sync_outbox (
   // Orden de rank del spec: padres antes que hijos. Las tablas sincronizables
   // de v7 tienen exactamente las columnas de TABLE_SPEC (audio_local y
   // path_progress son locales y no se recorren), asi que SELECT * es el payload.
-  const resendTables = ['audios', 'artistas', 'obras', 'obra_artistas', 'paths', 'triggers'];
+  const resendTables = ['recorridos', 'audios', 'artistas', 'obras', 'obra_artistas', 'paths', 'triggers'];
   var expectedResend = 0;
   for (var i = 0; i < resendTables.length; i++) {
     final t = resendTables[i];

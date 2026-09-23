@@ -5,6 +5,17 @@
 
 CREATE SEQUENCE IF NOT EXISTS change_seq;
 
+-- D-30: agrupa obras (una por artista/sesion). Vacia hasta que exista un consumidor.
+CREATE TABLE IF NOT EXISTS recorridos (
+  uuid uuid PRIMARY KEY,
+  name text NOT NULL,
+  description text NOT NULL DEFAULT '',
+  logical_version integer NOT NULL CHECK (logical_version >= 1),
+  updated_at timestamptz NOT NULL,
+  deleted_at timestamptz,
+  change_seq bigint NOT NULL DEFAULT nextval('change_seq')
+);
+
 CREATE TABLE IF NOT EXISTS audios (
   uuid uuid PRIMARY KEY,
   kind text NOT NULL DEFAULT 'grabacion' CHECK (kind IN ('grabacion','final')),
@@ -34,6 +45,7 @@ CREATE TABLE IF NOT EXISTS obras (
   uuid uuid PRIMARY KEY,
   name text NOT NULL,
   owner_id uuid,
+  recorrido_uuid uuid REFERENCES recorridos(uuid) DEFERRABLE INITIALLY DEFERRED,
   visibility text NOT NULL DEFAULT 'draft' CHECK (visibility IN ('draft','private','public')),
   share_token text UNIQUE,
   cover_lat double precision,
@@ -47,6 +59,10 @@ CREATE TABLE IF NOT EXISTS obras (
   deleted_at timestamptz,
   change_seq bigint NOT NULL DEFAULT nextval('change_seq')
 );
+-- recorrido_uuid llega despues de la primera version de esta tabla en algunas ramas
+-- (D-30): CREATE TABLE IF NOT EXISTS no altera una tabla ya creada, asi que el ALTER
+-- de abajo es lo que de verdad agrega la columna donde ya existia obras sin ella.
+ALTER TABLE obras ADD COLUMN IF NOT EXISTS recorrido_uuid uuid REFERENCES recorridos(uuid) DEFERRABLE INITIALLY DEFERRED;
 
 CREATE TABLE IF NOT EXISTS obra_artistas (
   uuid uuid PRIMARY KEY,
@@ -99,6 +115,7 @@ CREATE TABLE IF NOT EXISTS entity_prev (
   PRIMARY KEY (table_name, record_uuid)
 );
 
+CREATE INDEX IF NOT EXISTS recorridos_change_seq_idx ON recorridos (change_seq);
 CREATE INDEX IF NOT EXISTS audios_change_seq_idx ON audios (change_seq);
 CREATE INDEX IF NOT EXISTS artistas_change_seq_idx ON artistas (change_seq);
 CREATE INDEX IF NOT EXISTS obras_change_seq_idx ON obras (change_seq);
@@ -129,7 +146,7 @@ $$ LANGUAGE plpgsql;
 DO $$
 DECLARE t text;
 BEGIN
-  FOREACH t IN ARRAY ARRAY['audios','artistas','obras','obra_artistas','paths','triggers'] LOOP
+  FOREACH t IN ARRAY ARRAY['recorridos','audios','artistas','obras','obra_artistas','paths','triggers'] LOOP
     EXECUTE format('DROP TRIGGER IF EXISTS %I ON %I', t || '_bump_seq', t);
     EXECUTE format('CREATE TRIGGER %I BEFORE INSERT OR UPDATE ON %I FOR EACH ROW EXECUTE FUNCTION bump_change_seq()', t || '_bump_seq', t);
     EXECUTE format('DROP TRIGGER IF EXISTS %I ON %I', t || '_save_prev', t);

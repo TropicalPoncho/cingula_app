@@ -92,7 +92,7 @@ export function translate(rows, overrides = {}, contentOverrides = {}) {
       'ids ambiguos: ' + ambiguous.map((a) => `${a.table}:${a.id} -> ${a.uuids.join(', ')}`).join('; '),
     );
   }
-  const tables = { audios: [], artistas: [], obras: [], obra_artistas: [], paths: [], triggers: [] };
+  const tables = { recorridos: [], audios: [], artistas: [], obras: [], obra_artistas: [], paths: [], triggers: [] };
   const skipped = [];
   const warnings = [];
   const source = {};

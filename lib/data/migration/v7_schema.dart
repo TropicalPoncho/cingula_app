@@ -33,12 +33,23 @@ CREATE TABLE audio_local (
   remote_url TEXT,
   download_state TEXT
 )''',
+  // Vacia en 2.1: sin repositorio, entidad ni UI. Agrupa obras (D-30); recorrido_uuid en
+  // obras es nullable a proposito, ninguna obra existente se le asigna un recorrido.
+  '''
+CREATE TABLE recorridos (
+  uuid TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  updated_at INTEGER NOT NULL, deleted_at INTEGER, logical_version INTEGER NOT NULL DEFAULT 1
+)''',
   // owner_id: uuid nullable sin FK, no hay tabla users todavia (D-17)
+  // recorrido_uuid: nullable, D-30 — una obra puede no pertenecer a ningun recorrido todavia.
   '''
 CREATE TABLE obras (
   uuid TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   owner_id TEXT,
+  recorrido_uuid TEXT REFERENCES recorridos(uuid),
   visibility TEXT NOT NULL DEFAULT 'draft' CHECK (visibility IN ('draft','private','public')),
   share_token TEXT,
   cover_lat REAL, cover_lon REAL,
