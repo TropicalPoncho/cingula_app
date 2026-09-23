@@ -138,12 +138,16 @@ Todas las entidades sincronizadas llevan además `updated_at`, `deleted_at`, `lo
 sequenceDiagram
     actor U as Usuario
     participant App as main.dart
+    participant Lock as withDbInitLock() (D-34)
     participant DB as AppDatabase.init()
     participant Mig as migrateToV7()
     participant BK as backupBeforeMigration()
 
     U->>App: abre la app
     App->>DB: init()
+    Note over DB,Lock: WorkManager corre en OTRO isolate y puede llamar<br/>init() casi al mismo tiempo — D-34 los serializa.
+    DB->>Lock: adquirir lock de archivo (blockingExclusive)
+    Lock-->>DB: lock tomado (o espera a que el otro isolate termine)
     DB->>DB: lee PRAGMA user_version
     alt version == 6 (celular viejo)
         DB->>BK: copiar + verificar por conteo
@@ -165,6 +169,7 @@ sequenceDiagram
     else version == 7 (ya migrado)
         DB-->>App: nada que hacer
     end
+    DB->>Lock: liberar lock
 ```
 
 ### 3.2 Push de sincronización (celular → Neon)
