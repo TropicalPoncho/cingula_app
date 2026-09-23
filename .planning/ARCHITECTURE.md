@@ -5,7 +5,8 @@ Fuente canónica de estos diagramas. Si el schema cambia (`lib/data/migration/v7
 commit que el schema, no después.
 
 Las decisiones (por qué, alternativas descartadas, riesgos) viven en `PROJECT.md` → Key
-Decisions y en `phases/02.1-modelo-de-datos-objetivo/02.1-CONTEXT.md` (tags `D-XX`) — este
+Decisions (una línea por ADR; los ADRs completos están en Notion, "Cíngula App — ADRs") y en
+`workstreams/app/phases/02.1-modelo-de-datos-objetivo/02.1-CONTEXT.md` (tags `D-XX`) — este
 archivo es solo los diagramas.
 
 Vista renderizada equivalente (bonus, no fuente): [Cíngula — Arquitectura v7](https://claude.ai/artifact/1pdP7cPxVK7kaoPVTtMYap).
@@ -24,13 +25,18 @@ graph TB
   end
 
   blob["☁️ Storage de audio<br/><i>Fase 2.2 — no existe todavía</i>"]
+  web["🖥️ Web de gestión<br/><i>workstream web — no existe todavía</i><br/><small>WEB_API_KEY, pull + push (ADR-004)</small>"]
 
   artist -- "graba, camina, escucha" --> app
   app -- "HTTPS + Bearer key<br/>outbox batch" --> api
   api -- "SQL, tx" --> db
   app -.-> |"pendiente Fase 2.2<br/>subir .wav"| blob
+  artist -. "edita obras" .-> web
+  web -. "HTTPS + Bearer<br/>push · pull (pendiente)" .-> api
+  web -.-> |"pendiente 2.2<br/>subir audio final"| blob
 
   style blob stroke-dasharray: 5 5,fill:transparent
+  style web stroke-dasharray: 5 5,fill:transparent
 ```
 
 ## 2. Modelo de datos — DER
@@ -46,6 +52,7 @@ erDiagram
     ARTISTAS ||--o{ OBRA_ARTISTAS : "artista_uuid"
     PATHS ||--o{ TRIGGERS : "path_uuid"
     AUDIOS ||--o{ PATHS : "audio_uuid (nullable, D-11)"
+    AUDIOS ||--o{ PATHS : "grabacion_uuid (nullable, D-27)"
     AUDIOS ||--o| AUDIO_LOCAL : "solo local, D-05"
     PATHS ||--o| PATH_PROGRESS : "solo local, D-10"
 
@@ -63,6 +70,10 @@ erDiagram
         text share_token
         real cover_lat
         real cover_lon
+        real cover_min_lat "caja derivada, D-16/D-29"
+        real cover_max_lat
+        real cover_min_lon
+        real cover_max_lon
     }
     ARTISTAS {
         text uuid PK
@@ -95,7 +106,8 @@ erDiagram
         text obra_uuid FK
         text kind "route or portal, CHECK"
         text name
-        text audio_uuid FK "nullable"
+        text audio_uuid FK "nullable, el que suena"
+        text grabacion_uuid FK "nullable, fuente cruda, D-02/D-27"
         real tolerance_meters
     }
     PATH_PROGRESS {
@@ -107,6 +119,7 @@ erDiagram
         text path_uuid FK
         int position
         text name
+        text description
         real latitude
         real longitude
         real radius_meters
@@ -222,6 +235,7 @@ sequenceDiagram
 
 ---
 
-*Última actualización: 2026-09-22, corte de Fase 2.1 + D-33 (`recorridos`). Fuente: código real
+*Última actualización: 2026-09-23 — web de gestión en el C4 (workstream web, ADR-010) y columnas del DER
+alineadas con `backend/api/_lib/spec.js` (`paths.grabacion_uuid`, `triggers.description`, `obras.cover_min/max_*`). Fuente: código real
 (`lib/data/migration/v7_schema.dart`, `backend/schema.sql`, `backend/api/sync/push.js`,
 `lib/domain/usecases/monitor_user_location_usecase.dart`), no una versión resumida de otro doc.*

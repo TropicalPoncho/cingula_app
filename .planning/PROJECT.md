@@ -33,15 +33,15 @@ Que la app siga siendo confiable en el bolsillo del usuario mientras se construy
 
 ### Out of Scope
 
-- Interfaz web de edición de obras (RF-02: reemplazar audio, ajustar geolocalización, editar metadata) — deferido a un milestone siguiente una vez que la infraestructura de sync esté sólida; este milestone construye el backend y el pipe de sync, no la UI web
+- Interfaz web de edición de obras (RF-02: reemplazar audio, ajustar geolocalización, editar metadata) — fuera de este milestone (workstream `app`); desde 2026-09-23 vive en el workstream `web` (ADR-010), que además es dueño de `backend/`
 - Multi-usuario / apertura pública (v1 del ERS) — v0 sigue siendo de un solo editor
 - Resolución de conflictos multi-editor — no aplica con un solo editor
-- Creación de obras nuevas desde la web sin grabación de campo (RF-05) — depende de que exista la web, fuera de alcance
+- Creación de obras nuevas desde la web sin grabación de campo (RF-05) — fuera de este milestone; vive en el workstream `web`
 - Elegir stack de backend definitivo ahora — se arranca con algo local para desarrollo y se resuelve durante la fase de research/planning de ese frente, con más contexto técnico (candidatos relevados: VPS propio, Postgres gestionado tipo Supabase/Neon, Vercel)
 
 ## Context
 
-**Origen:** hay un ERS (Especificación de Requisitos del Sistema, v0.2 draft) en Notion que describe la arquitectura target de sincronización bidireccional celular↔servidor↔web con versionado. Este milestone cubre la mitad "celular + backend de sync" de ese ERS; la mitad "web de edición" queda para después.
+**Origen:** hay un ERS (Especificación de Requisitos del Sistema, v0.3 desde 2026-09-23, con subpáginas Backend y Web) en Notion que describe la arquitectura target de sincronización bidireccional celular↔servidor↔web con versionado. Este milestone cubre la mitad "celular + backend de sync" de ese ERS; la mitad "web de edición" queda para después.
 
 **Dirección futura (no diseñar todavía, solo no pintarse en una esquina):** más adelante, después de la etapa de un solo editor, la idea es que la app soporte multi-usuario — usuarios subiendo sus propios sonidos desde la web, con un perfil admin para moderar/gestionar audios de otros usuarios (reportes, etc.). Confirmado por el usuario el 2026-08-30: esto es "otra etapa", no de este milestone ni del siguiente (web de edición single-editor). El diseño de `synced_entities` (Fase 2, ver abajo) no bloquea esto — agregar noción de dueño de entidad es una columna nueva (`owner_id`), no una reestructuración; lo que sí es trabajo nuevo genuino en esa etapa es la lógica/UI de moderación y permisos.
 
@@ -80,10 +80,34 @@ Que la app siga siendo confiable en el bolsillo del usuario mientras se construy
 | Ponytail como parte del checklist de cada fase de ejecución | Preferencia explícita del usuario para mantener el código lo más simple posible en cada entrega, no solo al final | ✓ Good |
 | Acciones destructivas de debug (recrear/importar BD): eliminadas por completo en vez de gateadas con confirmación | Reemplaza la redacción original del requirement; alineado con memoria de feedback del proyecto (no automatizar rutas destructivas, ni con confirmación) | ✓ Good |
 | Confirmación humana en dispositivo real de la recuperación de BD corrupta: diferida, no bloquea el cierre de Fase 1 | El celular real del usuario es la única copia de datos de campo — no quiso arriesgarla corrompiéndola a propósito, y declinó la alternativa de probarlo en un emulador. La lógica de rename-not-delete está cubierta por tests automatizados (`db_recovery_test.dart`, verde) | ✓ Good — riesgo aceptado conscientemente, registrado en `01-HUMAN-UAT.md` |
-| `synced_entities`: una sola tabla genérica (payload JSONB, sin columnas tipadas por entidad) en vez de 4 tablas espejo | Discutido explícitamente con el usuario el 2026-08-30 por preocupación de migración futura al llegar la web de edición. Conclusión: JSONB es schema-on-read — agregar clientes (web) o campos nuevos no requiere ALTER TABLE ni migración; la web se integra como "otro participante del mismo protocolo de sync" (mismo current+previous versioning), no como un schema aparte. Lo que sí falta para reemplazar audio desde la web (no bloqueado por este schema, pero no construido): endpoints de lectura/escritura para la web, storage de archivos binarios (candidato: Vercel Blob, Neon no guarda blobs), y el pull sync (Fase 3) + descarga (Fase 5, DOWNLOAD-04) para que el celular baje el reemplazo | ✓ Good |
+| ~~`synced_entities`: una sola tabla genérica (payload JSONB, sin columnas tipadas por entidad) en vez de 4 tablas espejo~~ **REVERTIDA en Fase 2.1 por D-09 (tablas tipadas) → ADR-002.** Lo que sigue vigente de esta fila: la web es otro participante del mismo protocolo (ADR-004) | Discutido explícitamente con el usuario el 2026-08-30 por preocupación de migración futura al llegar la web de edición. Conclusión: JSONB es schema-on-read — agregar clientes (web) o campos nuevos no requiere ALTER TABLE ni migración; la web se integra como "otro participante del mismo protocolo de sync" (mismo current+previous versioning), no como un schema aparte. Lo que sí falta para reemplazar audio desde la web (no bloqueado por este schema, pero no construido): endpoints de lectura/escritura para la web, storage de archivos binarios (candidato: Vercel Blob, Neon no guarda blobs), y el pull sync (Fase 3) + descarga (Fase 5, DOWNLOAD-04) para que el celular baje el reemplazo | ✓ Good |
 | Roadmap: geofencing (Fase 4) mantiene su prioridad, no se reordena antes de la web/reemplazo de audio | El usuario confirmó el 2026-08-30 que la mejora funcional de geofencing es prioritaria pese a la urgencia de poder reemplazar audios desde la web | ✓ Good |
 | `recorridos` (D-33): nivel nuevo arriba de `obra`, agrupa varias obras (una por artista) | Un recorrido real puede tener obras de artistas distintos con créditos que se calculan por unión; agregarlo como schema puro antes de la migración real en el celular evita un salto v7→v8 después. Sin UI/repositorio todavía. Investigado contra Echoes (Walks/Echoes/Elements) el 2026-09-22 — ver `.planning/ARCHITECTURE.md` y Notion "Ideas de modelo a futuro" | ✓ Good |
 | WorkManager nunca abre la base por `sqflite` si la migración no terminó (D-34) | Encontrado en el corte real, en dos intentos: WorkManager corrió casi al mismo tiempo que el isolate principal en el primer arranque, `sqflite` tiró una excepción cruda que activó el camino de "BD corrupta" sin corrupción real. El primer fix (lock de archivo a nivel de SO) pasó los tests en Windows pero falló igual en el celular — los dos isolates comparten proceso, y los locks POSIX son por proceso, no por isolate. El fix real lee la versión directo del header del archivo, sin tocar `sqflite` en absoluto | ✓ Good — datos originales confirmados intactos las dos veces, fix con test real (bases v6/v7 de verdad) antes del tercer intento |
+
+### Decisiones transversales (ADRs, fuente canónica en Notion)
+
+Desde 2026-09-23 las decisiones que cruzan fases o contenedores viven en Notion: [Cíngula App — ADRs](https://app.notion.com/p/3e43d6cb9a5881749a19d3439a68a085). Acá va una línea por ADR, sin repetir el contenido. Los requisitos viven en el [ERS v0.3](https://app.notion.com/p/3943d6cb9a588143abe4c73c758042ce) y sus subpáginas Backend y Web (ADR-009).
+
+| ADR | Decisión |
+|---|---|
+| ADR-001 | Backend: Neon Postgres + Vercel Functions |
+| ADR-002 | Servidor con tablas tipadas (reemplaza `synced_entities`) |
+| ADR-003 | Versionado: actual + 1 anterior (corrige RF-04); archivos de audio inmutables en storage |
+| ADR-004 | La web es un participante más del protocolo de sync (push/pull, sin CRUD aparte) |
+| ADR-005 | Monorepo: app, `backend/` y `web/` en este repo; aislamiento de prod por rama + preview + rama de Neon |
+| ADR-006 | La web escribe por etapas: etapa 1 recorridos/artistas/obra_artistas/audios nuevos; etapa 2 el resto, cuando el celular tenga pull. Push agrega `staleIds` |
+| ADR-007 | `WEB_API_KEY` separada de `SYNC_API_KEY` |
+| ADR-008 | La web funciona solo online |
+| ADR-009 | Fuentes de verdad: requisitos y ADRs en Notion; modelo en el código; ejecución en `.planning/` |
+| ADR-010 | Dos workstreams GSD: `app` (este milestone) y `web` (dueño de `backend/` y `web/`) |
+
+## Workstreams (desde 2026-09-23)
+
+- `.planning/workstreams/app/` — este milestone (celular): lado celular de 2.2, pull en el celular (3), geofencing (4), precarga y descarga (5). Workstream activo por defecto.
+- `.planning/workstreams/web/` — web de gestión y **todo `backend/`**: endpoint de pull (lado servidor de la Fase 3), `staleIds`, `WEB_API_KEY`, storage y subida de audio (lado servidor de 2.2). Se trabaja con `--ws web`.
+- El contrato entre los dos está en la subpágina "ERS · Backend — protocolo de sync". El workstream `app` no programa contra un endpoint hasta que ese contrato esté cerrado.
+- Cada workstream en su propia rama y git worktree. `backend/` solo se toca desde `web`.
 
 ## Current State
 
@@ -109,4 +133,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-16 after Phase 2 completion*
+*Last updated: 2026-09-23 — workstreams app/web + ADRs en Notion (ADR-009/010)*

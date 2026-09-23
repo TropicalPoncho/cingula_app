@@ -1,7 +1,7 @@
 # cingula-sync-backend
 
 Vercel Functions (`/sync/push`, `/sync/state`) sobre Neon Postgres. Implementa el
-contrato HTTP documentado en `.planning/phases/02-backend-real-push-sync/02-02-PLAN.md`.
+contrato HTTP documentado en `.planning/workstreams/app/phases/02-backend-real-push-sync/02-02-PLAN.md`.
 
 ## Setup
 
