@@ -108,6 +108,20 @@ Desde 2026-09-23 las decisiones que cruzan fases o contenedores viven en Notion:
 - `.planning/workstreams/web/` — web de gestión y **todo `backend/`**: endpoint de pull (lado servidor de la Fase 3), `staleIds`, `WEB_API_KEY`, storage y subida de audio (lado servidor de 2.2). Se trabaja con `--ws web`.
 - El contrato entre los dos está en la subpágina "ERS · Backend — protocolo de sync". El workstream `app` no programa contra un endpoint hasta que ese contrato esté cerrado.
 - Cada workstream en su propia rama y git worktree. `backend/` solo se toca desde `web`.
+- Numeración de fases: `app` usa 1–5 (+ decimales); `web` arranca en **10** para que "Fase N" sea inequívoca en Notion y commits.
+
+## Current Milestone — workstream `web`: v1.0 Web de gestión (lectura)
+
+**Goal:** abrir una web y ver todo lo que hay en el servidor (recorridos, obras, paths con sus triggers, audios, artistas) sobre mapa y en detalle, leyendo por el mismo protocolo de sync que el celular (ADR-004). Sin escritura desde la web.
+
+**Target features:**
+- `GET /sync/pull` en el backend (BE-01) — lado servidor de la Fase 3 de `app`, mismo endpoint para web y celular — + fix de `state.js` sin `recorridos` (BE-05)
+- `WEB_API_KEY` (BE-03) + pantalla de acceso de la web
+- Web (stack propuesto en el ERS: Vite + React + Leaflet/OSM, mismo proyecto Vercel) de solo lectura: **mapa general de recorridos/obras** (coberturas, paths y triggers, filtro por recorrido), listados y detalle de recorridos, artistas, obras, path (triggers como círculos), audios, estado de sync
+- Storage de audio del lado servidor (BE-04): proveedor elegido con research + ADR, autorización de subida directa cliente→storage y URL de descarga — destraba la subida del celular (2.2 de `app`) y la reproducción en la web cuando haya archivos
+- Verificar que Preview no use la `DATABASE_URL` de Production (ADR-005)
+
+**Fuera de este milestone (decisión 2026-09-23):** toda escritura desde la web (etapas 1 y 2 de ADR-006) y `staleIds` (BE-02) — se ven en un milestone posterior. Riesgo mientras tanto: ninguno sobre datos (la web no escribe); el audio en la web solo se puede reproducir cuando `app` implemente la subida del lado celular.
 
 ## Current State
 
@@ -133,4 +147,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-23 — workstreams app/web + ADRs en Notion (ADR-009/010)*
+*Last updated: 2026-09-23 — milestone v1.0 del workstream web (web de gestión, lectura)*
