@@ -152,3 +152,14 @@ Nota de dependencias: la Fase 4 depende solo de la Fase 1 (es arquitectónicamen
 | 3. Sync Bidireccional (Pull) | 0/TBD | Not started | - |
 | 4. Reemplazo de Geofencing Híbrido | 0/TBD | Not started | - |
 | 5. Precarga de Audio + Descarga por Región | 0/TBD | Not started | - |
+
+## Backlog
+
+### Phase 999.1: Bug en el botón de reproducción del celular real (BACKLOG)
+
+**Goal:** [Captured for future planning] Investigar y arreglar un bug en el botón de reproducción, encontrado por el usuario en su celular real durante la verificación del corte de la Fase 2.1 (2026-09-23) al reproducir un recorrido grabado en casa. Postergado explícitamente por decisión del usuario para la fase de lógica y mejora de reproducción y triggers — no es parte del alcance de 2.1. Falta reproducir el bug con detalle (qué botón, qué hace mal).
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
