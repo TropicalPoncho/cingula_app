@@ -5,7 +5,7 @@
 
 CREATE SEQUENCE IF NOT EXISTS change_seq;
 
--- D-30: agrupa obras (una por artista/sesion). Vacia hasta que exista un consumidor.
+-- D-33: agrupa obras (una por artista/sesion). Vacia hasta que exista un consumidor.
 CREATE TABLE IF NOT EXISTS recorridos (
   uuid uuid PRIMARY KEY,
   name text NOT NULL,
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS obras (
   change_seq bigint NOT NULL DEFAULT nextval('change_seq')
 );
 -- recorrido_uuid llega despues de la primera version de esta tabla en algunas ramas
--- (D-30): CREATE TABLE IF NOT EXISTS no altera una tabla ya creada, asi que el ALTER
+-- (D-33): CREATE TABLE IF NOT EXISTS no altera una tabla ya creada, asi que el ALTER
 -- de abajo es lo que de verdad agrega la columna donde ya existia obras sin ella.
 ALTER TABLE obras ADD COLUMN IF NOT EXISTS recorrido_uuid uuid REFERENCES recorridos(uuid) DEFERRABLE INITIALLY DEFERRED;
 
