@@ -8,6 +8,7 @@ import 'package:sqflite/sqflite.dart';
 import '../../migration/db_backup.dart';
 import '../../migration/v7_migration.dart';
 import '../../migration/v7_schema.dart';
+import 'db_init_lock.dart';
 import 'db_recovery.dart';
 import 'seed_data.dart';
 
@@ -50,35 +51,42 @@ class AppDatabase {
     final f = factory ?? databaseFactory;
     final path = dbPath ?? p.join((await getApplicationDocumentsDirectory()).path, _dbName);
 
-    try {
-      // Respaldo tomado ANTES de abrir en v7: `onUpgrade` no puede copiar de
-      // forma segura la base que tiene abierta.
-      lastBackupPath = await backupBeforeMigration(path, DateTime.now(), factory: f);
-      _database = await f.openDatabase(
-        path,
-        options: OpenDatabaseOptions(version: _dbVersion, onCreate: _onCreate, onUpgrade: _onUpgrade),
-      );
-    } on MigrationException {
-      rethrow; // NO entra al camino de "BD corrupta": la base sana no se toca.
-    } on BackupFailedException {
-      rethrow; // sin respaldo confiable no se migra.
-    } catch (e) {
-      stderr.writeln(
-        'Database init failed: $e. Renombrando el archivo existente y arrancando en limpio...',
-      );
-      // Si el rename falla, la excepción se propaga a propósito: preferimos
-      // no arrancar antes que destruir datos del usuario (DATA-01).
-      final backupPath = await renameCorruptDatabase(path, DateTime.now());
+    // D-34: el isolate de WorkManager puede llamar a init() casi al mismo
+    // tiempo que el isolate principal, sobre el mismo archivo. Sin este lock
+    // de SO, sqflite tira DatabaseException(database_closed) — una excepción
+    // cruda que cae en el catch generico de abajo y dispara el camino de "BD
+    // corrupta" sin que haya corrupcion real.
+    await withDbInitLock(path, () async {
+      try {
+        // Respaldo tomado ANTES de abrir en v7: `onUpgrade` no puede copiar de
+        // forma segura la base que tiene abierta.
+        lastBackupPath = await backupBeforeMigration(path, DateTime.now(), factory: f);
+        _database = await f.openDatabase(
+          path,
+          options: OpenDatabaseOptions(version: _dbVersion, onCreate: _onCreate, onUpgrade: _onUpgrade),
+        );
+      } on MigrationException {
+        rethrow; // NO entra al camino de "BD corrupta": la base sana no se toca.
+      } on BackupFailedException {
+        rethrow; // sin respaldo confiable no se migra.
+      } catch (e) {
+        stderr.writeln(
+          'Database init failed: $e. Renombrando el archivo existente y arrancando en limpio...',
+        );
+        // Si el rename falla, la excepción se propaga a propósito: preferimos
+        // no arrancar antes que destruir datos del usuario (DATA-01).
+        final backupPath = await renameCorruptDatabase(path, DateTime.now());
 
-      _database = await f.openDatabase(
-        path,
-        options: OpenDatabaseOptions(version: _dbVersion, onCreate: _onCreate, onUpgrade: _onUpgrade),
-      );
+        _database = await f.openDatabase(
+          path,
+          options: OpenDatabaseOptions(version: _dbVersion, onCreate: _onCreate, onUpgrade: _onUpgrade),
+        );
 
-      if (backupPath != null) {
-        lastRecoveryEvent = DatabaseRecoveryEvent(backupPath: backupPath);
+        if (backupPath != null) {
+          lastRecoveryEvent = DatabaseRecoveryEvent(backupPath: backupPath);
+        }
       }
-    }
+    });
   }
 
   Future<void> _onCreate(Database db, int version) async {
