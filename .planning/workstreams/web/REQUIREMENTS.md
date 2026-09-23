@@ -76,12 +76,34 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (se completa con el roadmap) | | |
+| PULL-01 | Phase 10 | Pending |
+| PULL-02 | Phase 10 | Pending |
+| PULL-03 | Phase 10 | Pending |
+| PULL-04 | Phase 10 | Pending |
+| PULL-05 | Phase 10 | Pending |
+| AUTH-01 | Phase 10 | Pending |
+| INFRA-01 | Phase 11 | Pending |
+| INFRA-02 | Phase 11 | Pending |
+| INFRA-03 | Phase 11 | Pending |
+| AUTH-02 | Phase 12 | Pending |
+| WEB-01 | Phase 12 | Pending |
+| WEB-02 | Phase 12 | Pending |
+| WEB-03 | Phase 12 | Pending |
+| WEB-04 | Phase 12 | Pending |
+| WEB-05 | Phase 12 | Pending |
+| WEB-06 | Phase 12 | Pending |
+| WEB-07 | Phase 12 | Pending |
+| WEB-08 | Phase 12 | Pending |
+| STOR-01 | Phase 13 | Pending |
+| STOR-02 | Phase 13 | Pending |
+| STOR-03 | Phase 13 | Pending |
+| STOR-04 | Phase 13 | Pending |
 
 **Coverage:**
 - v1 requirements: 22 total
-- Mapped to phases: 0
-- Unmapped: 22
+- Mapped to phases: 22
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-09-23*
+*Roadmap created: 2026-09-23 — 4 fases (10-13), cobertura 22/22*
