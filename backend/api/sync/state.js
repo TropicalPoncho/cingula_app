@@ -1,14 +1,12 @@
-import { requireApiKey, AUTH_ERROR } from '../_lib/auth.js';
+import { apiKeyRole, AUTH_ERROR } from '../_lib/auth.js';
 import { getSql } from '../_lib/db.js';
+import { SYNCABLE_TABLES } from '../_lib/spec.js';
 
-const STATE_SQL = `
+// serverCursor es informativo (D-13): no pasa por el advisory lock y puede estar por delante de
+// un push en vuelo. El único cursor válido para pull es 0 o un nextCursor devuelto por un pull.
+export const STATE_SQL = `
   SELECT COALESCE(MAX(seq), 0)::text AS cursor, MAX(upd) AS last FROM (
-    SELECT MAX(change_seq) seq, MAX(updated_at) upd FROM audios
-    UNION ALL SELECT MAX(change_seq), MAX(updated_at) FROM artistas
-    UNION ALL SELECT MAX(change_seq), MAX(updated_at) FROM obras
-    UNION ALL SELECT MAX(change_seq), MAX(updated_at) FROM obra_artistas
-    UNION ALL SELECT MAX(change_seq), MAX(updated_at) FROM paths
-    UNION ALL SELECT MAX(change_seq), MAX(updated_at) FROM triggers) s`;
+    ${SYNCABLE_TABLES.map((t) => `SELECT MAX(change_seq) seq, MAX(updated_at) upd FROM "${t}"`).join('\n    UNION ALL ')}) s`;
 
 export async function currentState(sql) {
   const rows = await sql.query(STATE_SQL);
@@ -21,7 +19,8 @@ export async function currentCursor(sql) {
 }
 
 export default async function handler(request, response) {
-  if (requireApiKey(request)) {
+  // D-09: ambos roles (sync y web) leen state.
+  if (!apiKeyRole(request)) {
     return response.status(401).json({ error: AUTH_ERROR });
   }
   return response.status(200).json(await currentState(getSql()));

@@ -1,5 +1,5 @@
-import { requireApiKey, AUTH_ERROR } from '../_lib/auth.js';
-import { getSql } from '../_lib/db.js';
+import { apiKeyRole, AUTH_ERROR, READ_ONLY_ERROR } from '../_lib/auth.js';
+import { getSql, SYNC_LOCK_KEY } from '../_lib/db.js';
 import { validateOutboxItem, upsertStatement } from '../_lib/outbox.js';
 import { SCHEMA_VERSION } from '../_lib/spec.js';
 import { currentCursor } from './state.js';
@@ -8,9 +8,10 @@ export default async function handler(request, response) {
   if (request.method !== 'POST') {
     return response.status(405).json({ error: 'method not allowed' });
   }
-  if (requireApiKey(request)) {
-    return response.status(401).json({ error: AUTH_ERROR });
-  }
+  const role = apiKeyRole(request);
+  if (!role) return response.status(401).json({ error: AUTH_ERROR });
+  // D-10: una WEB_API_KEY válida no puede escribir (D-09: solo lectura en este milestone).
+  if (role !== 'sync') return response.status(403).json({ error: READ_ONLY_ERROR });
 
   if (request.body?.schema_version !== SCHEMA_VERSION) {
     return response.status(400).json({ error: 'schema_version 2 required' });
@@ -37,7 +38,13 @@ export default async function handler(request, response) {
   }
 
   const sql = getSql();
-  await sql.transaction(outbox.map((item) => upsertStatement(sql, item)));
+  // ponytail: el orden ES la garantía (D-01): el lock exclusivo va antes de cualquier
+  // INSERT/UPDATE porque bump_change_seq() asigna change_seq antes del commit. No meter
+  // ninguna sentencia antes del lock.
+  await sql.transaction([
+    sql.query('SELECT pg_advisory_xact_lock($1)', [SYNC_LOCK_KEY]),
+    ...outbox.map((item) => upsertStatement(sql, item)),
+  ]);
 
   return response.status(200).json({
     ackedIds: outbox.map((item) => item.id),

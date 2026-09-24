@@ -42,6 +42,42 @@ test('tabla vieja fuera del whitelist -> 400 aun con schema_version 2', async ()
   assert.equal(r.status, 400);
 });
 
+test('WEB_API_KEY valida contra push -> 403', async () => {
+  const original = process.env.WEB_API_KEY;
+  process.env.WEB_API_KEY = 'web-test-key';
+  try {
+    let status, json;
+    const response = { status(s) { status = s; return this; }, json(j) { json = j; return this; } };
+    await push(
+      {
+        method: 'POST',
+        headers: { authorization: 'Bearer web-test-key' },
+        body: { schema_version: 2, outbox: [audioItem(randomUUID(), 1)] },
+      },
+      response,
+    );
+    assert.equal(status, 403);
+    assert.equal(json.error, 'API key is read-only');
+  } finally {
+    if (original === undefined) delete process.env.WEB_API_KEY;
+    else process.env.WEB_API_KEY = original;
+  }
+});
+
+test('key invalida -> 401', async () => {
+  let status, json;
+  const response = { status(s) { status = s; return this; }, json(j) { json = j; return this; } };
+  await push(
+    {
+      method: 'POST',
+      headers: { authorization: 'Bearer nope' },
+      body: { schema_version: 2, outbox: [audioItem(randomUUID(), 1)] },
+    },
+    response,
+  );
+  assert.equal(status, 401);
+});
+
 test('push tipado contra Neon', { skip }, async (t) => {
   const sql = getSql();
   await applySchema(sql);
@@ -103,5 +139,14 @@ test('push tipado contra Neon', { skip }, async (t) => {
     const s = await currentState(sql);
     assert.match(s.serverCursor, /^\d+$/);
     assert.notEqual(s.lastSyncAt, null);
+  });
+
+  await t.test('handler con lock: push real -> 200', async () => {
+    const u = randomUUID();
+    created.audios.push(u);
+    const r = await callPush({ schema_version: 2, outbox: [audioItem(u, 1)] });
+    assert.equal(r.status, 200);
+    assert.deepEqual(r.json.ackedIds, [1]);
+    assert.match(r.json.serverCursor, /^\d+$/);
   });
 });
