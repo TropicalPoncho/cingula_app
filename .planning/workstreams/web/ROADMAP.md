@@ -28,7 +28,12 @@ Este milestone cierra primero el contrato de lectura que el workstream `app` nec
   3. `GET /sync/state` incluye `recorridos` en el cálculo de `serverCursor` y `lastSyncAt` (hoy no lo hace).
   4. Un pedido cuya key no coincide con ninguna variable de entorno configurada (o con ninguna de las dos configurada) es rechazado — nunca abre por default.
   5. El contrato de pull (formato, paginación, watermark) queda publicado en "ERS · Backend — protocolo de sync" (Notion) antes de cerrar la fase, listo para que `app` Fase 3 programe contra él.
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 10-01-PLAN.md — auth dual-key (`apiKeyRole`, 403 web en push), advisory lock exclusivo en push, `/sync/state` con recorridos (wave 1)
+- [ ] 10-02-PLAN.md — `GET /sync/pull` con lock compartido + test de concurrencia PULL-03 contra Neon dev (wave 2)
+- [ ] 10-03-PLAN.md — contrato de pull en Notion, ADR-007 solo lectura, verificación ADR-012, notas inline en research (wave 1)
+- [ ] 10-04-PLAN.md — auditoría ponytail + compuerta humana (suite contra Neon dev sin salteados) + cierre de VALIDATION (wave 3)
 **Ponytail audit**: Requerido como último plan/tarea de esta fase, antes de la compuerta humana de cierre — revisar el código nuevo (query de pull, watermark, dual-key) en busca de sobre-ingeniería y simplificar antes de dar la fase por cerrada.
 **Cross-workstream**: Desbloquea `app` Phase 3 (pull en el celular) — `app` no programa contra `/sync/pull` hasta que esta fase publique el contrato (PULL-05).
 
@@ -77,7 +82,7 @@ Phase 10 y Phase 11 pueden ejecutarse en paralelo (no comparten archivos de nego
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 10. Pull cerrado + Auth dual-key | 0/TBD | Not started | - |
+| 10. Pull cerrado + Auth dual-key | 0/4 | Not started | - |
 | 11. Infra de deploy (mismo proyecto Vercel) | 0/TBD | Not started | - |
 | 12. Web de lectura | 0/TBD | Not started | - |
 | 13. Storage de audio + reproducción en la web | 0/TBD | Not started | - |
