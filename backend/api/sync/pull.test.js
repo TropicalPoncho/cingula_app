@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { getSql } from '../_lib/db.js';
+import { Pool } from '@neondatabase/serverless';
+import { getSql, SYNC_LOCK_KEY } from '../_lib/db.js';
 import { upsertStatement } from '../_lib/outbox.js';
 import { applySchema } from '../_lib/schema_loader.js';
 import { TABLE_SPEC, SYNCABLE_TABLES } from '../_lib/spec.js';
@@ -142,4 +143,46 @@ test('PULL-01: WEB_API_KEY de solo lectura puede leer pull', { skip }, async (t)
   });
   const r = await callPull({ cursor: '0', limit: '1' }, 'web-test-key');
   assert.equal(r.status, 200);
+});
+
+test('PULL-03: pull concurrente espera al push abierto y no saltea sus filas', { skip }, async (t) => {
+  const sql = getSql();
+  await applySchema(sql);
+  const late = randomUUID();
+  t.after(async () => {
+    await sql.query('DELETE FROM recorridos WHERE uuid = $1', [late]);
+    await sql.query('DELETE FROM entity_prev WHERE record_uuid = $1', [late]);
+  });
+  await callPull({ cursor: '0', limit: '1' }); // calienta HTTP + compute: la espera de abajo no la come la latencia
+  const before = await currentCursor(sql);
+
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('SELECT pg_advisory_xact_lock($1)', [SYNC_LOCK_KEY]);
+    // bump_change_seq() asigna change_seq acá, antes del commit = el "commit tardío" de D-03.
+    await client.query(
+      "INSERT INTO recorridos (uuid, name, logical_version, updated_at) VALUES ($1, 'late', 1, to_timestamp(1700000000))",
+      [late],
+    );
+
+    let settled = false;
+    const pullPromise = callPull({ cursor: before, limit: '1000' }).finally(() => { settled = true; });
+    await new Promise((r) => setTimeout(r, 3000));
+    assert.equal(settled, false, 'pull resolvió con un push abierto: el lock compartido no está esperando al exclusivo');
+
+    await client.query('COMMIT');
+    let r = await pullPromise;
+    assert.equal(r.status, 200);
+    const seen = [...r.json.changes];
+    while (r.json.hasMore) {
+      r = await callPull({ cursor: r.json.nextCursor, limit: '1000' });
+      seen.push(...r.json.changes);
+    }
+    assert.ok(seen.some((c) => c.table === 'recorridos' && c.payload.uuid === late), 'la fila del push tardío fue salteada');
+  } finally {
+    client.release();
+    await pool.end();
+  }
 });
