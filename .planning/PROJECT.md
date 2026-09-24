@@ -101,6 +101,8 @@ Desde 2026-09-23 las decisiones que cruzan fases o contenedores viven en Notion:
 | ADR-008 | La web funciona solo online |
 | ADR-009 | Fuentes de verdad: requisitos y ADRs en Notion; modelo en el código; ejecución en `.planning/` |
 | ADR-010 | Dos workstreams GSD: `app` (este milestone) y `web` (dueño de `backend/` y `web/`) |
+| ADR-011 | Storage de audio: Cloudflare R2 privado + URL presignada PUT |
+| ADR-012 | Pull sin saltos: advisory lock de Postgres (reemplaza el margen de tiempo del research) |
 
 ## Workstreams (desde 2026-09-23)
 

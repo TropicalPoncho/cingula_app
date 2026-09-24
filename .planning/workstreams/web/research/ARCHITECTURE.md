@@ -223,3 +223,6 @@ Fases 10 y 11 pueden ejecutarse en paralelo entre sí (no comparten archivos); 1
 ---
 *Architecture research para: milestone v1.0, workstream `web`, Cíngula App*
 *Researched: 2026-09-23*
+
+
+> **Reemplazado (2026-09-23):** este margen sobre `updated_at` es inválido — esa columna la pone el cliente, no el servidor, así que no protege contra el commit tardío que describe. El mecanismo real se decidió en `phases/10-pull-cerrado-auth-dual-key/10-CONTEXT.md` D-01 (advisory lock de Postgres) y en el ADR correspondiente en Notion.
