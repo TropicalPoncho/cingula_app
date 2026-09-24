@@ -31,6 +31,7 @@ Un lector que hace `pull` entre el commit de B y el de A ve `change_seq=101` per
 **Evaluación para v0 (un solo editor):** hoy el único escritor real es `POST /sync/push`, y cada push corre en **una sola transacción** (`backend/api/sync/push.js:40` — `sql.transaction(outbox.map(...))`), así que todas las filas de un mismo push comitean atómicas juntas; el problema solo aparece si **dos requests de push distintos se solapan** (reintento del celular mientras el original sigue en vuelo — exactamente el caso "kill-mid-push" que `PROJECT.md:22` ya identifica como diferido a QA manual). La web de este milestone es de solo lectura (ADR-004, `PROJECT.md:124`), así que no agrega un segundo escritor. Probabilidad real hoy: baja, pero no cero — Vercel puede invocar dos ejecuciones concurrentes de la misma function por un timeout+retry del cliente.
 
 **Mitigación recomendada (barata, no over-engineering):** un watermark de seguridad basado en tiempo, no en secuencia. La query de pull no debe devolver ni avanzar el cursor más allá de filas que ya "asentaron" un margen corto:
+> ⚠ Reemplazado por ADR-012 / phases/10-pull-cerrado-auth-dual-key/10-CONTEXT.md D-01 (advisory lock de Postgres): el margen sobre updated_at no protege porque esa columna la pone el cliente.
 
 ```sql
 -- p.ej. 2s: una transacción de push (batch chico, un solo INSERT/UPDATE por fila) comitea
@@ -225,4 +226,4 @@ Fases 10 y 11 pueden ejecutarse en paralelo entre sí (no comparten archivos); 1
 *Researched: 2026-09-23*
 
 
-> **Reemplazado (2026-09-23):** este margen sobre `updated_at` es inválido — esa columna la pone el cliente, no el servidor, así que no protege contra el commit tardío que describe. El mecanismo real se decidió en `phases/10-pull-cerrado-auth-dual-key/10-CONTEXT.md` D-01 (advisory lock de Postgres) y en el ADR correspondiente en Notion.
+> **Reemplazado (2026-09-23):** este margen sobre `updated_at` es inválido — esa columna la pone el cliente, no el servidor, así que no protege contra el commit tardío que describe. El mecanismo real se decidió en `phases/10-pull-cerrado-auth-dual-key/10-CONTEXT.md` D-01 (advisory lock de Postgres) y en ADR-012 en Notion.

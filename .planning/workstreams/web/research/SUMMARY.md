@@ -46,6 +46,7 @@ Los tres research agents coinciden en el diagnóstico pero divergen en la soluci
 ### 5. Mitigación del gap de paginación por concurrencia (Pitfall 1)
 
 - **Qué se decidió (research):** ARCHITECTURE.md y PITFALLS.md coinciden en la solución (watermark de 2s: `safeUpperBound = MAX(change_seq) WHERE updated_at <= now() - interval '2s'`), así que esto **no** es una discrepancia real — se incluye acá solo porque es la pieza de diseño más importante del milestone y conviene que quede visible arriba, no enterrada en ARCHITECTURE.md. Alternativa descartada explícitamente por ambos: snapshot transaccional con `pg_current_snapshot()`/txid — más correcto pero over-engineering para v0 de un solo editor.
+> ⚠ Reemplazado por ADR-012 / phases/10-pull-cerrado-auth-dual-key/10-CONTEXT.md D-01 (advisory lock de Postgres): el margen sobre updated_at no protege porque esa columna la pone el cliente.
 - **Riesgo concreto si no se implementa:** una fila con commit tardío queda salteada para siempre por el cursor del cliente (no es delay, es pérdida de sincronización de ese cambio específico — recuperable solo forzando un pull completo desde `cursor=0`).
 - **Ceiling documentado (`ponytail`):** el margen de 2s asume que ninguna transacción de push tarda más que eso; si se prueba lo contrario, subir la constante es el único cambio necesario, no una reescritura.
 
@@ -88,6 +89,7 @@ El pull reutiliza el mismo `TABLE_SPEC`/serialización epoch que ya usa el push 
 ### Critical Pitfalls
 
 1. **Gap de paginación por commits concurrentes fuera de orden** — mitigar con watermark de 2s sobre `updated_at`, no con snapshot transaccional (decisión abierta #5)
+> ⚠ Reemplazado por ADR-012 / phases/10-pull-cerrado-auth-dual-key/10-CONTEXT.md D-01 (advisory lock de Postgres): el margen sobre updated_at no protege porque esa columna la pone el cliente.
 2. **`change_seq` BIGINT serializado como `number` de JS pierde precisión** — castear siempre a `::text` en SQL, replicando el patrón ya usado en `state.js:5`
 3. **Rewrites de `vercel.json` combinado (SPA + functions) pisan `/sync/*`** — el catch-all de la SPA siempre después de las reglas específicas; smoke test de `GET /sync/state` contra Preview antes de cualquier merge a `main`
 4. **`web/` ya existe y son restos de build de Flutter Web** — resolver antes de escribir cualquier código de UI (decisión abierta #1)
@@ -100,6 +102,7 @@ Numeración continua sobre la que ya usa el workstream `web` (arranca en Fase 10
 ### Fase 10: `GET /sync/pull` + BE-05
 **Rationale:** cierra el contrato que el workstream `app` (Fase 3) necesita antes de programar el lado celular — no depende de nada nuevo, solo usa schema/spec ya existentes.
 **Delivers:** endpoint de pull paginado con watermark de 2s, serialización epoch simétrica con push, `state.js` con `recorridos` agregado.
+> ⚠ Reemplazado por ADR-012 / phases/10-pull-cerrado-auth-dual-key/10-CONTEXT.md D-01 (advisory lock de Postgres): el margen sobre updated_at no protege porque esa columna la pone el cliente.
 **Avoids:** Pitfalls 1, 2, 3, 4, 5 (todos los de diseño de la query).
 
 ### Fase 11: `WEB_API_KEY` dual-key (BE-03)
@@ -182,4 +185,4 @@ Fases con patrones bien establecidos (research-phase probablemente innecesario):
 *Ready for roadmap: yes, con 5 decisiones abiertas a resolver antes/durante Fase 12*
 
 
-> **Reemplazado (2026-09-23):** este margen sobre `updated_at` es inválido — esa columna la pone el cliente, no el servidor, así que no protege contra el commit tardío que describe. El mecanismo real se decidió en `phases/10-pull-cerrado-auth-dual-key/10-CONTEXT.md` D-01 (advisory lock de Postgres) y en el ADR correspondiente en Notion.
+> **Reemplazado (2026-09-23):** este margen sobre `updated_at` es inválido — esa columna la pone el cliente, no el servidor, así que no protege contra el commit tardío que describe. El mecanismo real se decidió en `phases/10-pull-cerrado-auth-dual-key/10-CONTEXT.md` D-01 (advisory lock de Postgres) y en ADR-012 en Notion.

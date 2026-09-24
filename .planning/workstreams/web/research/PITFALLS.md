@@ -17,6 +17,7 @@ El cliente pide `?cursor=100&limit=500`, recibe filas hasta `change_seq=600`, gu
 **How to avoid:**
 El pull nunca debe leer "todo lo mayor a cursor" con una sola condición ingenua contra `MAX(change_seq)` reciente. Dos estrategias estándar, elegir una explícitamente en el diseño de BE-01:
 1. **Cursor con margen de seguridad (safe watermark):** no devolver filas con `change_seq` mayor a `now() - margen` (ej. últimos 2-3 segundos), dando tiempo a que transacciones en vuelo comiteen antes de que esa zona del rango se considere "cerrada". Simple, no requiere tocar el schema.
+> ⚠ Reemplazado por ADR-012 / phases/10-pull-cerrado-auth-dual-key/10-CONTEXT.md D-01 (advisory lock de Postgres): el margen sobre updated_at no protege porque esa columna la pone el cliente.
 2. **`pg_current_snapshot()` / `txid` visible:** guardar en el cursor no solo el `change_seq` máximo sino el conjunto de transacciones en vuelo al momento de la lectura, y en el próximo pull re-consultar ese rango. Más correcto, más complejo — probablemente over-engineering para v0 de un solo editor (ver Technical Debt Patterns).
 Para este milestone (`web` de solo lectura, sin escritura concurrente real todavía), la opción 1 con un margen conservador basta; documentarlo explícitamente como decisión consciente, no como "no lo pensamos".
 
@@ -304,4 +305,4 @@ When pitfalls occur despite prevention, how to recover.
 *Researched: 2026-09-23*
 
 
-> **Reemplazado (2026-09-23):** este margen sobre `updated_at` es inválido — esa columna la pone el cliente, no el servidor, así que no protege contra el commit tardío que describe. El mecanismo real se decidió en `phases/10-pull-cerrado-auth-dual-key/10-CONTEXT.md` D-01 (advisory lock de Postgres) y en el ADR correspondiente en Notion.
+> **Reemplazado (2026-09-23):** este margen sobre `updated_at` es inválido — esa columna la pone el cliente, no el servidor, así que no protege contra el commit tardío que describe. El mecanismo real se decidió en `phases/10-pull-cerrado-auth-dual-key/10-CONTEXT.md` D-01 (advisory lock de Postgres) y en ADR-012 en Notion.
