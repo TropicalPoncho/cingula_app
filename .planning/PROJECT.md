@@ -131,6 +131,8 @@ Desde 2026-09-23 las decisiones que cruzan fases o contenedores viven en Notion:
 
 **Fase 2 (Backend Real + Push Sync) completa** (2026-09-16): backend real en Neon+Vercel reemplaza SyncApiStub; push idempotente, backoff, auth y estado honesto de sync — validado en código, tests automatizados, y en vivo contra el deploy real (incluye haber destrabado y sincronizado por primera vez un backlog real de 1186 filas históricas del usuario, encontrado y arreglado durante la propia verificación de la fase). Tres casos de QA manual quedaron diferidos por decisión del usuario (ver `02-HUMAN-UAT.md`). Próximo: Fase 3 (Sync Bidireccional — Pull).
 
+**Fase 10 (workstream `web` — Pull cerrado + auth dual-key) completa** (2026-09-26): `GET /sync/pull` con advisory lock compartido (`pg_advisory_xact_lock_shared`) y push con lock exclusivo (ADR-012, reemplaza el watermark de tiempo del research original que era inválido); auth dual-key (`apiKeyRole`) con `WEB_API_KEY` acotada a solo lectura este milestone (ADR-007); `/sync/state` corregido para incluir `recorridos` (PULL-04). Contrato publicado en Notion ("ERS · Backend — protocolo de sync"), suite verde contra Neon dev sin tests salteados (58/58, incluido el test de concurrencia PULL-03), auditoría ponytail sin hallazgos. Los 6 requisitos de la fase (PULL-01..05, AUTH-01) marcados completos. Próximo: Fase 11 (infra de deploy, mismo proyecto Vercel).
+
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
