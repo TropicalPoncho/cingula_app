@@ -11,7 +11,7 @@ Este milestone cierra primero el contrato de lectura que el workstream `app` nec
 - Integer phases (10, 11, 12…): planned milestone work.
 - Decimal phases (10.1, 10.2…): urgent insertions (marked with INSERTED).
 
-- [ ] **Phase 10: Pull cerrado + Auth dual-key** - El backend sirve `GET /sync/pull` paginado con watermark a cualquier cliente autenticado con `SYNC_API_KEY` o `WEB_API_KEY`, y el contrato queda publicado para que `app` programe su Fase 3.
+- [x] **Phase 10: Pull cerrado + Auth dual-key** - El backend sirve `GET /sync/pull` paginado con watermark a cualquier cliente autenticado con `SYNC_API_KEY` o `WEB_API_KEY`, y el contrato queda publicado para que `app` programe su Fase 3. (completed 2026-09-26)
 - [ ] **Phase 11: Infra de deploy (mismo proyecto Vercel)** - La web y el backend conviven en un solo proyecto Vercel sin romper `/sync/push` en producción, Preview nunca toca la base de producción, y `web/` queda libre de restos de Flutter.
 - [ ] **Phase 12: Web de lectura** - El usuario abre la web, se autentica con `WEB_API_KEY`, y ve todo el contenido del servidor (mapa, recorridos, obras, artistas, paths, audios, estado de sync).
 - [ ] **Phase 13: Storage de audio + reproducción en la web** - Los audios tienen subida autorizada a R2 con checksum y descarga firmada, y la web reproduce cualquier audio que ya tenga archivo.
@@ -33,7 +33,7 @@ Plans:
 - [x] 10-01-PLAN.md — auth dual-key (`apiKeyRole`, 403 web en push), advisory lock exclusivo en push, `/sync/state` con recorridos (wave 1)
 - [x] 10-02-PLAN.md — `GET /sync/pull` con lock compartido + test de concurrencia PULL-03 contra Neon dev (wave 2)
 - [x] 10-03-PLAN.md — contrato de pull en Notion, ADR-007 solo lectura, verificación ADR-012, notas inline en research (wave 1)
-- [ ] 10-04-PLAN.md — auditoría ponytail + compuerta humana (suite contra Neon dev sin salteados) + cierre de VALIDATION (wave 3)
+- [x] 10-04-PLAN.md — auditoría ponytail + compuerta humana (suite contra Neon dev sin salteados) + cierre de VALIDATION (wave 3)
 **Ponytail audit**: Requerido como último plan/tarea de esta fase, antes de la compuerta humana de cierre — revisar el código nuevo (query de pull, watermark, dual-key) en busca de sobre-ingeniería y simplificar antes de dar la fase por cerrada.
 **Cross-workstream**: Desbloquea `app` Phase 3 (pull en el celular) — `app` no programa contra `/sync/pull` hasta que esta fase publique el contrato (PULL-05).
 
@@ -82,7 +82,7 @@ Phase 10 y Phase 11 pueden ejecutarse en paralelo (no comparten archivos de nego
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 10. Pull cerrado + Auth dual-key | 3/4 | In Progress|  |
+| 10. Pull cerrado + Auth dual-key | 4/4 | Complete   | 2026-09-26 |
 | 11. Infra de deploy (mismo proyecto Vercel) | 0/TBD | Not started | - |
 | 12. Web de lectura | 0/TBD | Not started | - |
 | 13. Storage de audio + reproducción en la web | 0/TBD | Not started | - |
