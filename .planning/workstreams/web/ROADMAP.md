@@ -48,7 +48,7 @@ Plans:
   4. Los restos de Flutter Web en `web/` (`index.html`, `manifest.json`, `icons/`) fueron eliminados y la carpeta resultante queda lista para alojar el código de la SPA de la Phase 12.
 **Plans**: 5 plans
 Plans:
-- [ ] 11-01-PLAN.md — Wave 0: `smoke-preview.sh` (solo GET, 401/200 JSON) + chequeo de CI + borrado de restos de Flutter web (INFRA-03) (wave 1)
+- [x] 11-01-PLAN.md — Wave 0: `smoke-preview.sh` (solo GET, 401/200 JSON) + chequeo de CI + borrado de restos de Flutter web (INFRA-03) (wave 1)
 - [ ] 11-02-PLAN.md — relevamiento del proyecto Vercel (humano), `check-preview-db.sh`, scopes de `DATABASE_URL` Production-only / Preview+Development = rama Neon dev (INFRA-02) (wave 1)
 - [ ] 11-03-PLAN.md — shims `web/api/sync/*` + `web/vercel.json`, spike `vercel dev` en proyecto descartable (d -> a; b descartado; c solo con decisión del usuario) (wave 2)
 - [ ] 11-04-PLAN.md — Root Directory = `web` (humano), Preview real: smoke + INFRA-02 sobre el deploy + producción viva intacta (wave 3)
@@ -89,7 +89,7 @@ Phase 10 y Phase 11 pueden ejecutarse en paralelo (no comparten archivos de nego
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 10. Pull cerrado + Auth dual-key | 4/4 | Complete    | 2026-09-26 |
-| 11. Infra de deploy (mismo proyecto Vercel) | 0/5 | Planned | - |
+| 11. Infra de deploy (mismo proyecto Vercel) | 1/5 | In Progress|  |
 | 12. Web de lectura | 0/TBD | Not started | - |
 | 13. Storage de audio + reproducción en la web | 0/TBD | Not started | - |
 
