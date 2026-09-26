@@ -82,7 +82,7 @@ Phase 10 y Phase 11 pueden ejecutarse en paralelo (no comparten archivos de nego
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 10. Pull cerrado + Auth dual-key | 4/4 | Complete   | 2026-09-26 |
+| 10. Pull cerrado + Auth dual-key | 4/4 | Complete    | 2026-09-26 |
 | 11. Infra de deploy (mismo proyecto Vercel) | 0/TBD | Not started | - |
 | 12. Web de lectura | 0/TBD | Not started | - |
 | 13. Storage de audio + reproducción en la web | 0/TBD | Not started | - |
