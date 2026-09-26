@@ -23,7 +23,7 @@
 - [x] **PULL-02**: El `payload` del pull tiene el mismo formato que el del push (columnas de `spec.js`, timestamps en epoch segundos); `change_seq` y `serverCursor` viajan como string
 - [x] **PULL-03**: Un pull paginado nunca saltea una fila por commits concurrentes (watermark), demostrado con un test de integración contra una rama de Neon dev
 - [x] **PULL-04**: `GET /sync/state` tiene en cuenta `recorridos` para `serverCursor` y `lastSyncAt` (BE-05)
-- [ ] **PULL-05**: El contrato de pull queda cerrado y publicado en "ERS · Backend — protocolo de sync" (Notion), para que la Fase 3 de `app` pueda programar contra él
+- [x] **PULL-05**: El contrato de pull queda cerrado y publicado en "ERS · Backend — protocolo de sync" (Notion), para que la Fase 3 de `app` pueda programar contra él
 
 ### Acceso (BE-03)
 
@@ -80,7 +80,7 @@
 | PULL-02 | Phase 10 | Complete |
 | PULL-03 | Phase 10 | Complete |
 | PULL-04 | Phase 10 | Complete |
-| PULL-05 | Phase 10 | Pending |
+| PULL-05 | Phase 10 | Complete |
 | AUTH-01 | Phase 10 | Complete |
 | INFRA-01 | Phase 11 | Pending |
 | INFRA-02 | Phase 11 | Pending |
