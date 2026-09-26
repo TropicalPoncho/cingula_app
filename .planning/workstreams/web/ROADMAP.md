@@ -46,7 +46,13 @@ Plans:
   2. Tras el cambio de Root Directory/`vercel.json`, `GET /sync/state` en un deploy de Preview responde JSON válido (no HTML) y el push real del celular contra producción sigue funcionando sin ningún cambio en la app — verificado como smoke test explícito antes de cualquier merge a `main`.
   3. Un deploy Preview usa la `DATABASE_URL` de una rama Neon dev — verificado inspeccionando la variable de entorno real del deploy, nunca asumido — y nunca la de producción.
   4. Los restos de Flutter Web en `web/` (`index.html`, `manifest.json`, `icons/`) fueron eliminados y la carpeta resultante queda lista para alojar el código de la SPA de la Phase 12.
-**Plans**: TBD
+**Plans**: 5 plans
+Plans:
+- [ ] 11-01-PLAN.md — Wave 0: `smoke-preview.sh` (solo GET, 401/200 JSON) + chequeo de CI + borrado de restos de Flutter web (INFRA-03) (wave 1)
+- [ ] 11-02-PLAN.md — relevamiento del proyecto Vercel (humano), `check-preview-db.sh`, scopes de `DATABASE_URL` Production-only / Preview+Development = rama Neon dev (INFRA-02) (wave 1)
+- [ ] 11-03-PLAN.md — shims `web/api/sync/*` + `web/vercel.json`, spike `vercel dev` en proyecto descartable (d -> a; b descartado; c solo con decisión del usuario) (wave 2)
+- [ ] 11-04-PLAN.md — Root Directory = `web` (humano), Preview real: smoke + INFRA-02 sobre el deploy + producción viva intacta (wave 3)
+- [ ] 11-05-PLAN.md — auditoría ponytail (borra `backend/vercel.json`) + compuerta humana: celular real antes/después del merge a `main` + cierre de VALIDATION (wave 4)
 **Ponytail audit**: Requerido como último plan/tarea de esta fase, antes de la compuerta humana de cierre — revisar la configuración de ruteo nueva en busca de mecanismos más complejos de lo necesario (p.ej. mover archivos que no hacía falta mover) y simplificar antes de dar la fase por cerrada.
 
 ### Phase 12: Web de lectura
@@ -83,7 +89,7 @@ Phase 10 y Phase 11 pueden ejecutarse en paralelo (no comparten archivos de nego
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 10. Pull cerrado + Auth dual-key | 4/4 | Complete    | 2026-09-26 |
-| 11. Infra de deploy (mismo proyecto Vercel) | 0/TBD | Not started | - |
+| 11. Infra de deploy (mismo proyecto Vercel) | 0/5 | Planned | - |
 | 12. Web de lectura | 0/TBD | Not started | - |
 | 13. Storage de audio + reproducción en la web | 0/TBD | Not started | - |
 
