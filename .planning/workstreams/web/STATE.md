@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_plan: 11-02
 status: executing
-stopped_at: Completed 11-01-PLAN.md
-last_updated: "2026-09-26T03:02:41.165Z"
-last_activity: 2026-09-26
+stopped_at: Completed 11-02-PLAN.md
+last_updated: "2026-09-28T23:07:04.279Z"
+last_activity: 2026-09-28
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 9
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # Project State
@@ -20,9 +20,9 @@ progress:
 
 Milestone: v1.0 Web de gestión (lectura)
 Phase: 11
-Plan: 1 of 5 complete
-Status: In progress
-Last activity: 2026-09-26
+Plan: 2 of 5 complete
+Status: Ready to execute
+Last activity: 2026-09-28
 
 ## Progress
 
@@ -40,8 +40,9 @@ Last activity: 2026-09-26
 - Fase 10: el watermark del research (margen sobre `updated_at`) era inválido — esa columna la pone el cliente. Reemplazado por `pg_advisory_xact_lock` (push exclusivo, pull compartido), registrado en ADR-012 (Notion). Todo escritor futuro (web ADR-006, scripts de datos) tiene que tomar el mismo lock.
 - Fase 10: pull en lista plana por `change_seq` (`{changes:[{table,change_seq,payload}], nextCursor, hasMore}`), ruta `/sync/pull`, limit 500/máx 1000, borradas como fila completa. `WEB_API_KEY` de solo lectura en este milestone (push responde 403 a una key web válida).
 - Fase 11 plan 01: `backend/scripts/smoke-preview.sh` creado (GET-only, distingue JSON de función vs HTML de Vercel); `.github/workflows/` no existe hoy, ningún CI depende de la ubicación de `backend/api/`; `web/` limpio de restos de Flutter (borrado total, sin conservar favicon).
+- Fase 11 plan 02 (INFRA-02, cerrado): la integración Neon Marketplace conectada al proyecto (`cingula-back`) no expone un toggle de "create a database branch for deployment" (solo "Update Name" en Settings) — se resolvió con Rama A: `DATABASE_URL` manual, scope Preview (branch-specific `ws/web`) + Development, apuntando a una rama Neon nueva (la rama `dev` de la Fase 10 había sido borrada). Verificado por host con `backend/scripts/check-preview-db.sh`: `INFRA-02 OK`. Gotchas para cualquier variable scoped-by-git-branch futura: (1) la rama tiene que existir en el remoto de GitHub antes de que `--git-branch` resuelva algo; (2) `vercel env add` sin `--no-sensitive` guarda la variable como Secret, y `vercel env pull` no puede leerla — imprime `[SENSITIVE]`, que el script interpretaría como un host real distinto de producción (falso OK silencioso). Deployment Protection ("Vercel Authentication") está activo en el proyecto pero no se confirmó si está scoped solo a Preview — riesgo para el smoke test del plan 04 (puede recibir HTML de login en vez de JSON), no bloqueante para este plan.
 
 ## Session Continuity
 
-**Stopped At:** Completed 11-01-PLAN.md
-**Resume File:** .planning/workstreams/web/phases/11-infra-de-deploy-mismo-proyecto-vercel/11-02-PLAN.md
+**Stopped At:** Completed 11-02-PLAN.md
+**Resume File:** .planning/workstreams/web/phases/11-infra-de-deploy-mismo-proyecto-vercel/11-03-PLAN.md

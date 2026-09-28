@@ -33,7 +33,7 @@
 ### Infraestructura
 
 - [x] **INFRA-01**: La web y el backend se sirven desde el mismo proyecto Vercel, y `/sync/*` sigue llegando a las funciones: el push del celular funciona igual en producción después del cambio
-- [ ] **INFRA-02**: Los deploys Preview usan una rama de Neon dev, nunca la `DATABASE_URL` de producción (verificado, no asumido) (ADR-005)
+- [x] **INFRA-02**: Los deploys Preview usan una rama de Neon dev, nunca la `DATABASE_URL` de producción (verificado, no asumido) (ADR-005)
 - [x] **INFRA-03**: Los restos de Flutter web se eliminan y `web/` contiene la web de gestión
 
 ### Web de lectura
@@ -83,7 +83,7 @@
 | PULL-05 | Phase 10 | Complete |
 | AUTH-01 | Phase 10 | Complete |
 | INFRA-01 | Phase 11 | Complete |
-| INFRA-02 | Phase 11 | Pending |
+| INFRA-02 | Phase 11 | Complete |
 | INFRA-03 | Phase 11 | Complete |
 | AUTH-02 | Phase 12 | Pending |
 | WEB-01 | Phase 12 | Pending |
