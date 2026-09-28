@@ -53,3 +53,8 @@ app.*.map.json
 
 # Volcados de synced_entities del script de migracion (datos reales)
 backend/scripts/dump-*.json
+
+# Link local de la CLI de Vercel (cualquier nivel: raíz, web/, backend/)
+.vercel/
+.vercel
+.env*
