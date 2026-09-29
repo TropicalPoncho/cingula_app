@@ -44,6 +44,32 @@ duration: ~1h 40min
 completed: 2026-09-28
 ---
 
+## ⚠️ SUPERSEDED (2026-09-28, mismo día, post-checkpoint 11-04)
+
+El mecanismo (d) elegido acá (shims en `web/api/` re-exportando `backend/api/`) fue revertido horas
+después de este SUMMARY, antes de tocar el proyecto Vercel real. Al presentar el checkpoint del plan
+11-04 (cambiar Root Directory), el usuario cuestionó la separación `backend/` vs `web/` en sí misma:
+"no entiendo por qué separado... para mí tiene sentido que el backend esté junto al front... son
+apps que gestionan la misma bd". Investigación (WebSearch) confirmó que el patrón estándar de Vercel
+es `api/` colocado en el mismo proyecto que el frontend que sirve, sin indirección
+([vercel/vercel#4686](https://github.com/vercel/vercel/discussions/4686)) — el shim era la opción
+MÁS atípica de las tres evaluadas, no la más simple.
+
+**Decisión revisada:** en vez de shims, `backend/` se disolvió por completo — todo su contenido
+(`api/`, `scripts/`, `package.json`, `schema.sql`, `.env.example`, `README.md`) se movió físicamente
+a `web/`. `web/api/sync/*.js` ahora SON los handlers reales, no re-exports. `web/vercel.json` perdió
+el `installCommand: npm ci --prefix ../backend` (ya no hace falta — las deps son locales a `web/`).
+Ver commit `524da3e` (rama `ws/web`, post-11-04-checkpoint) para el detalle completo del movimiento.
+
+**Qué sigue siendo válido de este SUMMARY:** la decisión de Root Directory = `web` (sección
+`key-decisions` abajo) no cambió — sigue siendo la Root Directory correcta, ahora sin indirección.
+El hallazgo del bug de `vercel dev`/`@vercel/node` local (sección Deviations) también sigue vigente
+tal cual, es independiente del mecanismo. Lo obsoleto es específicamente: la existencia de los
+archivos shim, el `installCommand`, y cualquier mención de que "`backend/` no se mueve ni cambia
+(ADR-005)" — ADR-005 necesita una nota de revisión en Notion reflejando este cambio.
+
+---
+
 # Phase 11 Plan 03: Ruteo /sync/* vía shims web/api/ hacia backend/ Summary
 
 **`web/api/sync/{push,pull,state}.js` re-exportan (identidad verificada) los handlers de `backend/api/sync/` sin mover ni duplicar código; `web/vercel.json` fija el rewrite `/sync/:path*` y el install de deps de `backend/` — mecanismo (d) elegido, (b) descartado analíticamente, (c) nunca necesario.**
