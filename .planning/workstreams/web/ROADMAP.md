@@ -12,7 +12,7 @@ Este milestone cierra primero el contrato de lectura que el workstream `app` nec
 - Decimal phases (10.1, 10.2…): urgent insertions (marked with INSERTED).
 
 - [x] **Phase 10: Pull cerrado + Auth dual-key** - El backend sirve `GET /sync/pull` paginado con watermark a cualquier cliente autenticado con `SYNC_API_KEY` o `WEB_API_KEY`, y el contrato queda publicado para que `app` programe su Fase 3. (completed 2026-09-26)
-- [ ] **Phase 11: Infra de deploy (mismo proyecto Vercel)** - La web y el backend conviven en un solo proyecto Vercel sin romper `/sync/push` en producción, Preview nunca toca la base de producción, y `web/` queda libre de restos de Flutter.
+- [x] **Phase 11: Infra de deploy (mismo proyecto Vercel)** - La web y el backend conviven en un solo proyecto Vercel sin romper `/sync/push` en producción, Preview nunca toca la base de producción, y `web/` queda libre de restos de Flutter. (completed 2026-09-29)
 - [ ] **Phase 12: Web de lectura** - El usuario abre la web, se autentica con `WEB_API_KEY`, y ve todo el contenido del servidor (mapa, recorridos, obras, artistas, paths, audios, estado de sync).
 - [ ] **Phase 13: Storage de audio + reproducción en la web** - Los audios tienen subida autorizada a R2 con checksum y descarga firmada, y la web reproduce cualquier audio que ya tenga archivo.
 
@@ -52,7 +52,7 @@ Plans:
 - [x] 11-02-PLAN.md — relevamiento del proyecto Vercel (humano), `check-preview-db.sh`, scopes de `DATABASE_URL` Production-only / Preview+Development = rama Neon dev (INFRA-02) (wave 1)
 - [x] 11-03-PLAN.md — shims `web/api/sync/*` + `web/vercel.json`, spike `vercel dev` en proyecto descartable (d -> a; b descartado; c solo con decisión del usuario) (wave 2)
 - [x] 11-04-PLAN.md — Root Directory = `web` (humano), Preview real: smoke + INFRA-02 sobre el deploy + producción viva intacta (wave 3)
-- [ ] 11-05-PLAN.md — auditoría ponytail (borra `backend/vercel.json`) + compuerta humana: celular real antes/después del merge a `main` + cierre de VALIDATION (wave 4)
+- [x] 11-05-PLAN.md — auditoría ponytail (borra `backend/vercel.json`) + compuerta humana: celular real antes/después del merge a `main` + cierre de VALIDATION (wave 4)
 **Ponytail audit**: Requerido como último plan/tarea de esta fase, antes de la compuerta humana de cierre — revisar la configuración de ruteo nueva en busca de mecanismos más complejos de lo necesario (p.ej. mover archivos que no hacía falta mover) y simplificar antes de dar la fase por cerrada.
 
 ### Phase 12: Web de lectura
@@ -89,7 +89,7 @@ Phase 10 y Phase 11 pueden ejecutarse en paralelo (no comparten archivos de nego
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 10. Pull cerrado + Auth dual-key | 4/4 | Complete    | 2026-09-26 |
-| 11. Infra de deploy (mismo proyecto Vercel) | 4/5 | In Progress|  |
+| 11. Infra de deploy (mismo proyecto Vercel) | 5/5 | Complete    | 2026-09-29 |
 | 12. Web de lectura | 0/TBD | Not started | - |
 | 13. Storage de audio + reproducción en la web | 0/TBD | Not started | - |
 

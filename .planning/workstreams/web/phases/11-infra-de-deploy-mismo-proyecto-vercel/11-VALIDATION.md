@@ -1,9 +1,9 @@
 ---
 phase: 11
 slug: infra-de-deploy-mismo-proyecto-vercel
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: complete
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-09-25
 ---
 
@@ -38,21 +38,29 @@ created: 2026-09-25
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 11-01-01 | 01 | 0 | INFRA-01 | smoke script | `bash backend/scripts/smoke-preview.sh <preview-url>` | ❌ W0 | ⬜ pending |
-| 11-01-02 | 01 | 1 | INFRA-01 | manual/scripted | `curl -s https://<preview-url>/sync/state -H "Authorization: Bearer $WEB_API_KEY"` returns valid JSON, not HTML | ✅ (curl, no file needed) | ⬜ pending |
-| 11-02-01 | 02 | 1 | INFRA-02 | scripted env inspection | `vercel env pull --environment=preview .env.preview.local && grep DATABASE_URL .env.preview.local` differs from Production value | ✅ (documented command, no file needed) | ⬜ pending |
-| 11-03-01 | 03 | 1 | INFRA-03 | trivial file-existence check | `test ! -f web/index.html && test ! -f web/manifest.json && test ! -d web/icons && test ! -f web/favicon.png && echo OK` | ✅ (one-liner, no dedicated test file) | ⬜ pending |
-| 11-04-01 | 04 | 2 | INFRA-01/02/03 | unit (regression) | `cd backend && npm test` | ✅ | ⬜ pending |
+| 11-01-01 | 01 | 1 | INFRA-01 | smoke script (Wave 0) | `bash -n web/scripts/smoke-preview.sh` + usage exit 2 | ✅ | ✅ green |
+| 11-01-02 | 01 | 1 | INFRA-03 | file-existence | `test -z "$(git ls-files web/index.html web/manifest.json web/favicon.png web/icons)"` | ✅ | ✅ green |
+| 11-02-02 | 02 | 1 | INFRA-02 | scripted env inspection (Wave 0) | `bash web/scripts/check-preview-db.sh ws/web` → `INFRA-02 OK` | ✅ | ✅ green |
+| 11-03-01 | 03 | 2 | INFRA-01 | identidad de módulos | `SHIMS OK` (mecanismo (d), luego superseded — ver 11-03-SUMMARY addendum: `backend/` se disolvió, `web/api/` son handlers reales, no shims) | ✅ | ✅ green (superseded) |
+| 11-03-02 | 03 | 2 | INFRA-01 | spike `vercel dev` | `bash web/scripts/smoke-preview.sh http://localhost:3000` — bloqueado por bug de `@vercel/node` local (ver 11-03-SUMMARY Deviations); ruteo/descubrimiento sí validado (404 vs 500) | ✅ (no concluyente localmente) | ⚠️ no concluyente local, ✅ real (ver 11-04) |
+| 11-04-02 | 04 | 3 | INFRA-01, INFRA-02 | smoke Preview real + host + serverCursor | `SMOKE_API_KEY=... bash web/scripts/smoke-preview.sh <preview-url>` → `SMOKE OK`, `serverCursor: "3420"`; `check-preview-db.sh ws/web` → `INFRA-02 OK` contra el deploy real | ✅ | ✅ green |
+| 11-05-01 | 05 | 4 | todos | audit + regresión | `cd web && npm test` → 48 pass/0 fail/5 skip | ✅ | ✅ green |
+| 11-05-02 | 05 | 4 | INFRA-01 | manual (celular) + smoke prod | `bash web/scripts/smoke-preview.sh https://cingula.vercel.app` → `SMOKE OK`; celular real: push pre-merge (`"Mi rutaggfgg"`, confirmado por query directa a Neon) y post-merge con reconexión offline→online (`"Mi ruta prueba ultima ahora"`, confirmado igual) | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+
+**Nota (plan 05):** la tabla del borrador asumía el mecanismo shim de `backend/vercel.json` +
+`backend/scripts/*`. El mismo día, antes del checkpoint del plan 04, se decidió disolver `backend/`
+como paquete separado y mover todo a `web/` (ver `11-03-SUMMARY.md` addendum) — todos los comandos
+de esta tabla reflejan los paths reales (`web/scripts/`, `web/api/`), no los del borrador original.
 
 ---
 
 ## Wave 0 Requirements
 
-- [ ] `backend/scripts/smoke-preview.sh` — curls `/sync/state` on a given Preview URL and asserts JSON content-type (not HTML), per RESEARCH.md "Pitfall 1" and "Don't Hand-Roll" — this is currently done ad hoc and must become repeatable for every future Preview deploy.
-- [ ] Documented (not necessarily scripted) procedure for INFRA-02's env var inspection (`vercel env pull --environment=preview`) written into the plan text itself, so it's repeatable and never "assumed" (ADR-005 risk).
-- [ ] `.github/workflows/*.yml` review — check whether any CI workflow assumes `cd backend && npm test` before finalizing which routing mechanism moves/keeps `backend/api/` in place (RESEARCH.md Open Question 3).
+- [x] `web/scripts/smoke-preview.sh` (creado como `backend/scripts/smoke-preview.sh` en 11-01, movido a `web/` en el merge del mismo día) — curls `/sync/state` en una Preview URL dada y verifica JSON, no HTML.
+- [x] Procedimiento documentado (y scripteado: `web/scripts/check-preview-db.sh`) para la inspección de env vars de INFRA-02 (`vercel env pull --environment=preview`), repetible, nunca asumido.
+- [x] `.github/workflows/` no existe (confirmado en 11-01) — ningún CI depende de la ubicación de `backend/api/`.
 
 ---
 
@@ -68,11 +76,11 @@ created: 2026-09-25
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 60s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 60s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-09-29
