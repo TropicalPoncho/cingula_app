@@ -52,6 +52,29 @@ void main() {
     expect(dir.listSync().where((e) => e.path.contains('pre-v7')), isEmpty);
   });
 
+  test('tras el chequeo (ya en v7), reabrir el MISMO path como singleInstance '
+      'no da database_closed en la primera query — regresion del bug real: '
+      'app_database.dart abre singleInstance el mismo path justo despues de '
+      'esta funcion, y si esta funcion usara la cache singleInstance para su '
+      'propio open+close, esa reapertura podia devolver una conexion ya '
+      'cerrada', () async {
+    final (path, _) = await seeded();
+    final db0 = await databaseFactoryFfi.openDatabase(path);
+    await db0.execute('PRAGMA user_version = 7');
+    await db0.close();
+
+    expect(await backupBeforeMigration(path, now, factory: databaseFactoryFfi), isNull);
+
+    // Exactamente lo que hace AppDatabase.init() a continuacion: abrir el
+    // mismo path, singleInstance (default), y correr la primera query real.
+    final real = await databaseFactoryFfi.openDatabase(path);
+    addTearDown(real.close);
+    await expectLater(
+      real.rawQuery('SELECT COUNT(*) FROM geo_triggers'),
+      completes,
+    );
+  });
+
   test('base ilegible para la verificacion aborta ruidosamente', () async {
     final (path, _) = await seeded();
     // Sin las tablas esperadas no se puede contar: no se sigue adelante.

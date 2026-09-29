@@ -52,4 +52,12 @@ app.*.map.json
 .local-db/
 
 # Volcados de synced_entities del script de migracion (datos reales)
-backend/scripts/dump-*.json
+web/scripts/dump-*.json
+
+# Dependencias npm (web/, cualquier nivel)
+node_modules/
+
+# Link local de la CLI de Vercel (cualquier nivel: raíz, web/)
+.vercel/
+.vercel
+.env*

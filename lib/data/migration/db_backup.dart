@@ -34,7 +34,13 @@ Future<String?> backupBeforeMigration(
   final f = factory ?? databaseFactory;
 
   // Sin `version` ni callbacks: abrir asi no dispara ninguna migracion.
-  final db = await f.openDatabase(dbPath);
+  // singleInstance: false es obligatorio: sqflite cachea conexiones por path
+  // cuando singleInstance es true (default). Si esta funcion usara la cache
+  // compartida, su `close()` de abajo podria cerrar (o dejar en un estado
+  // invalido) la conexion "real" que `AppDatabase.init()` abre a continuacion
+  // sobre el MISMO path -> DatabaseException(database_closed) en la primera
+  // query de la app, sin ningun error visible durante el arranque.
+  final db = await f.openDatabase(dbPath, options: OpenDatabaseOptions(singleInstance: false));
   final Map<String, int> original;
   try {
     final v = Sqflite.firstIntValue(await db.rawQuery('PRAGMA user_version')) ?? 0;

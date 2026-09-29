@@ -12,7 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart' show Sqflite, inMemoryDatabasePath;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-/// Columnas que backend/api/_lib/spec.js acepta por tabla (TABLE_SPEC). Copiadas a
+/// Columnas que web/api/_lib/spec.js acepta por tabla (TABLE_SPEC). Copiadas a
 /// mano porque el test no puede leer JS: si spec.js cambia, este mapa hay que
 /// actualizarlo a mano también.
 const _specColumns = {
@@ -212,7 +212,7 @@ void main() {
     expect(deleteRows.where((r) => r['table_name'] == 'path_progress'), isEmpty);
   });
 
-  test('todo payload encolado usa solo columnas que backend/api/_lib/spec.js acepta para esa tabla', () async {
+  test('todo payload encolado usa solo columnas que web/api/_lib/spec.js acepta para esa tabla', () async {
     final audios = AudioLocalDataSource(db, sync);
     final obras = ObraLocalDataSource(db, sync);
     final paths = GeoPathLocalDataSource(db, sync);

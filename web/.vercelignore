@@ -1,0 +1,4 @@
+# ponytail (11-05): Vercel descubre CUALQUIER .js en api/ como función, sin distinguir tests —
+# el plan 04 encontró api/sync/push.test.js etc. desplegados como funciones reales (no rompen nada,
+# no exportan un handler HTTP válido, pero consumen build time y ensucian el listado de deploy).
+**/*.test.js
