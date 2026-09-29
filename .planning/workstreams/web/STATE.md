@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_plan: 11-03
+current_plan: 4
 status: executing
-stopped_at: Completed 11-03-PLAN.md
-last_updated: "2026-09-28T23:24:58.149Z"
-last_activity: 2026-09-28
+stopped_at: Completed 11-04-PLAN.md
+last_updated: "2026-09-29T02:19:32.826Z"
+last_activity: 2026-09-29 -- Phase 11 plan 04 (real Preview deploy) closed
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 9
-  completed_plans: 7
+  completed_plans: 9
 ---
 
 # Project State
@@ -19,15 +19,15 @@ progress:
 ## Current Position
 
 Milestone: v1.0 Web de gestión (lectura)
-Phase: 11
-Plan: 3 of 5 complete
-Status: Ready to execute
-Last activity: 2026-09-28
+Phase: 11 (infra-de-deploy-mismo-proyecto-vercel) — EXECUTING
+Plan: 4 of 5
+Status: Executing Phase 11
+Last activity: 2026-09-29 -- Phase 11 plan 04 (real Preview deploy) closed
 
 ## Progress
 
 **Phases Complete:** 1/4
-**Current Plan:** 11-03
+**Current Plan:** 4
 
 ## Accumulated Context
 
@@ -41,9 +41,11 @@ Last activity: 2026-09-28
 - Fase 10: pull en lista plana por `change_seq` (`{changes:[{table,change_seq,payload}], nextCursor, hasMore}`), ruta `/sync/pull`, limit 500/máx 1000, borradas como fila completa. `WEB_API_KEY` de solo lectura en este milestone (push responde 403 a una key web válida).
 - Fase 11 plan 01: `backend/scripts/smoke-preview.sh` creado (GET-only, distingue JSON de función vs HTML de Vercel); `.github/workflows/` no existe hoy, ningún CI depende de la ubicación de `backend/api/`; `web/` limpio de restos de Flutter (borrado total, sin conservar favicon).
 - Fase 11 plan 02 (INFRA-02, cerrado): la integración Neon Marketplace conectada al proyecto (`cingula-back`) no expone un toggle de "create a database branch for deployment" (solo "Update Name" en Settings) — se resolvió con Rama A: `DATABASE_URL` manual, scope Preview (branch-specific `ws/web`) + Development, apuntando a una rama Neon nueva (la rama `dev` de la Fase 10 había sido borrada). Verificado por host con `backend/scripts/check-preview-db.sh`: `INFRA-02 OK`. Gotchas para cualquier variable scoped-by-git-branch futura: (1) la rama tiene que existir en el remoto de GitHub antes de que `--git-branch` resuelva algo; (2) `vercel env add` sin `--no-sensitive` guarda la variable como Secret, y `vercel env pull` no puede leerla — imprime `[SENSITIVE]`, que el script interpretaría como un host real distinto de producción (falso OK silencioso). Deployment Protection ("Vercel Authentication") está activo en el proyecto pero no se confirmó si está scoped solo a Preview — riesgo para el smoke test del plan 04 (puede recibir HTML de login en vez de JSON), no bloqueante para este plan.
-- Fase 11 plan 03 (INFRA-01, cerrado): mecanismo (d) elegido — shims `web/api/sync/{push,pull,state}.js` re-exportando (identidad verificada) los handlers de `backend/api/sync/` (backend/ sin diff), `web/package.json` (`type: module`), `web/vercel.json` (rewrite `/sync/:path*` + `installCommand: npm ci --prefix ../backend`). (b) "functions glob" descartado analíticamente (docs Vercel + vercel/vercel#7591, nunca probado); (c) "mover backend/api/ a la raíz" nunca necesario. El spike local de `vercel dev` no pudo producir la evidencia `SMOKE OK`: tanto (d) como (a) (candidato de respaldo, descartado tras el spike) dan `500 FUNCTION_INVOCATION_FAILED` para CUALQUIER función Node local, incluso un handler trivial sin imports — bug de bootstrap de `@vercel/node@16.0.1` (CLI 60.1.3, Node 22.14, Windows), confirmado con `--debug` (`ETIMEDOUT` ~300ms tras spawnear el subproceso del builder, no un timeout real; networking de Node en la máquina funciona bien por otro lado). Lo que SÍ validó el spike para ambos mecanismos: ruteo/descubrimiento correcto (rutas reales → 500 "encontrada, intentó invocar"; rutas inexistentes → 404; estáticos sirven 200 desde la misma Root Directory). Decisión del usuario tras checkpoint: proceder con (d) (Opción 1) sin seguir debugueando el bug de tooling local; la evidencia `SMOKE OK` real queda diferida al Preview real del plan 04, que no pasa por este código de dev-server local. Documentado en `backend/README.md` y en `11-03-SUMMARY.md`. Limpieza del spike verificada completa (ambos proyectos descartables borrados, `.vercel/` real restaurado, `git status --porcelain` limpio).
+- Fase 11 plan 03 (INFRA-01, cerrado, **luego superseded el mismo día — ver nota abajo**): mecanismo (d) elegido originalmente — shims `web/api/sync/{push,pull,state}.js` re-exportando (identidad verificada) los handlers de `backend/api/sync/` (backend/ sin diff), `web/package.json` (`type: module`), `web/vercel.json` (rewrite `/sync/:path*` + `installCommand: npm ci --prefix ../backend`). (b) "functions glob" descartado analíticamente (docs Vercel + vercel/vercel#7591, nunca probado); (c) "mover backend/api/ a la raíz" nunca necesario en ese momento. El spike local de `vercel dev` no pudo producir la evidencia `SMOKE OK`: tanto (d) como (a) (candidato de respaldo) dan `500 FUNCTION_INVOCATION_FAILED` para CUALQUIER función Node local, incluso un handler trivial sin imports — bug de bootstrap de `@vercel/node@16.0.1` (CLI 60.1.3, Node 22.14, Windows). Ruteo/descubrimiento sí se validó para ambos mecanismos (rutas reales → 500, inexistentes → 404, estáticos → 200). Decisión del usuario tras checkpoint: proceder con (d) sin seguir debugueando el bug de tooling local, diferir `SMOKE OK` real al plan 04.
+- **Fase 11, mismo día, previo al checkpoint del plan 04:** el usuario cuestionó la separación `backend/`↔`web/` en sí misma ("no entiendo por qué separado... backend y front gestionan la misma bd"). Investigación confirmó que el patrón estándar de Vercel es `api/` colocado en el mismo proyecto que el frontend, sin indirección (shim era la opción atípica). **Decisión revisada: `backend/` se disolvió por completo, todo su contenido se movió a `web/`** (`api/`, `scripts/`, `package.json`, `schema.sql`, `.env.example`, `README.md`) — commit `524da3e`. `web/api/sync/*.js` ahora son los handlers reales, no shims; `installCommand` eliminado (deps locales a `web/`). Ver addendum en `11-03-SUMMARY.md`. ADR-005 (Notion) necesita revisión para reflejar esto.
+- Fase 11 plan 04 (INFRA-01 + INFRA-02 contra deploy real, cerrado): Root Directory del proyecto Vercel real cambiada a `web` (usuario, dashboard) — "Include files outside the root directory" quedó DESACTIVADO (ya no hace falta tras el merge a `web/`). Primer Preview real de `ws/web`: `SMOKE OK` (401 sin key, 200 con key y `serverCursor`), `pull`→401, `push` GET→405, todos JSON real. `check-preview-db.sh` → `INFRA-02 OK` contra el deploy real. Producción en vivo (`cingula.vercel.app`) verificada intacta. Bloqueadores resueltos en el camino: (1) Deployment Protection devolvía 302 a login SSO — resuelto con el secreto "Protection Bypass for Automation" (usuario lo generó, agente lo usó solo en memoria para el header, nunca persistido); (2) `WEB_API_KEY` no existía en Preview — generada por el agente (`openssl rand -hex 32`, no es credencial ajena) y agregada vía CLI; (3) **hallazgo operativo importante:** una env var agregada a un entorno con deploy ya activo no llega a la función en runtime hasta hacer un redeploy explícito (`vercel redeploy <url> --non-interactive`) — aplica a cualquier env var futura. Hallazgo diferido al ponytail audit del plan 05: Vercel despliega `*.test.js` de `api/` como funciones reales (no rompe nada, pero es ruido — candidatos: `.vercelignore` o mover tests fuera de `api/`). Ventana de riesgo sigue abierta: no pushear a `main` hasta que el plan 05 mergee `ws/web`.
 
 ## Session Continuity
 
-**Stopped At:** Completed 11-03-PLAN.md
-**Resume File:** .planning/workstreams/web/phases/11-infra-de-deploy-mismo-proyecto-vercel/11-04-PLAN.md
+**Stopped At:** Completed 11-04-PLAN.md
+**Resume File:** .planning/workstreams/web/phases/11-infra-de-deploy-mismo-proyecto-vercel/11-05-PLAN.md
