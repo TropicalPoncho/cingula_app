@@ -1,5 +1,5 @@
 // Migracion one-shot synced_entities -> tablas tipadas (D-13 / MODEL-06).
-// Uso (desde backend/): node scripts/migrate_v2.mjs [--url=<...>] [--apply] [--finalize]
+// Uso (desde web/): node scripts/migrate_v2.mjs [--url=<...>] [--apply] [--finalize]
 // Sin flags es DRY-RUN: no escribe una sola fila.
 import { neon } from '@neondatabase/serverless';
 import { writeFileSync, readFileSync } from 'node:fs';

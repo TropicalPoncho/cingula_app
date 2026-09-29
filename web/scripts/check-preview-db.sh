@@ -2,7 +2,7 @@
 # check-preview-db.sh — INFRA-02: verifica por HOST (nunca por valor completo) que Preview y
 # Development de Vercel no resuelven la DATABASE_URL de Production.
 #
-# Uso: bash backend/scripts/check-preview-db.sh [rama-git]
+# Uso: bash web/scripts/check-preview-db.sh [rama-git]
 #   Corre desde un directorio ya linkeado con `npx vercel@latest link` (raíz del repo).
 #   [rama-git] es la rama que se usa para pedir el env de Preview (default: rama git actual).
 #

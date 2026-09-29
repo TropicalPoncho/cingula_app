@@ -6,7 +6,7 @@ contrato HTTP documentado en `.planning/workstreams/app/phases/02-backend-real-p
 ## Setup
 
 ```bash
-cd backend
+cd web
 npm install
 cp .env.example .env   # completar DATABASE_URL y SYNC_API_KEY
 ```
@@ -25,14 +25,15 @@ a una branch de Neon; sin esa env var se saltean (verde igual).
 
 ## Dev local
 
-Las funciones viven en `backend/api/` pero Vercel solo descubre funciones dentro de
-`<Root Directory>/api`. Por eso `backend/api/` **no se mueve** (ADR-005: mantiene su propio
-`package.json`, tests y `.env.example` autocontenidos) — en cambio, `web/api/sync/{push,pull,state}.js`
-re-exportan (`export { default } from '../../../backend/api/sync/<f>.js'`) el handler real, y el
-proyecto Vercel usa **Root Directory = `web`**. `web/vercel.json` tiene el rewrite
-`/sync/:path* -> /api/sync/:path*` y el `installCommand: npm ci --prefix ../backend` (así el
-deploy instala las deps de `backend/`, no solo las de `web/`). Función nueva en `backend/api/sync/`
-= shim nuevo en `web/api/sync/`.
+Las funciones viven en `web/api/` — es el mismo directorio que Vercel usa como Root Directory del
+proyecto único (backend + futura web de gestión de la Fase 12). No hay indirección: Vercel descubre
+y sirve directamente `web/api/sync/{push,pull,state}.js`. `web/vercel.json` tiene el rewrite
+`/sync/:path* -> /api/sync/:path*`.
+
+(Fase 11: hasta el plan 03 esto vivió separado en `backend/`, con `web/api/` como shims de
+re-export — ADR-005 lo justificaba para mantener el backend autocontenido. Se descartó: es el
+patrón atípico frente al estándar de Vercel de colocar `api/` junto al frontend que sirve, y backend
+y web comparten la misma base de datos y evolucionan juntos. Todo se unificó en `web/`.)
 
 ```bash
 npx vercel@latest dev
@@ -54,8 +55,8 @@ JSON) se obtiene contra el primer Preview real (fase 11, plan 04), que no pasa p
 Antes de mergear a `main`:
 
 ```bash
-bash backend/scripts/smoke-preview.sh <preview-url>          # SMOKE_API_KEY/VERCEL_BYPASS opcionales
-bash backend/scripts/check-preview-db.sh <rama-git>
+bash web/scripts/smoke-preview.sh <preview-url>          # SMOKE_API_KEY/VERCEL_BYPASS opcionales
+bash web/scripts/check-preview-db.sh <rama-git>
 ```
 
 `smoke-preview.sh` confirma que `/sync/state` responde JSON de la función (no HTML de un

@@ -11,7 +11,7 @@ class Cover {
 }
 
 /// Media aritmetica del centro + caja min/max, todo redondeado a 6 decimales
-/// alejandose del cero. La MISMA formula esta portada en backend/api/_lib/cover.js;
+/// alejandose del cero. La MISMA formula esta portada en web/api/_lib/cover.js;
 /// si una cambia, el vector compartido de vectors_test.dart / vectors.test.js falla.
 double _r6(double x) => (x * 1e6).round() / 1e6;
 

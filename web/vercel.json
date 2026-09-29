@@ -1,5 +1,4 @@
 {
-  "installCommand": "npm ci --prefix ../backend",
   "rewrites": [
     { "source": "/sync/:path*", "destination": "/api/sync/:path*" }
   ]

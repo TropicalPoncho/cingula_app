@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Uso: bash backend/scripts/smoke-preview.sh <base-url>
+# Uso: bash web/scripts/smoke-preview.sh <base-url>
 # Chequea GET /sync/state: sin key debe dar 401 JSON (prueba el ruteo, ningún secreto).
 # SMOKE_API_KEY (opcional): WEB_API_KEY/SYNC_API_KEY -> chequea 200 con serverCursor.
 # VERCEL_BYPASS (opcional): secreto de Protection Bypass -> header x-vercel-protection-bypass.

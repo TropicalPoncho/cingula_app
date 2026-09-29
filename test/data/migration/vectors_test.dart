@@ -3,7 +3,7 @@ import 'package:cingula_app/data/migration/ids.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // Vectores verificados tambien con Python `uuid.uuid5` como tercer testigo independiente.
-// Los mismos valores literales estan en backend/api/_lib/vectors.test.js.
+// Los mismos valores literales estan en web/api/_lib/vectors.test.js.
 void main() {
   test('uuid v5 vectors', () {
     expect(obraUuidForPath('11111111-2222-4333-8444-555555555555'),
