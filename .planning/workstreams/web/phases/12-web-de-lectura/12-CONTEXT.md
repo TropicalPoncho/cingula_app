@@ -49,6 +49,26 @@ cuando no hay archivo todavía", no subir/gestionar archivos).
 - **D-06:** Un único componente de panel lateral se **reusa** para los 4 tipos: obra, path, trigger,
   recorrido. No hay 4 implementaciones separadas.
 
+### Modelo de dominio visible en la web (corrección 2026-10-02, post-prototipo)
+- **D-16:** El prototipo de Claude Design (D-14) corrigió el modelo: **triggers y portales son cosas distintas**.
+  - **Trigger:** círculo anónimo (sin nombre, sin sonido propio) — posición, radio, orden dentro del path.
+    En un path hay muchos, uno tras otro, solo para marcar el camino; el audio del path suena mientras
+    el celular está dentro de alguno.
+  - **Portal:** trigger circular **con nombre, descripción, radio, offset y audio propio**. Pertenece
+    a un path (supuesto — confirmar si pueden existir sueltos en la obra).
+  - Riesgo: los campos `name`/`description`/`offset` que el prompt original asignaba a "trigger"
+    pertenecen al portal; verificar contra el esquema real del pull (Phase 10) antes de planificar.
+- **D-17:** Vista de paths en el mapa, dos modos conmutables: **Corredor** (default, simplificada: banda
+  con ancho = diámetro de los triggers) y **Círculos** (cada trigger seleccionable; sirve para ver
+  huecos y, en una fase futura de edición, moverlos). **Huecos** (dos triggers consecutivos cuyos
+  círculos no se tocan) se marcan en ámbar en ambos modos y se cuentan en el detalle del path.
+  Riesgo: con paths reales de cientos de triggers, el modo Círculos necesita agrupar o limitarse al
+  zoom cercano — no resuelto en el prototipo (triggers sintéticos).
+- **D-18:** El panel lateral (D-05/D-06) reusa un único componente para **5 tipos**: recorrido, obra,
+  path, portal y trigger (antes 4). Capas del mapa: Cobertura, Paths, Portales (todas prendidas por
+  defecto, D-03). Detalle de path: tira de cobertura (un cuadro por trigger, ámbar = hueco) + tabla de
+  portales; el audio del path y el de cada portal se muestran inline, con estado "sin archivo todavía".
+
 ### Navegación / arquitectura de información
 - **D-07:** La pantalla de entrada (home) tras loguearse es **el mapa general** — no hay dashboard
   intermedio.
@@ -72,21 +92,24 @@ cuando no hay archivo todavía", no subir/gestionar archivos).
   del celular. No es una pantalla separada a la que haya que navegar.
 
 ### Identidad visual
-- **D-14:** El usuario va a prototipar las pantallas en **Claude Design** (producto de Anthropic
-  Labs, research preview en claude.ai, no integrado a este flujo de Claude Code) usando el prompt
-  guardado en `12-CLAUDE-DESIGN-PROMPT.md`. **Todavía no lo corrió** al cerrar esta discusión —
-  research/planning arrancan SIN esa referencia visual. Cuando el usuario tenga el resultado
-  (link o export), actualizar este CONTEXT.md o correr `/gsd:ui-phase 12 web` con esa referencia
-  antes de implementar el detalle visual final.
-- **D-15:** Sin preferencia de colores/tipografía por ahora — abierto a lo que proponga Claude
-  Design o el research de la fase, apropiado para una herramienta de gestión de arte sonoro en la
-  naturaleza (sin caer en literalismo — nada de hojas/árboles por default, ver el prompt guardado).
+- **D-14:** Prototipo interactivo hecho (2026-10-02) como canvas de Claude Design, con 8 tableros
+  navegables: mapa + panel (obra abierta / expandida / path con hueco / recorrido filtrado / error de
+  sync), Obras, Artistas y Acceso. **Referencia visual vigente:**
+  https://claude.ai/artifact/Wow1kvau7E9jtAHQYHCyWb (privado; ver D-16 a D-18 para las correcciones
+  de modelo que salieron de revisarlo). Datos del prototipo son de muestra inventados; el mapa es una
+  ilustración (Leaflet/OSM va en la implementación). Correr `/gsd:ui-phase 12 web` con esta referencia.
+- **D-15:** Identidad visual: se usa el **Cíngula Design System** del usuario
+  (https://claude.ai/code/artifact/5a5f7c08-5959-4914-a2f9-e1964ee8f05d — fondo oscuro, Chillax +
+  Synonym, paleta mint/azure/violeta/magenta/ámbar, motivos de onda y portal). Mapeo semántico usado:
+  mint = triggers/portales/selección, azure = paths, ámbar = hueco/atención/error de sync,
+  violeta = acción primaria. Íconos: SVG inline en el prototipo; en la implementación usar `lucide-react`
+  (el sistema declara Lucide, sin confirmar).
 
 ### Claude's Discretion
 - Densidad exacta de los listados (Obras, Artistas).
 - Estados vacíos y manejo de errores de pull más allá del criterio de "estado honesto" ya establecido.
 - Ancho del panel lateral, animación de apertura/cierre/expansión.
-- Colores/tipografía finales hasta que exista un resultado de Claude Design (D-14).
+- Ajustes finos de color/tipografía sobre el Cíngula Design System (D-15).
 - Cómo estructurar el build de Vite dentro de `web/` sin colisionar con el descubrimiento de
   funciones de Vercel (`web/api/`, ya en producción desde la Fase 11) — configuración de
   `outputDirectory` en `web/vercel.json` y orden de reglas de rewrite (la SPA no puede interceptar
@@ -124,9 +147,11 @@ cuando no hay archivo todavía", no subir/gestionar archivos).
   sin tocar ese rewrite
 - `web/README.md` — flujo de dev/deploy vigente
 
-### Diseño (cuando exista)
-- `.planning/workstreams/web/phases/12-web-de-lectura/12-CLAUDE-DESIGN-PROMPT.md` — prompt usado
-  para prototipar en Claude Design (D-14); actualizar con el link/export cuando el usuario lo tenga
+### Diseño
+- Prototipo: https://claude.ai/artifact/Wow1kvau7E9jtAHQYHCyWb (D-14) — prevalece sobre el prompt
+  original donde difieran (modelo de triggers/portales, D-16)
+- `.planning/workstreams/web/phases/12-web-de-lectura/12-CLAUDE-DESIGN-PROMPT.md` — prompt original;
+  su descripción de "trigger" (con nombre/descripción/offset) quedó superada por D-16
 
 </canonical_refs>
 
