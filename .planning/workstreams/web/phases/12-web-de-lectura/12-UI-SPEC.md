@@ -30,10 +30,11 @@ Estas decisiones afectan el futuro de la fase (modelo de datos visible, escalado
 | R7 | **Audio: sin forma de onda falsa y sin reproducción en esta fase.** La tarjeta de audio tiene 3 estados (sin audio asignado / sin archivo todavía / archivo en el servidor) y un slot reservado para el reproductor que llega en Fase 13. | `web/schema.sql:19-31` (`storage_key` NULL = sin archivo; `duration_seconds` real). El prototipo dibuja 56 barras decorativas con `Math.sin` (`Main.dc.html:425`): datos falsos. `12-CONTEXT.md` (dominio): STOR-04 es "indicar cuando no hay archivo", no gestionar. | Reusar las barras del prototipo como decoración. | Bajo. Desvío visual del prototipo, justificado: la UI no puede mostrar un dato que no existe. |
 | R8 | **Copy del 401 corregido:** el prototipo dice "Revisá que sea la clave de lectura y no la del celular" pero el backend acepta TAMBIÉN `SYNC_API_KEY` para leer (role `sync`). | `web/api/_lib/auth.js:7-9` (`KEYS = [['sync',…],['web',…]]`, ambos roles autentican); `Acceso.dc.html:124`. | Copy del prototipo (afirma algo falso). | Bajo. Copy nuevo en la tabla de Copywriting. |
 | R9 | **Foco visible en formas SVG ausente en el prototipo.** `.mk:focus-visible{outline:none}` y `box-shadow` (regla global del DS) no pinta sobre elementos SVG. El contrato exige un foco propio para capas Leaflet (ver Accesibilidad). | `Main.dc.html:61-62`, `bundle.css` regla `[tabindex]:focus-visible{box-shadow:var(--glow-focus)}`. | Heredar el prototipo. | Medio: sin esto el mapa no es operable con teclado (incumple contraste/foco WCAG 2.4.7). |
-| R10 | **Tipografía normalizada:** el prototipo usa 8 tamaños (12/13/14/15/17/20/25/40). El contrato fija **exactamente 4 tamaños en total** (13 / 15 / 20 / 40, todos tokens `--fs-*` del DS) y 2 pesos de UI (400/500); el 300 sólo en el display de 40 px (mandato del DS). Se fusionaron los antiguos 20 y 25 en un único tamaño de título (20). | Ver Typography. Regla del checker: 3-4 tamaños, 2 pesos. | Copiar los 8 tamaños; o declarar 4 + 1 display "fuera de la cuenta" (relabel, rechazado por el checker). | Bajo; ajustes de 1 a 5 px respecto del prototipo, listados. El título del panel compacto, el `h1` de toolbar/login y los títulos de fila pasan de 25/17 a 20: la jerarquía contra el display (40) se mantiene. |
+| R10 | **Tipografía normalizada:** el prototipo usa 8 tamaños (12/13/14/15/17/20/25/40). El contrato fija **exactamente 4 tamaños en total** (13 / 15 / 20 / 40, todos tokens `--fs-*` del DS) y **exactamente 2 pesos en total: 300 (sólo Display 40 px) y 400 (todo lo demás)**; ver R14 por el desvío del DS. Se fusionaron los antiguos 20 y 25 en un único tamaño de título (20). | Ver Typography. Regla del checker: 3-4 tamaños, 2 pesos. | Copiar los 8 tamaños; o declarar 4 + 1 display "fuera de la cuenta" (relabel, rechazado por el checker). | Bajo; ajustes de 1 a 5 px respecto del prototipo, listados. El título del panel compacto, el `h1` de toolbar/login y los títulos de fila pasan de 25/17 a 20: la jerarquía contra el display (40) se mantiene. |
 | R11 | **Faltan assets del DS en la copia local:** `tokens.css` referencia `fonts/*.woff2` (Chillax/Synonym) y el login usa `assets/logo-mark-light.png`; la copia guardada sólo trae `README.md`, `tokens.css` y `components/bundle.css`. | `ls …/artifact-files/5a5f7c08-…/project/` (3 archivos). | Sustituir por fuentes del sistema (rompe D-15). | Medio: sin los `.woff2` la tipografía cae a `Futura/system-ui`. Obtenerlos del proyecto del DS antes de implementar (OI-06). |
 | R12 | **El cursor es string.** `change_seq` y `nextCursor` viajan como string (bigint); nunca pasar por `Number()`, se compara/ordena sólo como BigInt y se muestra tal cual. | `12-CONTEXT.md` (Phase 10 D-04..D-13), `web/api/sync/pull.js:26-33,57`; REQUIREMENTS PULL-02. | Parsear a número. | Bajo hoy (48213), pierde precisión > 2^53. |
 | R13 | **Layout móvil no existe en el prototipo.** Se propone una regla mínima [DEFAULT/NO VALIDADO] (ver Layout y Responsive). | Prototipo fijo a 1440x900 (`$preview` en cada `data-props`). | Diseñar móvil completo (fuera de alcance, herramienta desktop-first). | Medio en pantallas < 900 px. |
+| R14 | **DESVÍO DEL DS (flagged, el usuario puede revertirlo): exactamente 2 pesos, 300 (sólo Display 40 px) y 400 (todo lo demás, incluidos Heading y etiquetas).** El README del DS dice "sentence-case headings step up to medium below 25px" y el prototipo aprobado usa 500 en etiquetas `.lbl`, títulos de 20 px y registro `CÍNGULA`; este contrato los baja a 400. La jerarquía pasa a depender de tamaño (13/15/20/40), mayúscula y `--ls-label` en etiquetas, y color (`--text-primary` vs `--text-secondary`), no de peso. Implementación: sobreescribir a 400 el peso de `.lbl`, `.cg-label`, `.cg-portal-type`, `.tbl th`, `.seg`, `.btn`, nav links y de `h1..h4` a 20 px (la regla global `h1..h4` del DS es light/300: ahí el contrato exige 400, el 300 queda sólo en `.dtitle`). | Regla del checker (máximo 2 pesos, Dimension 4) contra la regla del DS. Se eligió esta ruta por quedar más cerca de D-14/D-15: conserva el título display 40 px light aprobado y el único cambio es 500 -> 400. | (a) 400/500 en todo con Display también en 400/500: contradice "display light" del DS y cambia el título aprobado. (b) Declarar el 300 "fuera de la cuenta": relabel, rechazado por el checker (igual que con los tamaños). | Bajo/Medio. Etiquetas y títulos de 20 px se ven algo más livianos que en el prototipo (500); Chillax a 400 sigue siendo legible, pero verificar contraste visual de etiquetas 13 px mayúscula sobre `--surface-card` en la revisión de UAT. Si el usuario prefiere el 500 del prototipo, el cambio es acotado: la fila 13/20 de Typography y este R14 (pasaría a 3 pesos, con nueva excepción documentada del checker). |
 
 ---
 
@@ -45,7 +46,7 @@ Estas decisiones afectan el futuro de la fase (modelo de datos visible, escalado
 | Preset | not applicable |
 | Component library | none: componentes React escritos a mano que replican las clases del prototipo (`.hdr .pill .panel .row .fact .seg .strip .card .ent .btn .ib .lnk .crumb .sel .inp .tbl`) |
 | Icon library | `lucide-react` (el DS declara Lucide, trazo 1,5 px, `currentColor`, puntas redondeadas; el prototipo usa SVG inline equivalentes) |
-| Font | Display/etiquetas: Chillax (300/400/500). Texto: Synonym (400/500). Mono: `ui-monospace, "SFMono-Regular", Menlo, monospace` (`--font-mono`) |
+| Font | Display/etiquetas: Chillax (300 sólo Display; 400 el resto). Texto: Synonym (400). Mono: `ui-monospace, "SFMono-Regular", Menlo, monospace` (`--font-mono`) |
 
 Hoja de estilos, en este orden (README del DS, "Using this system"): `tokens.css` y luego `components/bundle.css`, copiados dentro de `web/` (ej. `web/public/ds/` o `web/src/ds/`); las `@font-face` de `tokens.css` resuelven `fonts/` relativo al CSS. Tema por defecto `oscuro` (`:root`); el tema `claro` NO se usa en esta fase. Reglas globales del DS que se heredan sin tocar: foco `--glow-focus` en `a/button/input/select/[tabindex]`, `::selection` violeta, `h1..h4` Chillax light, enlaces mint con subrayado al 40%.
 
@@ -59,7 +60,7 @@ Esta tabla es una lista **no exhaustiva** de componentes conocidos y no una list
 
 | Componente | Origen en el prototipo | Notas |
 |-----------|------------------------|-------|
-| `AppHeader` (marca, nav, `SyncPill`, "Salir") | `.hdr .brand .nav .nl .pill .quiet` (`Main.dc.html:21-37`) | 56 px, `--surface-raised`, borde inferior hairline; pestaña activa con subrayado mint 2 px |
+| `AppHeader` (marca, nav, `SyncPill`, "Salir de la web") | `.hdr .brand .nav .nl .pill .quiet` (`Main.dc.html:21-37`) | 56 px, `--surface-raised`, borde inferior hairline; pestaña activa con subrayado mint 2 px |
 | `SyncPill` + popover | `.pill .pop .perr` (`:31-36`) | Ver sección Sync |
 | `SidePanel` (único, 5 tipos) | `.panel .rail .phead .crumbs .ptools .pbody` (`:63-72`) | Ver sección Panel |
 | `EntityDetail` (contenido del panel y del detalle de Obras) | `buildView()` (`:347-430`) | Un solo objeto de vista alimenta panel y página (prototipo lo declara: "el MISMO objeto alimenta el panel del mapa y el detalle de la página Obras") |
@@ -108,16 +109,16 @@ Otras excepciones (todas dimensiones estructurales, no espaciado entre bloques d
 
 ## Typography
 
-Contrato normalizado a **4 tamaños en total** (13 / 15 / 20 / 40; tokens `--fs-xs`, `--fs-sm`, `--fs-md`, `--fs-2xl` del DS) y 2 pesos de UI (400 / 500), más el peso 300 acotado al display. No existe ningún otro tamaño de fuente en la fase (incluida la atribución de OSM, la leyenda, los errores y las etiquetas de mapa: todos 13). Fuente de los valores: `tokens.css` y el CSS del prototipo; el redondeo se declara fila por fila.
+Contrato normalizado a **4 tamaños en total** (13 / 15 / 20 / 40; tokens `--fs-xs`, `--fs-sm`, `--fs-md`, `--fs-2xl` del DS) y **exactamente 2 pesos en total: 300 (sólo el Display de 40 px) y 400 (todo lo demás)**. Desvío del DS (500 -> 400 en etiquetas y títulos) declarado y reversible en R14. No existe ningún otro tamaño de fuente en la fase (incluida la atribución de OSM, la leyenda, los errores y las etiquetas de mapa: todos 13). Fuente de los valores: `tokens.css` y el CSS del prototipo; el redondeo se declara fila por fila.
 
 | Role | Size | Weight | Line Height | Notas |
 |------|------|--------|-------------|-------|
-| Caption / etiqueta / meta | 13px | 500 (etiquetas `.lbl`, mayúscula, `--ls-label` .12em, Chillax) · 400 (meta, mono, crumbs, leyenda, errores) | 1.35 (meta) / 1.2 (etiqueta) | Prototipo usa 12 px para `.lbl` (`--type-label`) y 12-14 para meta: se unifica en 13. Mono (`--font-mono`) también 13 |
+| Caption / etiqueta / meta | 13px | 400 (etiquetas `.lbl`: mayúscula, `--ls-label` .12em, Chillax; meta, mono, crumbs, leyenda, errores; el prototipo usaba 500 en `.lbl`, ver R14) | 1.35 (meta) / 1.2 (etiqueta) | Prototipo usa 12 px para `.lbl` (`--type-label`) y 12-14 para meta: se unifica en 13. Mono (`--font-mono`) también 13 |
 | Body | 15px | 400 | 1.62 (`--lh-relaxed`) | `--type-body-sm`; texto base de la app, filas `.row .t`, celdas de tabla (prototipo 14 -> 15) |
-| Heading | 20px | 500 (Chillax) | 1.3 | Fusión del antiguo Subheading (17 -> 20) y Heading (25 -> 20): títulos de `.card h4` y de `.ent .t`, título del panel compacto (`.ptitle`), `h1` de toolbar de página y del login. Títulos de sección de popover no (esos son etiqueta) |
-| Display | 40px | 300 (Chillax light) | 1.14 | Sólo título del panel expandido y del detalle de Obras/Artistas (`.dtitle`). Excepción única de peso 300, mandato del DS ("display en light; nunca bold") |
+| Heading | 20px | 400 (Chillax; el prototipo usaba 500, ver R14) | 1.3 | Fusión del antiguo Subheading (17 -> 20) y Heading (25 -> 20): títulos de `.card h4` y de `.ent .t`, título del panel compacto (`.ptitle`), `h1` de toolbar de página y del login. Títulos de sección de popover no (esos son etiqueta) |
+| Display | 40px | 300 (Chillax light) | 1.14 | Sólo título del panel expandido y del detalle de Obras/Artistas (`.dtitle`). Único uso del peso 300 y único rol que lo declara: es uno de los 2 pesos del contrato (300 + 400), mandato del DS ("display en light; nunca bold") |
 
-Reglas: títulos en minúscula/mayúscula de oración, nunca negrita; el registro `CÍNGULA` (`.cg-portal-type`, Chillax 500 13 px, `--ls-portal` .42em, mayúscula) sólo para la marca del header y del login; etiquetas `.lbl` en mayúscula con `--ls-label`; jamás espaciar letras de texto en minúscula. Numeración y metadatos técnicos (uuid, cursor, lat/lon, `kind`, `tolerance_meters`, offsets) en `--font-mono`. Los offsets se formatean con separador de miles por espacio: `+1 200 ms` (`fms`, `Main.dc.html:307`). Lat/lon con 5 decimales.
+Reglas: títulos en minúscula/mayúscula de oración, nunca negrita; el registro `CÍNGULA` (`.cg-portal-type`, Chillax 400 13 px, `--ls-portal` .42em, mayúscula) sólo para la marca del header y del login; etiquetas `.lbl` en mayúscula con `--ls-label`; jamás espaciar letras de texto en minúscula. Numeración y metadatos técnicos (uuid, cursor, lat/lon, `kind`, `tolerance_meters`, offsets) en `--font-mono`. Los offsets se formatean con separador de miles por espacio: `+1 200 ms` (`fms`, `Main.dc.html:307`). Lat/lon con 5 decimales.
 
 ---
 
@@ -169,7 +170,7 @@ Ruteo (D-07..D-10, planificador elige librería; D-01 aclara que el ruteo es lo 
 
 No hay ruta de Recorridos (D-10) ni de Audios (D-11). Reglas de despliegue (de `12-CONTEXT.md`, discreción): el fallback de la SPA no puede interceptar `/sync/*` ni `/api/*`.
 
-Shell (todas las pantallas salvo `/acceso`): `AppHeader` 56 px arriba, contenido debajo ocupando `100vh - 56px`, `overflow:hidden` en el shell y scroll interno sólo en `.pbody`, `.listpane`, `.detpane`. Header: marca "Cíngula" (registro `.cg-portal-type`) + etiqueta "Web de lectura"; nav "Mapa / Obras / Artistas" (`aria-label="Secciones"`, `aria-current="page"` en la activa); espaciador; `SyncPill`; "Salir" (texto silencioso, sin confirmación: sólo borra `sessionStorage`).
+Shell (todas las pantallas salvo `/acceso`): `AppHeader` 56 px arriba, contenido debajo ocupando `100vh - 56px`, `overflow:hidden` en el shell y scroll interno sólo en `.pbody`, `.listpane`, `.detpane`. Header: marca "Cíngula" (registro `.cg-portal-type`) + etiqueta "Web de lectura"; nav "Mapa / Obras / Artistas" (`aria-label="Secciones"`, `aria-current="page"` en la activa); espaciador; `SyncPill`; "Salir de la web" (texto silencioso, sin confirmación: sólo borra `sessionStorage`).
 
 ### Responsive [DEFAULT, NO VALIDADO]
 
@@ -219,7 +220,7 @@ El botón "Volver a" (`.btn`, ícono `ArrowLeft`) se muestra en compacto y expan
 
 ### Contenido por tipo (compacto vs expandido)
 
-Compacto muestra: etiqueta de tipo (registro `.lbl`), título 20/500, subtítulo, [Volver], `Facts`, hasta 4 filas por lista con "+N más" y el botón primario `Ver detalle completo` (ancho completo, violeta, ícono `Maximize2`). Expandido: etiqueta, título 40/300, subtítulo, [Volver]; columna izquierda (5fr): `Facts` + descripción; columna derecha (7fr): tarjeta de audio, tira de cobertura, listas completas, tabla. En la página Obras (`pageObras`) se usa el mismo contenido expandido en `.detpane` y se agrega un mini-mapa de 240 px de alto (no interactivo: sin arrastre ni zoom con rueda, resalta la selección).
+Compacto muestra: etiqueta de tipo (registro `.lbl`), título 20/400, subtítulo, [Volver], `Facts`, hasta 4 filas por lista con "+N más" y el botón primario `Ver detalle completo` (ancho completo, violeta, ícono `Maximize2`). Expandido: etiqueta, título 40/300, subtítulo, [Volver]; columna izquierda (5fr): `Facts` + descripción; columna derecha (7fr): tarjeta de audio, tira de cobertura, listas completas, tabla. En la página Obras (`pageObras`) se usa el mismo contenido expandido en `.detpane` y se agrega un mini-mapa de 240 px de alto (no interactivo: sin arrastre ni zoom con rueda, resalta la selección).
 
 | Tipo | Facts (etiqueta -> valor) | Sólo expandido | Listas |
 |------|---------------------------|----------------|--------|
@@ -283,7 +284,7 @@ Propuesta (R6): modo Círculos dibuja círculos sólo con zoom >= 16; sólo los 
 
 ### Interacción de la selección
 
-Clic o Enter/Espacio en una obra, un path, un portal o un trigger -> `sel = <tipo>:<uuid>` y se abre el panel compacto (si estaba expandido, se queda expandido). Seleccionar una obra del recorrido filtrado no cambia el filtro. Una selección que ya no existe tras un refresco (soltó el uuid o quedó con `deleted_at`) muestra en el panel "Este elemento ya no existe en el servidor." con botón "Cerrar".
+Clic o Enter/Espacio en una obra, un path, un portal o un trigger -> `sel = <tipo>:<uuid>` y se abre el panel compacto (si estaba expandido, se queda expandido). Seleccionar una obra del recorrido filtrado no cambia el filtro. Una selección que ya no existe tras un refresco (soltó el uuid o quedó con `deleted_at`) muestra en el panel "Este elemento ya no existe en el servidor." con botón "Cerrar aviso".
 
 ---
 
@@ -291,11 +292,11 @@ Clic o Enter/Espacio en una obra, un path, un portal o un trigger -> `sel = <tip
 
 ### Acceso (`/acceso`, AUTH-02)
 
-Fondo `--grad-dusk` con dos ondas decorativas (`--c-mint` y `--c-azure`, 1,25 px, no escalables, opacidad .5; el DS permite `WaveLine` como motivo). Tarjeta 440 px centrada (`--surface-card`, `--r-lg`, `--shadow-raised`, padding 40 px): marca (`logo-mark-light.png` 56 px de alto), `CÍNGULA`, `h1` "Ingresá la clave de acceso", párrafo, etiqueta `API key`, input `type=password` `autocomplete=off` placeholder `WEB_API_KEY`, botón primario "Entrar a la web" (violeta, ancho completo, **es un botón de envío de formulario**, no un enlace como en el prototipo), nota inferior. Enter en el input envía. Estados: reposo; enviando (botón deshabilitado, texto "Entrando…"); 401 (bloque `.perr` con `role="alert"`); error de red/5xx (mismo bloque, copy distinto). La clave se valida con una llamada de lectura (`GET /sync/state` con `Authorization: Bearer`); si 200 se guarda en `sessionStorage` y se navega a `/`. [REAL] El prototipo no persiste la clave: este contrato sí (`12-CONTEXT.md` Integration Points: "guardarla en `sessionStorage`"); nunca va en el bundle ni en la URL. Una respuesta 401 durante la sesión (clave revocada) borra la clave y vuelve a `/acceso?motivo=401`; "Salir" hace lo mismo sin mensaje.
+Fondo `--grad-dusk` con dos ondas decorativas (`--c-mint` y `--c-azure`, 1,25 px, no escalables, opacidad .5; el DS permite `WaveLine` como motivo). Tarjeta 440 px centrada (`--surface-card`, `--r-lg`, `--shadow-raised`, padding 40 px): marca (`logo-mark-light.png` 56 px de alto), `CÍNGULA`, `h1` "Ingresá la clave de acceso", párrafo, etiqueta `API key`, input `type=password` `autocomplete=off` placeholder `WEB_API_KEY`, botón primario "Entrar a la web" (violeta, ancho completo, **es un botón de envío de formulario**, no un enlace como en el prototipo), nota inferior. Enter en el input envía. Estados: reposo; enviando (botón deshabilitado, texto "Entrando…"); 401 (bloque `.perr` con `role="alert"`); error de red/5xx (mismo bloque, copy distinto). La clave se valida con una llamada de lectura (`GET /sync/state` con `Authorization: Bearer`); si 200 se guarda en `sessionStorage` y se navega a `/`. [REAL] El prototipo no persiste la clave: este contrato sí (`12-CONTEXT.md` Integration Points: "guardarla en `sessionStorage`"); nunca va en el bundle ni en la URL. Una respuesta 401 durante la sesión (clave revocada) borra la clave y vuelve a `/acceso?motivo=401`; "Salir de la web" hace lo mismo sin mensaje.
 
 ### Obras (`/obras`, WEB-04)
 
-Header + toolbar (título "Obras" 20/500, selectores "Recorrido" y "Visibilidad", conteo `{n} obra(s)`) + split: `.listpane` 560 px con `EntityRow` (`.ent`, 64 px): título 20/500, sub `{Recorrido o "Sin recorrido"} · {artistas}`, a la derecha visibilidad (`.vis`, punto + etiqueta 13 px). Fila seleccionada con borde mint. `.detpane` (padding 32 px): breadcrumb + `EntityDetail` expandido + mini-mapa. Opciones del selector Visibilidad: "Todas / Pública / Privada / Borrador". Sin coincidencias: "Ninguna obra coincide con los filtros." (texto `dim`, copy del prototipo).
+Header + toolbar (título "Obras" 20/400, selectores "Recorrido" y "Visibilidad", conteo `{n} obra(s)`) + split: `.listpane` 560 px con `EntityRow` (`.ent`, 64 px): título 20/400, sub `{Recorrido o "Sin recorrido"} · {artistas}`, a la derecha visibilidad (`.vis`, punto + etiqueta 13 px). Fila seleccionada con borde mint. `.detpane` (padding 32 px): breadcrumb + `EntityDetail` expandido + mini-mapa. Opciones del selector Visibilidad: "Todas / Pública / Privada / Borrador". Sin coincidencias: "Ninguna obra coincide con los filtros." (texto `dim`, copy del prototipo).
 
 ### Artistas (`/artistas`, WEB-03)
 
@@ -327,7 +328,7 @@ Reglas: [DEFAULT] el pull de una carga es todo-o-nada: se acumula en un buffer y
 | Mapa `/` | Mapa base visible + velo `--surface-veil` central con "Leyendo el servidor…" y la pill en `Leyendo…`; selector y capas deshabilitados | Sin obras: velo con "Todavía no hay obras en el servidor." (vista de respaldo en Lago Puelo, sin capas). Sin recorridos: el selector sólo ofrece "Todos los recorridos". Obras sin cobertura: se omiten del mapa y la leyenda las cuenta; la lista de panel dice "Sin cobertura todavía" | Primer pull falla: `.perr` central "No se pudo leer el servidor." + código + botón `Reintentar lectura`; con datos previos: se mantiene el mapa y sólo cambia la pill |
 | Obras | Lista con 3 filas esqueleto (bloques `--surface-raised`, sin animación shimmer; el DS no define esqueletos) y detalle vacío | "Todavía no hay obras en el servidor." / filtros sin resultado: "Ninguna obra coincide con los filtros." | Bloque `.perr` en el `listpane` con el mismo copy del mapa + `Reintentar lectura` |
 | Artistas | Igual que Obras | "Todavía no hay artistas en el servidor." | Igual que Obras |
-| Panel | Contenido ya en memoria: nunca carga por separado | Listas internas vacías se omiten (no se muestra el título de sección sin ítems); audio en sus 3 estados | Elemento inexistente (deep link o ya borrado): "Este elemento ya no existe en el servidor." + `Cerrar`; en `/obras/:uuid` inexistente: "No encontramos esta obra." con enlace "Volver al listado" |
+| Panel | Contenido ya en memoria: nunca carga por separado | Listas internas vacías se omiten (no se muestra el título de sección sin ítems); audio en sus 3 estados | Elemento inexistente (deep link o ya borrado): "Este elemento ya no existe en el servidor." + `Cerrar aviso`; en `/obras/:uuid` inexistente: "No encontramos esta obra." con enlace "Volver al listado" |
 | Acceso | Botón "Entrando…" | — | 401 / red, ver Acceso |
 
 ---
@@ -383,7 +384,7 @@ Registro del DS (README, "Content fundamentals"): español rioplatense con voseo
 | Pluralización | `1 obra` / `2 obras`; `1 path` / `2 paths`; `1 portal` / `2 portales`; `1 hueco` / `2 huecos` |
 | Leyenda | `{n} obras · {n} paths · {n} triggers · {n} portales` |
 | Pista Círculos | `Acercá el mapa para ver los círculos.` |
-| Destructive confirmation | not applicable: no hay acciones destructivas en esta fase (sólo lectura). "Salir" no confirma porque sólo borra `sessionStorage` |
+| Destructive confirmation | not applicable: no hay acciones destructivas en esta fase (sólo lectura). "Salir de la web" no confirma porque sólo borra `sessionStorage` |
 
 ---
 
@@ -421,7 +422,7 @@ Applicable state considerations resolved: 11 covered, 3 backstop, 2 unresolved. 
 | long-text | Títulos en `.ent`/`.row`, riel vertical, nombres de obra en el mapa | 🧪 backstop | Filas: una línea con `text-overflow: ellipsis` y `title`; título del panel envuelve hasta 2 líneas; riel recorta a 420 px; etiqueta de obra en el mapa no envuelve (prueba visual con un nombre de 60 caracteres) |
 | overflow | Listas del panel compacto, tira de cobertura, nota de huecos, tabla de portales | 🧪 backstop | Listas: 4 filas + "+N más"; tira `flex-wrap`; nota: 3 huecos + "+N más"; tabla con scroll vertical del `.pbody` |
 | partial | Path sin audio, grabación de origen nula, `description` vacía | ✅ covered | "—", "Este path no tiene audio asignado.", secciones omitidas si no hay contenido |
-| stale | Selección que desapareció tras un refresco | ✅ covered | Panel "Este elemento ya no existe en el servidor." + `Cerrar` |
+| stale | Selección que desapareció tras un refresco | ✅ covered | Panel "Este elemento ya no existe en el servidor." + `Cerrar aviso` |
 | many | Círculos con cientos de triggers reales | ⚠ unresolved | Umbral z16 / tope 600 propuestos pero sin medir (OI-02); el planificador lo trata como supuesto |
 | tab-order | Roving tabindex en triggers y orden panel -> mapa | 🧪 backstop | Prueba de teclado manual + test de componente sobre un path de 30 triggers |
 | responsive | < 900 px | ⚠ unresolved | Regla mínima [DEFAULT] sin validar (OI-05) |
