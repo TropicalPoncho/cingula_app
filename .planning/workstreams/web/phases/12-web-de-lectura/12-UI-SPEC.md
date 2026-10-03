@@ -30,7 +30,7 @@ Estas decisiones afectan el futuro de la fase (modelo de datos visible, escalado
 | R7 | **Audio: sin forma de onda falsa y sin reproducción en esta fase.** La tarjeta de audio tiene 3 estados (sin audio asignado / sin archivo todavía / archivo en el servidor) y un slot reservado para el reproductor que llega en Fase 13. | `web/schema.sql:19-31` (`storage_key` NULL = sin archivo; `duration_seconds` real). El prototipo dibuja 56 barras decorativas con `Math.sin` (`Main.dc.html:425`): datos falsos. `12-CONTEXT.md` (dominio): STOR-04 es "indicar cuando no hay archivo", no gestionar. | Reusar las barras del prototipo como decoración. | Bajo. Desvío visual del prototipo, justificado: la UI no puede mostrar un dato que no existe. |
 | R8 | **Copy del 401 corregido:** el prototipo dice "Revisá que sea la clave de lectura y no la del celular" pero el backend acepta TAMBIÉN `SYNC_API_KEY` para leer (role `sync`). | `web/api/_lib/auth.js:7-9` (`KEYS = [['sync',…],['web',…]]`, ambos roles autentican); `Acceso.dc.html:124`. | Copy del prototipo (afirma algo falso). | Bajo. Copy nuevo en la tabla de Copywriting. |
 | R9 | **Foco visible en formas SVG ausente en el prototipo.** `.mk:focus-visible{outline:none}` y `box-shadow` (regla global del DS) no pinta sobre elementos SVG. El contrato exige un foco propio para capas Leaflet (ver Accesibilidad). | `Main.dc.html:61-62`, `bundle.css` regla `[tabindex]:focus-visible{box-shadow:var(--glow-focus)}`. | Heredar el prototipo. | Medio: sin esto el mapa no es operable con teclado (incumple contraste/foco WCAG 2.4.7). |
-| R10 | **Tipografía normalizada:** el prototipo usa 8 tamaños (12/13/14/15/17/20/25/40). El contrato fija 4 tamaños de UI (13/15/20/25) + 1 display (40, peso 300) y 2 pesos de UI (400/500). | Ver Typography. Regla del checker: 3-4 tamaños, 2 pesos. | Copiar los 8 tamaños. | Bajo; ajustes de 1 a 3 px respecto del prototipo, listados. |
+| R10 | **Tipografía normalizada:** el prototipo usa 8 tamaños (12/13/14/15/17/20/25/40). El contrato fija **exactamente 4 tamaños en total** (13 / 15 / 20 / 40, todos tokens `--fs-*` del DS) y 2 pesos de UI (400/500); el 300 sólo en el display de 40 px (mandato del DS). Se fusionaron los antiguos 20 y 25 en un único tamaño de título (20). | Ver Typography. Regla del checker: 3-4 tamaños, 2 pesos. | Copiar los 8 tamaños; o declarar 4 + 1 display "fuera de la cuenta" (relabel, rechazado por el checker). | Bajo; ajustes de 1 a 5 px respecto del prototipo, listados. El título del panel compacto, el `h1` de toolbar/login y los títulos de fila pasan de 25/17 a 20: la jerarquía contra el display (40) se mantiene. |
 | R11 | **Faltan assets del DS en la copia local:** `tokens.css` referencia `fonts/*.woff2` (Chillax/Synonym) y el login usa `assets/logo-mark-light.png`; la copia guardada sólo trae `README.md`, `tokens.css` y `components/bundle.css`. | `ls …/artifact-files/5a5f7c08-…/project/` (3 archivos). | Sustituir por fuentes del sistema (rompe D-15). | Medio: sin los `.woff2` la tipografía cae a `Futura/system-ui`. Obtenerlos del proyecto del DS antes de implementar (OI-06). |
 | R12 | **El cursor es string.** `change_seq` y `nextCursor` viajan como string (bigint); nunca pasar por `Number()`, se compara/ordena sólo como BigInt y se muestra tal cual. | `12-CONTEXT.md` (Phase 10 D-04..D-13), `web/api/sync/pull.js:26-33,57`; REQUIREMENTS PULL-02. | Parsear a número. | Bajo hoy (48213), pierde precisión > 2^53. |
 | R13 | **Layout móvil no existe en el prototipo.** Se propone una regla mínima [DEFAULT/NO VALIDADO] (ver Layout y Responsive). | Prototipo fijo a 1440x900 (`$preview` en cada `data-props`). | Diseñar móvil completo (fuera de alcance, herramienta desktop-first). | Medio en pantallas < 900 px. |
@@ -77,38 +77,44 @@ Esta tabla es una lista **no exhaustiva** de componentes conocidos y no una list
 
 ## Spacing Scale
 
-Valores declarados (múltiplos de 4; tokens del DS entre paréntesis):
+Escala estándar (múltiplos de 4; tokens del DS entre paréntesis):
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| xs | 4px (`--sp-1`) | Separación entre ítems de nav, `h` márgenes mínimos |
-| sm | 8px (`--sp-2`) | Gap de botón-ícono, margen entre `.row`, padding vertical de `.mcard` |
-| 12 | 12px (`--sp-3`) | Gap de pill, de fact grid, padding de popover rows y `.perr` |
+| xs | 4px (`--sp-1`) | Separación entre ítems de nav, gap de `.crumbs` y de `.strip`, `h` márgenes mínimos |
+| sm | 8px (`--sp-2`) | Gap de botón-ícono, margen entre `.row`, padding vertical de `.mcard` y de `.fact`, gap vertical de `.perr` |
 | md | 16px (`--sp-4`) | Padding horizontal de controles, gap de mapbar, padding de `.empty` |
-| 20 | 20px (`--sp-5`) | Padding del cuerpo del panel (`.pbody`), de `.card` y de `.listpane`, padding del header |
 | lg | 24px (`--sp-6`) | Gap del header, margen del login |
 | xl | 32px (`--sp-8`) | Gap de `dgrid` (panel expandido), padding de `.detpane` |
-| 40 | 40px (`--sp-10`) | Padding del login card |
 | 2xl | 48px (`--sp-12`) | Panel plegado (riel) |
 | 3xl | 64px (`--sp-16`) | Reservado; no se usa en esta fase |
 
-Excepciones (todas valores del prototipo o dimensiones estructurales):
+Excepción justificada E1 — pasos intermedios del DS (12 / 20 / 40): son múltiplos de 4 pero no pertenecen al juego 4/8/16/24/32/48/64. Se conservan **tal cual** porque `tokens.css` (`--sp-3`, `--sp-5`, `--sp-10`) se reusa sin modificar (D-15) y el prototipo bloqueado (D-14) está dimensionado con ellos; snapearlos obligaría a redefinir el espaciado del DS. Uso permitido, sólo estos:
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| 12 | 12px (`--sp-3`) | Gap de pill, de fact grid, padding de popover rows y de `.perr` |
+| 20 | 20px (`--sp-5`) | Padding del cuerpo del panel (`.pbody`), de `.card` y de `.listpane`, padding del header |
+| 40 | 40px (`--sp-10`) | Padding del login card |
+
+Ningún otro valor fuera de la escala estándar y de E1 puede usarse como espaciado (gap/padding/margin). Los valores 6 px (`.perr`), 10 px (`.fact`), 2 px (`.crumbs`) y 3 px (`.strip`) del prototipo se **snapearon** a 8 / 8 / 4 / 4 (ajuste de 1 a 2 px, sin cambio de estructura).
+
+Otras excepciones (todas dimensiones estructurales, no espaciado entre bloques de texto):
 - Objetivos táctiles: 44 px mínimo (`--touch-min`) en `.pill .btn .ib .sel .inp .seg .chk` y 28 px en `.crumb` (enlace de texto en línea, dentro de un grupo; área clickeable extendida a 44 px de alto con padding vertical si se mide en auditoría [DEFAULT]).
 - Estructurales fijos: header 56 px; fila `.row` 52 px; fila `.ent` 64 px; fila de tabla 52 px; columna de etiqueta de facts 124 px (popover 104 px); `.listpane` 560 px; popover de sync 400 px; login card 440 px; panel 380 px / 62% / 48 px; mini-mapa de Obras 240 px de alto; leyenda/atribución a 16 px de los bordes.
-- No múltiplos de 4 heredados del prototipo y conservados por ser microgeometría, no layout: 2 px (gap de `.crumbs`, `.bars`), 3 px (gap de `.strip`), 6 px (gap vertical de `.perr`), 10 px (padding vertical de `.fact`), 18 px (checkbox y muestra `.sw`), 14 px (`--r-md`).
+- No múltiplos de 4 que se conservan por ser tamaño de glifo/forma y no espaciado: 18 px (lado del checkbox y de la muestra `.sw`), 14 px (`--r-md`, radio de borde), y las medidas de las marcas de la tira de cobertura (6×20 px y 18×20 px). Ningún gap, padding ni margin usa estos valores.
 
 ---
 
 ## Typography
 
-Contrato normalizado a 4 tamaños de UI + 1 de display y 2 pesos de UI. Fuente de los valores: `tokens.css` roles `--type-*` y el CSS del prototipo; el redondeo se declara fila por fila.
+Contrato normalizado a **4 tamaños en total** (13 / 15 / 20 / 40; tokens `--fs-xs`, `--fs-sm`, `--fs-md`, `--fs-2xl` del DS) y 2 pesos de UI (400 / 500), más el peso 300 acotado al display. No existe ningún otro tamaño de fuente en la fase (incluida la atribución de OSM, la leyenda, los errores y las etiquetas de mapa: todos 13). Fuente de los valores: `tokens.css` y el CSS del prototipo; el redondeo se declara fila por fila.
 
 | Role | Size | Weight | Line Height | Notas |
 |------|------|--------|-------------|-------|
 | Caption / etiqueta / meta | 13px | 500 (etiquetas `.lbl`, mayúscula, `--ls-label` .12em, Chillax) · 400 (meta, mono, crumbs, leyenda, errores) | 1.35 (meta) / 1.2 (etiqueta) | Prototipo usa 12 px para `.lbl` (`--type-label`) y 12-14 para meta: se unifica en 13. Mono (`--font-mono`) también 13 |
 | Body | 15px | 400 | 1.62 (`--lh-relaxed`) | `--type-body-sm`; texto base de la app, filas `.row .t`, celdas de tabla (prototipo 14 -> 15) |
-| Subheading | 20px | 500 (Chillax) | 1.35 | Títulos de `.card h4` y de `.ent .t` (prototipo 17 -> 20), títulos de sección de popover no (esos son etiqueta) |
-| Heading | 25px | 500 (Chillax) | 1.14 | Título del panel compacto (`.ptitle`), `h1` de toolbar de página y del login |
+| Heading | 20px | 500 (Chillax) | 1.3 | Fusión del antiguo Subheading (17 -> 20) y Heading (25 -> 20): títulos de `.card h4` y de `.ent .t`, título del panel compacto (`.ptitle`), `h1` de toolbar de página y del login. Títulos de sección de popover no (esos son etiqueta) |
 | Display | 40px | 300 (Chillax light) | 1.14 | Sólo título del panel expandido y del detalle de Obras/Artistas (`.dtitle`). Excepción única de peso 300, mandato del DS ("display en light; nunca bold") |
 
 Reglas: títulos en minúscula/mayúscula de oración, nunca negrita; el registro `CÍNGULA` (`.cg-portal-type`, Chillax 500 13 px, `--ls-portal` .42em, mayúscula) sólo para la marca del header y del login; etiquetas `.lbl` en mayúscula con `--ls-label`; jamás espaciar letras de texto en minúscula. Numeración y metadatos técnicos (uuid, cursor, lat/lon, `kind`, `tolerance_meters`, offsets) en `--font-mono`. Los offsets se formatean con separador de miles por espacio: `+1 200 ms` (`fms`, `Main.dc.html:307`). Lat/lon con 5 decimales.
@@ -140,7 +146,7 @@ Otros roles semánticos fijos (D-15, "no se inventan tonos nuevos"):
 
 | Color | Valor | Uso exclusivo |
 |-------|-------|---------------|
-| Violeta | `#9900FF` (`--action-primary`), hover `#C77CFF` | Acción primaria: "Ver detalle completo" y "Entrar". Una sola acción primaria visible por pantalla. Texto blanco (contraste ≈ 5,5:1), hover con texto `--ink-900` |
+| Violeta | `#9900FF` (`--action-primary`), hover `#C77CFF` | Acción primaria: "Ver detalle completo" y "Entrar a la web". Una sola acción primaria visible por pantalla. Texto blanco (contraste ≈ 5,5:1), hover con texto `--ink-900` |
 | Azure | `#578CCB` (`--c-azure`), soft `#A8C6E7` | Geometría de paths y triggers (línea, corredor, círculos); `--azure-soft` sólo para el path/trigger resaltado |
 | Ámbar | `#FFBC00` (`--c-ambar`), soft `#FFD980` | Hueco entre triggers, atención, error/stale de sync, "Sin archivo todavía", visibilidad Borrador, `.perr`/`.empty` (relleno 6-8%, borde 40-55%) |
 | Ink-200 / texto | `--text-primary #F4F1F7`, `--text-secondary #9C96AB`, `--text-muted #6E6880` | `--text-muted` (contraste ≈ 3,4:1 sobre `#17151E`, no cumple AA para texto) sólo para placeholders y separadores `/` del breadcrumb (no esenciales); toda información va en `--text-secondary` o más claro. Visibilidad Privada usa punto `--ink-200` |
@@ -213,7 +219,7 @@ El botón "Volver a" (`.btn`, ícono `ArrowLeft`) se muestra en compacto y expan
 
 ### Contenido por tipo (compacto vs expandido)
 
-Compacto muestra: etiqueta de tipo (registro `.lbl`), título 25/500, subtítulo, [Volver], `Facts`, hasta 4 filas por lista con "+N más" y el botón primario `Ver detalle completo` (ancho completo, violeta, ícono `Maximize2`). Expandido: etiqueta, título 40/300, subtítulo, [Volver]; columna izquierda (5fr): `Facts` + descripción; columna derecha (7fr): tarjeta de audio, tira de cobertura, listas completas, tabla. En la página Obras (`pageObras`) se usa el mismo contenido expandido en `.detpane` y se agrega un mini-mapa de 240 px de alto (no interactivo: sin arrastre ni zoom con rueda, resalta la selección).
+Compacto muestra: etiqueta de tipo (registro `.lbl`), título 20/500, subtítulo, [Volver], `Facts`, hasta 4 filas por lista con "+N más" y el botón primario `Ver detalle completo` (ancho completo, violeta, ícono `Maximize2`). Expandido: etiqueta, título 40/300, subtítulo, [Volver]; columna izquierda (5fr): `Facts` + descripción; columna derecha (7fr): tarjeta de audio, tira de cobertura, listas completas, tabla. En la página Obras (`pageObras`) se usa el mismo contenido expandido en `.detpane` y se agrega un mini-mapa de 240 px de alto (no interactivo: sin arrastre ni zoom con rueda, resalta la selección).
 
 | Tipo | Facts (etiqueta -> valor) | Sólo expandido | Listas |
 |------|---------------------------|----------------|--------|
@@ -243,7 +249,7 @@ Un cuadro por trigger en orden de `position`: 6×20 px, radio 2 px, azure; un hu
 
 ## Mapa general [PROTOTIPO + REAL]
 
-Leaflet 1.9.x imperativo dentro de un único `MapView` (sin `react-leaflet`: las panes propias, los atributos ARIA sobre elementos SVG y el recálculo de grosor por zoom son imperativos de todos modos; el planificador puede decidir distinto). Base OSM con la atribución visible (© OpenStreetMap contributors, abajo a la derecha, 12 px `--text-secondary`). Los tiles se oscurecen por CSS sobre `.leaflet-tile-pane` (p. ej. `filter: invert(1) hue-rotate(180deg) brightness(.8) contrast(.9)`) [DEFAULT]: sin dependencia de un proveedor de tiles oscuros; verificar la política de uso de tiles de OSM (tráfico de un solo editor). Control de zoom de Leaflet abajo a la derecha (arriba izquierda está ocupado por la `mapbar`), botones de 44 px.
+Leaflet 1.9.x imperativo dentro de un único `MapView` (sin `react-leaflet`: las panes propias, los atributos ARIA sobre elementos SVG y el recálculo de grosor por zoom son imperativos de todos modos; el planificador puede decidir distinto). Base OSM con la atribución visible (© OpenStreetMap contributors, abajo a la derecha, 13 px `--text-secondary`). Los tiles se oscurecen por CSS sobre `.leaflet-tile-pane` (p. ej. `filter: invert(1) hue-rotate(180deg) brightness(.8) contrast(.9)`) [DEFAULT]: sin dependencia de un proveedor de tiles oscuros; verificar la política de uso de tiles de OSM (tráfico de un solo editor). Control de zoom de Leaflet abajo a la derecha (arriba izquierda está ocupado por la `mapbar`), botones de 44 px.
 
 ### Controles (`mapbar`, arriba, `pointer-events:none` salvo los hijos)
 
@@ -285,11 +291,11 @@ Clic o Enter/Espacio en una obra, un path, un portal o un trigger -> `sel = <tip
 
 ### Acceso (`/acceso`, AUTH-02)
 
-Fondo `--grad-dusk` con dos ondas decorativas (`--c-mint` y `--c-azure`, 1,25 px, no escalables, opacidad .5; el DS permite `WaveLine` como motivo). Tarjeta 440 px centrada (`--surface-card`, `--r-lg`, `--shadow-raised`, padding 40 px): marca (`logo-mark-light.png` 56 px de alto), `CÍNGULA`, `h1` "Ingresá la clave de acceso", párrafo, etiqueta `API key`, input `type=password` `autocomplete=off` placeholder `WEB_API_KEY`, botón primario "Entrar" (violeta, ancho completo, **es un botón de envío de formulario**, no un enlace como en el prototipo), nota inferior. Enter en el input envía. Estados: reposo; enviando (botón deshabilitado, texto "Entrando…"); 401 (bloque `.perr` con `role="alert"`); error de red/5xx (mismo bloque, copy distinto). La clave se valida con una llamada de lectura (`GET /sync/state` con `Authorization: Bearer`); si 200 se guarda en `sessionStorage` y se navega a `/`. [REAL] El prototipo no persiste la clave: este contrato sí (`12-CONTEXT.md` Integration Points: "guardarla en `sessionStorage`"); nunca va en el bundle ni en la URL. Una respuesta 401 durante la sesión (clave revocada) borra la clave y vuelve a `/acceso?motivo=401`; "Salir" hace lo mismo sin mensaje.
+Fondo `--grad-dusk` con dos ondas decorativas (`--c-mint` y `--c-azure`, 1,25 px, no escalables, opacidad .5; el DS permite `WaveLine` como motivo). Tarjeta 440 px centrada (`--surface-card`, `--r-lg`, `--shadow-raised`, padding 40 px): marca (`logo-mark-light.png` 56 px de alto), `CÍNGULA`, `h1` "Ingresá la clave de acceso", párrafo, etiqueta `API key`, input `type=password` `autocomplete=off` placeholder `WEB_API_KEY`, botón primario "Entrar a la web" (violeta, ancho completo, **es un botón de envío de formulario**, no un enlace como en el prototipo), nota inferior. Enter en el input envía. Estados: reposo; enviando (botón deshabilitado, texto "Entrando…"); 401 (bloque `.perr` con `role="alert"`); error de red/5xx (mismo bloque, copy distinto). La clave se valida con una llamada de lectura (`GET /sync/state` con `Authorization: Bearer`); si 200 se guarda en `sessionStorage` y se navega a `/`. [REAL] El prototipo no persiste la clave: este contrato sí (`12-CONTEXT.md` Integration Points: "guardarla en `sessionStorage`"); nunca va en el bundle ni en la URL. Una respuesta 401 durante la sesión (clave revocada) borra la clave y vuelve a `/acceso?motivo=401`; "Salir" hace lo mismo sin mensaje.
 
 ### Obras (`/obras`, WEB-04)
 
-Header + toolbar (título "Obras" 25/500, selectores "Recorrido" y "Visibilidad", conteo `{n} obra(s)`) + split: `.listpane` 560 px con `EntityRow` (`.ent`, 64 px): título 20/500, sub `{Recorrido o "Sin recorrido"} · {artistas}`, a la derecha visibilidad (`.vis`, punto + etiqueta 13 px). Fila seleccionada con borde mint. `.detpane` (padding 32 px): breadcrumb + `EntityDetail` expandido + mini-mapa. Opciones del selector Visibilidad: "Todas / Pública / Privada / Borrador". Sin coincidencias: "Ninguna obra coincide con los filtros." (texto `dim`, copy del prototipo).
+Header + toolbar (título "Obras" 20/500, selectores "Recorrido" y "Visibilidad", conteo `{n} obra(s)`) + split: `.listpane` 560 px con `EntityRow` (`.ent`, 64 px): título 20/500, sub `{Recorrido o "Sin recorrido"} · {artistas}`, a la derecha visibilidad (`.vis`, punto + etiqueta 13 px). Fila seleccionada con borde mint. `.detpane` (padding 32 px): breadcrumb + `EntityDetail` expandido + mini-mapa. Opciones del selector Visibilidad: "Todas / Pública / Privada / Borrador". Sin coincidencias: "Ninguna obra coincide con los filtros." (texto `dim`, copy del prototipo).
 
 ### Artistas (`/artistas`, WEB-03)
 
@@ -303,12 +309,12 @@ Header + toolbar ("Artistas", conteo `{n} artistas`) + split: `.listpane` con `.
 
 | Estado | Punto | Texto de la pill | Filas del popover | Botón |
 |--------|-------|------------------|-------------------|-------|
-| Leyendo (carga inicial o refresco) | `--ink-200` sin animación | `Leyendo… {n} filas` | Estado: "Pull en curso · página {k}" | `Actualizar` deshabilitado |
-| Al día | mint | `Sync al día · pull hace {rel}` | Último pull (`hoy HH:MM:SS · hace {rel}`), Cursor (mono), Filas leídas (`{n} · {m} con deleted_at descartadas`), Estado: "Sin errores" | `Actualizar` |
-| Desactualizado [DEFAULT]: último pull OK hace > 15 min, sin error | ámbar | `Datos de hace {rel}` | Estado: "Hace más de 15 min que no se actualiza." | `Actualizar` |
-| Error (con datos previos) | ámbar + `TriangleAlert` | `Error de pull · datos de hace {rel}` | Último pull OK, Cursor (`{c} (no avanzó)`), Estado: "Pull incompleto: se muestran los datos del último pull completo."; bloque `.perr` `role="alert"` etiqueta "Errores" con líneas `HH:MM:SS  GET /sync/pull?cursor={c} → {código} {texto} (página {k})` y `(reintento {i} de 3)` | `Reintentar`; nota "Próximo reintento automático en 30 s." |
-| Error (sin datos, primera carga) | ámbar + `TriangleAlert` | `Error de pull · sin datos` | igual, sin "Último pull OK" | `Reintentar` |
-| Sin conexión (`navigator.onLine === false`) | `--ink-200` | `Sin conexión · datos de hace {rel}` | Estado: "La web sólo funciona con conexión." | `Actualizar` deshabilitado |
+| Leyendo (carga inicial o refresco) | `--ink-200` sin animación | `Leyendo… {n} filas` | Estado: "Pull en curso · página {k}" | `Actualizar datos` deshabilitado |
+| Al día | mint | `Sync al día · pull hace {rel}` | Último pull (`hoy HH:MM:SS · hace {rel}`), Cursor (mono), Filas leídas (`{n} · {m} con deleted_at descartadas`), Estado: "Sin errores" | `Actualizar datos` |
+| Desactualizado [DEFAULT]: último pull OK hace > 15 min, sin error | ámbar | `Datos de hace {rel}` | Estado: "Hace más de 15 min que no se actualiza." | `Actualizar datos` |
+| Error (con datos previos) | ámbar + `TriangleAlert` | `Error de pull · datos de hace {rel}` | Último pull OK, Cursor (`{c} (no avanzó)`), Estado: "Pull incompleto: se muestran los datos del último pull completo."; bloque `.perr` `role="alert"` etiqueta "Errores" con líneas `HH:MM:SS  GET /sync/pull?cursor={c} → {código} {texto} (página {k})` y `(reintento {i} de 3)` | `Reintentar lectura`; nota "Próximo reintento automático en 30 s." |
+| Error (sin datos, primera carga) | ámbar + `TriangleAlert` | `Error de pull · sin datos` | igual, sin "Último pull OK" | `Reintentar lectura` |
+| Sin conexión (`navigator.onLine === false`) | `--ink-200` | `Sin conexión · datos de hace {rel}` | Estado: "La web sólo funciona con conexión." | `Actualizar datos` deshabilitado |
 
 Reglas: [DEFAULT] el pull de una carga es todo-o-nada: se acumula en un buffer y el store en memoria se reemplaza recién al completar la última página (`hasMore=false`); un pull fallado jamás deja una vista a medias (por eso el texto "se muestran los datos del último pull completo"). Reintento automático: 3 intentos cada 30 s; luego queda en error y la nota pasa a "Reintentá cuando tengas conexión." (cambio mínimo sobre el prototipo, que sólo mostraba el primer caso). El botón en estado Al día/Desactualizado hace un pull incremental desde el cursor guardado. Nunca se oculta un error: aunque el popover esté cerrado, la pill ya lo dice. Una fila de `deleted_at` no nulo se cuenta en "Filas leídas" y se descarta de todas las vistas (WEB-08).
 
@@ -318,8 +324,8 @@ Reglas: [DEFAULT] el pull de una carga es todo-o-nada: se acumula en un buffer y
 
 | Pantalla | Cargando | Vacío | Error |
 |----------|----------|-------|-------|
-| Mapa `/` | Mapa base visible + velo `--surface-veil` central con "Leyendo el servidor…" y la pill en `Leyendo…`; selector y capas deshabilitados | Sin obras: velo con "Todavía no hay obras en el servidor." (vista de respaldo en Lago Puelo, sin capas). Sin recorridos: el selector sólo ofrece "Todos los recorridos". Obras sin cobertura: se omiten del mapa y la leyenda las cuenta; la lista de panel dice "Sin cobertura todavía" | Primer pull falla: `.perr` central "No se pudo leer el servidor." + código + botón `Reintentar`; con datos previos: se mantiene el mapa y sólo cambia la pill |
-| Obras | Lista con 3 filas esqueleto (bloques `--surface-raised`, sin animación shimmer; el DS no define esqueletos) y detalle vacío | "Todavía no hay obras en el servidor." / filtros sin resultado: "Ninguna obra coincide con los filtros." | Bloque `.perr` en el `listpane` con el mismo copy del mapa + `Reintentar` |
+| Mapa `/` | Mapa base visible + velo `--surface-veil` central con "Leyendo el servidor…" y la pill en `Leyendo…`; selector y capas deshabilitados | Sin obras: velo con "Todavía no hay obras en el servidor." (vista de respaldo en Lago Puelo, sin capas). Sin recorridos: el selector sólo ofrece "Todos los recorridos". Obras sin cobertura: se omiten del mapa y la leyenda las cuenta; la lista de panel dice "Sin cobertura todavía" | Primer pull falla: `.perr` central "No se pudo leer el servidor." + código + botón `Reintentar lectura`; con datos previos: se mantiene el mapa y sólo cambia la pill |
+| Obras | Lista con 3 filas esqueleto (bloques `--surface-raised`, sin animación shimmer; el DS no define esqueletos) y detalle vacío | "Todavía no hay obras en el servidor." / filtros sin resultado: "Ninguna obra coincide con los filtros." | Bloque `.perr` en el `listpane` con el mismo copy del mapa + `Reintentar lectura` |
 | Artistas | Igual que Obras | "Todavía no hay artistas en el servidor." | Igual que Obras |
 | Panel | Contenido ya en memoria: nunca carga por separado | Listas internas vacías se omiten (no se muestra el título de sección sin ítems); audio en sus 3 estados | Elemento inexistente (deep link o ya borrado): "Este elemento ya no existe en el servidor." + `Cerrar`; en `/obras/:uuid` inexistente: "No encontramos esta obra." con enlace "Volver al listado" |
 | Acceso | Botón "Entrando…" | — | 401 / red, ver Acceso |
@@ -351,7 +357,7 @@ Registro del DS (README, "Content fundamentals"): español rioplatense con voseo
 
 | Element | Copy |
 |---------|------|
-| Primary CTA (acceso) | `Entrar` |
+| Primary CTA (acceso) | `Entrar a la web` |
 | Primary CTA (panel) | `Ver detalle completo` |
 | Acción secundaria de panel | `Volver a {nombre}` · `Expandir a pantalla completa` · `Volver al panel angosto` · `Plegar panel` · `Abrir panel` · `Cerrar panel` |
 | Etiqueta de tipo (registro `PORTAL 03 · …`) | `RECORRIDO` · `OBRA` · `PATH` · `PORTAL` · `TRIGGER`; texto del riel `{TIPO} · {título}`; metadatos de ejemplo en este registro: `PORTAL · RADIO 30 M` (opcional, sólo si el planificador lo usa en filas) |
