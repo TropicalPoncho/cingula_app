@@ -408,21 +408,21 @@ Registro del DS (README, "Content fundamentals"): español rioplatense con voseo
 
 ## UI Considerations
 
-Sonda ui-consideration (2026-10-05): 12 elementos, 77 consideraciones de estado; tipos de elemento confirmados por el usuario (sin tipos faltantes). Resolución elegida: **mapear cada categoría a las filas existentes del contrato** (los textos de estado vacío y error viven en  y se referencian, no se repiten). Resumen: 61 resueltas (explicit), 14 resueltas con verificación backstop, 2 sin resolver (fuera de la taxonomía cerrada, listas abajo). Elementos: E1 mapa, E2 selector/capas, E3 panel, E4 Obras, E5 Artistas, E6 tarjeta de audio, E7 tira de cobertura, E8 tabla de portales, E9 acceso, E10 pill de sync, E11 nav/breadcrumb, E12 títulos y etiquetas largas.
+Sonda ui-consideration (2026-10-05): 12 elementos, 77 consideraciones de estado; tipos de elemento confirmados por el usuario (sin tipos faltantes). Resolución elegida: **mapear cada categoría a las filas existentes del contrato** (los textos de estado vacío y error viven en `## Copywriting Contract` y se referencian, no se repiten). Resumen: 60 resueltas (explicit) y 17 resueltas con verificación backstop (overflow y long-text). Además, fuera de la taxonomía cerrada de la sonda: stale y tab-order (resueltas) y 2 sin resolver (many, responsive), listadas abajo. Elementos: E1 mapa, E2 selector/capas, E3 panel, E4 Obras, E5 Artistas, E6 tarjeta de audio, E7 tira de cobertura, E8 tabla de portales, E9 acceso, E10 pill de sync, E11 nav/breadcrumb, E12 títulos y etiquetas largas.
 
 | Category | Elements | Status | Resolution |
 |----------|----------|--------|------------|
 | empty | E1 E2 E3 E4 E5 E6 E7 E8 E9 E12 | resolved (explicit) | Copywriting Contract (vacío de mapa/Obras/Artistas, sin cobertura, audio sin asignar/sin archivo); listas internas vacías se omiten; selector sólo con "Todos los recorridos" |
-| loading | E1–E12 | resolved (explicit) | Estados por pantalla (velo del mapa, filas esqueleto) y matriz de sync (); buffer todo-o-nada, el panel nunca carga por separado |
-| error | E1–E12 | resolved (explicit) | Matriz de sync (con y sin datos, sin conexión), Acceso (401 / sesión vencida / red),  por pantalla, "Este elemento ya no existe" |
+| loading | E1–E12 | resolved (explicit) | Estados por pantalla (velo del mapa, filas esqueleto) y matriz de sync (`Leyendo… {n} filas`); buffer todo-o-nada, el panel nunca carga por separado |
+| error | E1–E12 | resolved (explicit) | Matriz de sync (con y sin datos, sin conexión), Acceso (401 / sesión vencida / red), `.perr` por pantalla, "Este elemento ya no existe" |
 | populated | E1 E3 E4 E5 E6 E7 E8 E12 | resolved (explicit) | Prototipo bloqueado (D-14) + contenido por tipo del panel; hay que verificar con datos reales de Neon (OI-03) |
 | partial | E1 E2 E3 E4 E5 E6 E7 E8 E9 E12 | resolved (explicit) | "—" para grabación nula, sección omitida si falta descripción/bio, obra sin recorrido ("Sin recorrido"), obra sin cobertura, portal sin trigger |
 | zero-one-many | E1 E3 E4 E5 E6 E7 E8 E12 | resolved (explicit) | Pluralización definida (1 obra / 2 obras, 1 hueco / 2 huecos, …) y leyenda; path con 0 o 1 trigger definido |
-| overflow | E1 E3 E4 E5 E6 E7 E8 E11 E12 | resolved (backstop) | Listas del panel: 4 filas + "+N más"; tira ; nota de huecos: 3 + "+N más"; // con scroll interno. Verificar en prueba visual con un path de 30+ triggers |
-| long-text | E1 E2 E3 E4 E9 E10 E11 E12 | resolved (backstop) | Filas: una línea con ellipsis y ; título del panel hasta 2 líneas; riel recorta a 420 px; etiqueta de obra en el mapa sin wrap. Verificar con un nombre de 60 caracteres |
-| stale | E3 E1 | resolved (explicit) | Selección que desaparece tras un refresco: "Este elemento ya no existe en el servidor." +  |
+| overflow | E1 E3 E4 E5 E6 E7 E8 E11 E12 | resolved (backstop) | Listas del panel: 4 filas + "+N más"; tira `flex-wrap`; nota de huecos: 3 + "+N más"; `.pbody`/`.listpane`/`.detpane` con scroll interno. Verificar en prueba visual con un path de 30+ triggers |
+| long-text | E1 E2 E3 E4 E9 E10 E11 E12 | resolved (backstop) | Filas: una línea con ellipsis y `title`; título del panel hasta 2 líneas; riel recorta a 420 px; etiqueta de obra en el mapa sin wrap. Verificar con un nombre de 60 caracteres |
+| stale | E3 E1 | resolved (explicit) | Selección que desaparece tras un refresco: "Este elemento ya no existe en el servidor." + `Cerrar aviso` |
 | tab-order | E1 E3 | resolved (backstop) | Roving tabindex en triggers; panel antes del mapa en el DOM; prueba de teclado manual + test de componente sobre un path de 30 triggers |
-| many | E1 (modo Círculos) | ⚠ unresolved — planner must treat as assumption | Umbral z16 / tope 600 propuestos sin medir (OI-02); medir  en Neon en el Plan 1 |
+| many | E1 (modo Círculos) | ⚠ unresolved — planner must treat as assumption | Umbral z16 / tope 600 propuestos sin medir (OI-02); medir `count(triggers)` en Neon en el Plan 1 |
 | responsive | E1–E5, E10 | ⚠ unresolved — planner must treat as assumption | Regla < 900 px [DEFAULT] sin validar (OI-05) |
 
 ---
