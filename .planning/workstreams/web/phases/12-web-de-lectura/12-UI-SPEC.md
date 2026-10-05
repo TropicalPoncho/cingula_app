@@ -393,7 +393,7 @@ Registro del DS (README, "Content fundamentals"): español rioplatense con voseo
 
 | ID | Item | Quién lo resuelve | Cuándo |
 |----|------|-------------------|--------|
-| OI-01 | **Portales vs paths.** En los datos reales un portal es un `paths.kind='portal'` hijo de la obra (R1). Confirmar con el usuario que (a) la tabla "Portales" del detalle de path pasa a "Portales de la obra", (b) no hay "Orden de N en el path", (c) un portal con más de un trigger usa el primero por `position`. Además WEB-05 pide `name/description` por trigger (R4): decidir si se enmienda el requisito | Usuario + planificador | Antes de planificar |
+| OI-01 | **Portales vs paths.** En los datos reales un portal es un `paths.kind='portal'` hijo de la obra (R1). Confirmar con el usuario que (a) la tabla "Portales" del detalle de path pasa a "Portales de la obra", (b) no hay "Orden de N en el path", (c) un portal con más de un trigger usa el primero por `position`. Además WEB-05 pide `name/description` por trigger (R4): decidir si se enmienda el requisito | Usuario + planificador | **Parcial 2026-10-05:** el usuario confirmó que el portal cuelga de la obra ((a) y (b) quedan firmes). Abiertos: (c) portal con más de un trigger, y la enmienda de WEB-05 (R4) — antes de planificar |
 | OI-02 | **Escalado de Círculos** (R6): medir triggers reales por obra/path en Neon y validar zoom >= 16 y tope 600 | Plan 1 de la fase | Antes de implementar el modo Círculos |
 | OI-03 | **Datos de muestra inventados** (prototipo): nombres, uuids, geometría y los `kind` (`walk`, `ambient`, `voz`); sólo `Obra`/`Recorrido` nombres reales vendrán del pull. No copiar ninguno como fixture de producción | Ejecutor | Siempre |
 | OI-04 | **Enums**: verificados contra `web/schema.sql` (R3), pero el CHECK podría ampliarse; mostrar el valor crudo si no coincide | Ejecutor | En el mapeo pull -> vista |
@@ -450,4 +450,4 @@ Applicable state considerations resolved: 11 covered, 3 backstop, 2 unresolved. 
 - [x] Dimension 6 Registry Safety: PASS
 - [x] Dimension 7 Inventory Provenance: FLAG (Could not enumerate, motivo real)
 
-**Approval:** approved 2026-10-03 (checker, 3ª pasada; pendiente: OI-01 y sonda UI Considerations)
+**Approval:** approved 2026-10-03 (checker, 3ª pasada; OI-01 confirmado parcialmente 2026-10-05; pendiente: OI-01(c), enmienda WEB-05 y sonda UI Considerations)

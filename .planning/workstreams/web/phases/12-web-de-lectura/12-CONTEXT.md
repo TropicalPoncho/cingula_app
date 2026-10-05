@@ -54,8 +54,10 @@ cuando no hay archivo todavía", no subir/gestionar archivos).
   - **Trigger:** círculo anónimo (sin nombre, sin sonido propio) — posición, radio, orden dentro del path.
     En un path hay muchos, uno tras otro, solo para marcar el camino; el audio del path suena mientras
     el celular está dentro de alguno.
-  - **Portal:** trigger circular **con nombre, descripción, radio, offset y audio propio**. Pertenece
-    a un path (supuesto — confirmar si pueden existir sueltos en la obra).
+  - **Portal:** trigger circular **con nombre, descripción, radio, offset y audio propio**.
+    **Confirmado por el usuario (2026-10-05, OI-01 del UI-SPEC):** un portal NO cuelga de un path de
+    ruta — es un `paths` con `kind='portal'` que cuelga directo de la **obra** (`web/schema.sql:78-106`).
+    Reemplaza el supuesto original "pertenece a un path".
   - Riesgo: los campos `name`/`description`/`offset` que el prompt original asignaba a "trigger"
     pertenecen al portal; verificar contra el esquema real del pull (Phase 10) antes de planificar.
 - **D-17:** Vista de paths en el mapa, dos modos conmutables: **Corredor** (default, simplificada: banda
@@ -66,8 +68,11 @@ cuando no hay archivo todavía", no subir/gestionar archivos).
   zoom cercano — no resuelto en el prototipo (triggers sintéticos).
 - **D-18:** El panel lateral (D-05/D-06) reusa un único componente para **5 tipos**: recorrido, obra,
   path, portal y trigger (antes 4). Capas del mapa: Cobertura, Paths, Portales (todas prendidas por
-  defecto, D-03). Detalle de path: tira de cobertura (un cuadro por trigger, ámbar = hueco) + tabla de
-  portales; el audio del path y el de cada portal se muestran inline, con estado "sin archivo todavía".
+  defecto, D-03). Detalle de path: tira de cobertura (un cuadro por trigger, ámbar = hueco); los
+  portales se listan en el detalle de la **obra** ("Portales de la obra", no en el path — ver D-16).
+  El audio del path y el de cada portal se muestran inline, con estado "sin archivo todavía".
+  Otras correcciones al prototipo (cobertura = caja + centro, enums reales, triggers de ruta anónimos)
+  viven en `12-UI-SPEC.md` R1–R14, que prevalece sobre el prototipo donde difieran.
 
 ### Navegación / arquitectura de información
 - **D-07:** La pantalla de entrada (home) tras loguearse es **el mapa general** — no hay dashboard
