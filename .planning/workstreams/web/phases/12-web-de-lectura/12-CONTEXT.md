@@ -51,7 +51,7 @@ cuando no hay archivo todavía", no subir/gestionar archivos).
 
 ### Modelo de dominio visible en la web (corrección 2026-10-02, post-prototipo)
 - **D-16:** El prototipo de Claude Design (D-14) corrigió el modelo: **triggers y portales son cosas distintas**.
-  - **Trigger:** círculo anónimo (sin nombre, sin sonido propio) — posición, radio, orden dentro del path.
+  - **Trigger:** círculo anónimo — **ningún trigger tiene nombre** (confirmado 2026-10-05): el nombre es del **path**, también el de un path `kind=portal` (su nombre es el del portal). Sin sonido propio — posición, radio, orden dentro del path.
     En un path hay muchos, uno tras otro, solo para marcar el camino; el audio del path suena mientras
     el celular está dentro de alguno.
   - **Portal:** trigger circular **con nombre, descripción, radio, offset y audio propio**.
