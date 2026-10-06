@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useModel, useStore, load } from '../data/store.js';
 import { plural } from '../app/format.js';
 import { useQuery, setParams } from '../app/router.jsx';
@@ -51,20 +51,35 @@ export default function MapPage() {
   const q = useQuery();
   const sel = q.get('sel');
   const expanded = q.get('x') === '1';
+  // Plegado = el `sel` que estaba abierto al plegar: elegir otro elemento lo despliega solo, sin efectos.
+  const [fold, setFold] = useState(null);
+  const collapsed = fold !== null && fold === sel;
 
   // Sin datos no hay vista: un deep link no puede parpadear "ya no existe" mientras se lee.
   const ready = lastPullAt != null;
   const view = useMemo(() => (ready ? buildView(model, sel, 'map') : null), [ready, model, sel]);
+
+  // Único punto de selección (panel y, desde 12-07, mapa): elegir algo despliega el panel plegado.
+  const select = (s) => {
+    setFold(null);
+    setParams({ sel: s });
+  };
+  // 12-08 devuelve acá el foco al marcador del mapa que abrió el panel.
+  const close = () => {
+    setFold(null);
+    setParams({ sel: null, x: null });
+  };
 
   return (
     <div className="mapcols">
       <SidePanel
         view={view}
         expanded={expanded}
-        onSelect={(s) => setParams({ sel: s })}
+        collapsed={collapsed}
+        onSelect={select}
         onExpand={(on) => setParams({ x: on ? 1 : null })}
-        onCollapse={() => {}}
-        onClose={() => setParams({ sel: null, x: null })}
+        onCollapse={(on) => setFold(on ? sel : null)}
+        onClose={close}
       />
       <div className="mapwrap">
         <MapArea counts={model.counts} />
