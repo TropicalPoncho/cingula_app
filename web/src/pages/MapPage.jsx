@@ -5,13 +5,11 @@ import { useQuery, setParams } from '../app/router.jsx';
 import { buildView } from '../panel/buildView.js';
 import SidePanel from '../panel/SidePanel.jsx';
 import MapView from '../map/MapView.jsx';
+import MapBar from '../map/MapBar.jsx';
 
-const CAPAS = { cobertura: true, paths: true, portales: true };
-
-// Contenido del área del mapa. El lienzo Leaflet lo agrega 12-07 alrededor de esta leyenda y de
-// estos estados (E1).
-function MapArea({ counts }) {
-  const { status, lastPullAt, errors } = useStore();
+// Velos de estado (E1) y leyenda de conteos de lo visible. Van sobre el mapa base, que siempre está.
+function MapOverlay({ counts, total }) {
+  const { lastPullAt, status, errors } = useStore();
 
   if (lastPullAt == null) {
     if (status === 'error') {
@@ -29,7 +27,7 @@ function MapArea({ counts }) {
     return <div className="mapstate"><p>Leyendo el servidor…</p></div>;
   }
 
-  if (counts.obras === 0) {
+  if (total === 0) {
     return (
       <div className="mapstate">
         <p>Todavía no hay obras en el servidor.</p>
@@ -46,7 +44,7 @@ function MapArea({ counts }) {
   );
 }
 
-// Home (D-07). `sel` y `x` viajan en la URL por replaceState (D-05): el panel nunca crea historial.
+// Home (D-07). `sel`, `x` y `rec` viajan en la URL por replaceState (D-05): el panel nunca crea historial.
 // El panel va ANTES del área del mapa en el DOM (orden de Tab: header, panel, mapa).
 export default function MapPage() {
   const { lastPullAt } = useStore();
@@ -54,6 +52,8 @@ export default function MapPage() {
   const q = useQuery();
   const sel = q.get('sel');
   const expanded = q.get('x') === '1';
+  const [capas, setCapas] = useState({ cobertura: true, paths: true, portales: true });
+  const [fitTarget, setFitTarget] = useState(null);
   // Plegado = el `sel` que estaba abierto al plegar: elegir otro elemento lo despliega solo, sin efectos.
   const [fold, setFold] = useState(null);
   const collapsed = fold !== null && fold === sel;
@@ -62,14 +62,47 @@ export default function MapPage() {
   const ready = lastPullAt != null;
   const view = useMemo(() => (ready ? buildView(model, sel, 'map') : null), [ready, model, sel]);
 
-  // Único punto de selección (panel y, desde 12-07, mapa): elegir algo despliega el panel plegado.
+  // `rec` de la URL se compara contra el modelo (T-12-28): uno desconocido equivale a `Todos`.
+  const rec = q.get('rec');
+  const recorrido = rec && rec !== 'none' ? (model.byId.recorrido.get(rec) ?? null) : null;
+  const recVal = rec === 'none' ? 'none' : recorrido ? rec : '';
+  const obras = useMemo(
+    () => (recVal === 'none' ? model.obras.filter((o) => !o.recorrido) : recorrido ? recorrido.obras : model.obras),
+    [model, recVal, recorrido],
+  );
+  const counts = useMemo(() => ({
+    obras: obras.length,
+    paths: obras.reduce((n, o) => n + o.routes.length, 0),
+    triggers: obras.reduce((n, o) => n + o.routes.reduce((m, p) => m + p.triggers.length, 0), 0),
+    portales: obras.reduce((n, o) => n + o.portals.length, 0),
+  }), [obras]);
+  const hasSinRecorrido = model.obras.some((o) => !o.recorrido);
+
+  // Selección desde el mapa: el elemento ya está a la vista, no se re-encuadra. Elegir algo despliega el panel plegado.
   const select = (s) => {
     setFold(null);
     setParams({ sel: s });
-  };  // 12-08 devuelve acá el foco al marcador del mapa que abrió el panel.
+  };
+  // Desde un enlace del panel el elemento puede quedar fuera de la parte visible: se encuadra [DEFAULT UI-SPEC].
+  const selectFromPanel = (s) => {
+    select(s);
+    setFitTarget({ sel: s });
+  };
+  // 12-08 devuelve acá el foco al marcador del mapa que abrió el panel.
   const close = () => {
     setFold(null);
     setParams({ sel: null, x: null });
+  };
+  // D-04 + D-10 en una sola interacción: elegir un recorrido filtra y abre su panel; Todos / Sin recorrido
+  // quitan el filtro y cierran el panel si era el de un recorrido.
+  const onRec = (v) => {
+    setFold(null);
+    if (v && v !== 'none') {
+      setParams({ rec: v, sel: `recorrido:${v}`, x: null });
+      return;
+    }
+    const closing = sel?.startsWith('recorrido:');
+    setParams({ rec: v || null, sel: closing ? null : sel, x: closing ? null : q.get('x') });
   };
 
   return (
@@ -78,14 +111,21 @@ export default function MapPage() {
         view={view}
         expanded={expanded}
         collapsed={collapsed}
-        onSelect={select}
+        onSelect={selectFromPanel}
         onExpand={(on) => setParams({ x: on ? 1 : null })}
         onCollapse={(on) => setFold(on ? sel : null)}
         onClose={close}
       />
       <div className="mapwrap">
-        <MapView model={model} obras={model.obras} capas={CAPAS} sel={sel} fitKey={ready ? 'all' : null} fitTarget={null} onSelect={select} />
-        <MapArea counts={model.counts} />
+        <MapView
+          model={model} obras={obras} capas={capas} sel={sel}
+          fitKey={ready ? `rec:${recVal}` : null} fitTarget={fitTarget} onSelect={select}
+        />
+        <MapBar
+          recorridos={model.recorridos} rec={recVal} hasSinRecorrido={hasSinRecorrido}
+          capas={capas} onRec={onRec} onCapas={setCapas} disabled={!ready}
+        />
+        <MapOverlay counts={counts} total={model.counts.obras} />
       </div>
     </div>
   );

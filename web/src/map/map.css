@@ -36,6 +36,23 @@
 .mapview .leaflet-interactive:focus-visible { outline: none; stroke: var(--text-primary); stroke-width: 3.5px; stroke-opacity: 1; }
 .mapview .portal-hit:focus-visible { box-shadow: var(--glow-focus); }
 
+/* Barra de controles (prototipo `.mapbar .mcard .chk .sw`, tipografía y espaciado normalizados al DS). */
+.mapbar {
+  position: absolute; top: var(--sp-4); left: var(--sp-4); right: var(--sp-4); display: flex; flex-wrap: wrap;
+  gap: var(--sp-3); align-items: stretch; pointer-events: none; /* [ASUNCIÓN OI-05] envuelve entre 900 y 1199 px */
+}
+.mapbar > * { pointer-events: auto; }
+.mcard {
+  display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); min-width: 0; padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-lg); background: var(--surface-veil); backdrop-filter: var(--backdrop-veil); border: 1px solid var(--border-hairline);
+}
+.mlbl { font-size: var(--fs-xs); color: var(--text-secondary); }
+.chk { display: flex; align-items: center; gap: var(--sp-2); min-height: var(--touch-min); cursor: pointer; font-size: var(--fs-sm); }
+.chk input { width: 18px; height: 18px; accent-color: var(--c-mint); }
+.sw { width: 18px; height: 0; border-top: 2px solid; flex: none; }
+/* El selector recorta nombres largos sin romper la barra. */
+.mcard .sel { max-width: 260px; min-width: 0; text-overflow: ellipsis; }
+
 /* Velo, leyenda y barra por encima del mapa (el mapa queda en z-index 0). */
 .mapwrap .mapstate, .mapwrap .legend, .mapwrap .mapbar { z-index: 3; }
 /* La leyenda no tapa la atribución ni el zoom: se corta antes y no envuelve. */
