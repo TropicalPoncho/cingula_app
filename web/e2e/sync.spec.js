@@ -52,3 +52,19 @@ test('401 en el pull: borra la clave y va a /acceso?motivo=401', async ({ page }
   await expect(page).toHaveURL(/\/acceso\?motivo=401$/);
   expect(await page.evaluate(() => sessionStorage.length)).toBe(0);
 });
+
+test('pull fallido: la pill lo dice, el popover explica el intento y "Reintentar lectura" lo recupera', async ({ page }) => {
+  await mockApi(page, { limit: 30, failPage: 2, failTimes: 1 });
+  await loginAs(page);
+  await page.goto('/');
+  const pill = page.locator('.pill');
+  await expect(pill).toContainText('Error de pull · sin datos');
+  await pill.click();
+  const dialog = page.getByRole('dialog', { name: 'Detalle del estado de sync' });
+  const linea = dialog.getByRole('alert');
+  await expect(linea).toContainText('GET /sync/pull?cursor=');
+  await expect(linea).toContainText('→ 500 mock failure (página 2)');
+  await expect(dialog).not.toContainText('Bearer');
+  await dialog.getByRole('button', { name: 'Reintentar lectura' }).click();
+  await expect(pill).toContainText('Sync al día');
+});

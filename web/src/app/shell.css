@@ -67,6 +67,18 @@ h1, h2, h3, h4 {
 .pill:hover { border-color: rgba(244, 241, 247, .5); background: rgba(244, 241, 247, .04); }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex: none; }
 
+/* Popover de sync (400 px, no modal) */
+.syncwrap { position: relative; }
+.pop {
+  position: absolute; right: 0; top: 52px; width: 400px; max-width: calc(100vw - var(--sp-4)); padding: var(--sp-5);
+  border-radius: var(--r-lg); background: var(--surface-card); border: 1px solid var(--border-hairline);
+  box-shadow: var(--shadow-raised); display: flex; flex-direction: column; gap: var(--sp-3);
+}
+.pop .r { display: grid; grid-template-columns: 104px 1fr; gap: var(--sp-3); align-items: baseline; min-width: 0; }
+.pop .r > span:last-child, .pop .perr > span { overflow-wrap: anywhere; }
+.popfoot { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+.popfoot .dim { font-size: var(--fs-xs); }
+
 /* Botones */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);

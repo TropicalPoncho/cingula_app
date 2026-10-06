@@ -41,19 +41,26 @@ export function resetStore() {
 
 // Todo-o-nada: se acumula en un buffer y el store se reemplaza recién con hasMore=false;
 // un pull roto nunca pisa los datos previos ni deja una vista a medias.
-export async function load() {
+// Completa (cursor 0, reemplaza) o incremental (desde el cursor guardado, sobre una copia).
+async function pull(incremental) {
   if (state.status === 'loading') return;
   const mine = gen;
+  const inc = incremental && state.cursor != null;
   set({ status: 'loading', read: 0, page: 0 });
   try {
     const { rows, cursor } = await pullAll({
       key: getKey(),
-      cursor: '0',
+      cursor: inc ? state.cursor : '0',
       onPage: ({ page, rows: n }) => mine === gen && set({ page, read: n }),
     });
     if (mine !== gen) return;
-    const { tables, read, discarded } = applyRows(emptyTables(), rows);
-    set({ status: 'ready', tables, cursor, read, discarded, lastPullAt: Date.now() });
+    const { tables, read, discarded } = applyRows(inc ? state.tables : emptyTables(), rows);
+    // El cursor nunca retrocede (BigInt: bigint de Postgres, R12).
+    const keep = inc && BigInt(cursor) < BigInt(state.cursor);
+    set({
+      status: 'ready', tables: inc && !rows.length ? state.tables : tables, cursor: keep ? state.cursor : cursor,
+      read, discarded, lastPullAt: Date.now(), errors: [],
+    });
   } catch (e) {
     if (mine !== gen) return;
     if (e instanceof HttpError && e.status === 401) {
@@ -62,14 +69,27 @@ export async function load() {
       navigate('/acceso?motivo=401', { replace: true });
       return;
     }
-    // Sin headers ni clave: sólo posición del pull y código.
+    // Sin headers ni clave: sólo posición del pull, código y el `error` del JSON (T-12-17).
     const err = {
       at: Date.now(),
       cursor: e.cursor ?? null,
       page: e.page ?? state.page,
       status: e instanceof HttpError ? e.status : null,
-      text: e instanceof HttpError ? e.body.slice(0, 200) : String(e.message ?? e),
+      text: e instanceof HttpError ? jsonError(e.body) : String(e.message ?? e).slice(0, 200),
     };
-    set({ status: 'error', errors: [...state.errors, err] });
+    set({ status: 'error', errors: [...state.errors, err].slice(-10) });
   }
 }
+
+function jsonError(body) {
+  try {
+    const m = JSON.parse(body)?.error;
+    return typeof m === 'string' ? m.slice(0, 200) : '';
+  } catch {
+    return '';
+  }
+}
+
+export const load = () => pull(false); // primera carga
+export const refresh = () => pull(true); // `Actualizar datos`
+export const retryNow = refresh; // con datos: incremental; sin datos (cursor null): `pull` cae a completa

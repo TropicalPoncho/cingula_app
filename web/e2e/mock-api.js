@@ -4,9 +4,11 @@ import { makeRows, pageAfter } from '../src/test/fixtures.js';
 export const KEY = 'clave-buena';
 
 // `limit` es el tamaño de página del mock (el cliente siempre pide 1000); `failPage` = número de
-// request de /sync/pull (1-based) que responde `failStatus`.
-export async function mockApi(page, { rows = makeRows(), limit = 1000, failPage, failStatus = 500, stateStatus = 200 } = {}) {
+// request de /sync/pull (1-based) que responde `failStatus`; esa página (mismo cursor) falla `failTimes` veces.
+export async function mockApi(page, { rows = makeRows(), limit = 1000, failPage, failTimes = 1, failStatus = 500, stateStatus = 200 } = {}) {
   let n = 0;
+  let failCursor;
+  let failed = 0;
   await page.route('**/sync/state', (route) =>
     stateStatus === 200
       ? route.fulfill({ json: { serverCursor: rows.at(-1)?.change_seq ?? '0', lastSyncAt: null } })
@@ -14,8 +16,12 @@ export async function mockApi(page, { rows = makeRows(), limit = 1000, failPage,
   );
   await page.route('**/sync/pull**', (route) => {
     n++;
-    if (n === failPage) return route.fulfill({ status: failStatus, json: { error: 'mock failure' } });
     const cursor = new URL(route.request().url()).searchParams.get('cursor') ?? '0';
+    if (n === failPage) failCursor = cursor;
+    if (cursor === failCursor && failed < failTimes) {
+      failed++;
+      return route.fulfill({ status: failStatus, json: { error: 'mock failure' } });
+    }
     return route.fulfill({ json: pageAfter(rows, cursor, limit) });
   });
 }
