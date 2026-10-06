@@ -108,6 +108,36 @@ describe('SidePanel con MapPage', () => {
     expect(aside().querySelector('img')).toBeNull();
   });
 
+  it('camino de vuelta: "Volver a {Obra}" y los segmentos del breadcrumb cambian la selección, sin historial nuevo', async () => {
+    const user = userEvent.setup();
+    await open(`/?sel=trigger:${ID.trA(7)}`);
+    const before = history.length;
+    expect(screen.getByRole('heading', { name: 'Trigger 008' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Volver a Ruta A/ }));
+    expect(screen.getByRole('heading', { name: 'Ruta A' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Volver a Obra Aurora/ }));
+    expect(screen.getByRole('heading', { name: 'Obra Aurora' })).toBeInTheDocument();
+    await user.click(within(screen.getByRole('navigation', { name: 'Ruta' })).getByRole('button', { name: 'Recorrido Norte' }));
+    expect(screen.getByRole('heading', { name: 'Recorrido Norte' })).toBeInTheDocument();
+    expect(within(screen.getByRole('navigation', { name: 'Ruta' })).getByText('Recorrido Norte')).toHaveAttribute('aria-current', 'page');
+    expect(history.length).toBe(before);
+  });
+
+  it('un recorrido con más de 4 obras recorta a 4 filas con "+N más"', async () => {
+    const extra = Array.from({ length: 4 }, (_, i) => ({
+      table: 'obras', change_seq: String(500 + i),
+      payload: { ...makeRows().find((r) => r.payload.uuid === ID.obA).payload, uuid: `obra-extra-${i}`, name: `Extra ${i}` },
+    }));
+    const pages = makePages([...makeRows(), ...extra], 1000);
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, status: 200, text: async () => JSON.stringify(pages[0]) })));
+    sessionStorage.setItem('cingula.key', 'K');
+    await act(() => load());
+    history.replaceState(null, '', `/?sel=recorrido:${ID.rec1}`);
+    render(<MapPage />);
+    expect(within(aside()).getAllByRole('listitem')).toHaveLength(4);
+    expect(within(aside()).getByRole('button', { name: '+2 más' })).toBeInTheDocument();
+  });
+
   it('accesibilidad: aside con nombre, botones con aria-label y breadcrumb "Ruta"', async () => {
     await open(`/?sel=obra:${ID.obA}`);
     for (const n of ['Expandir a pantalla completa', 'Plegar panel', 'Cerrar panel']) {

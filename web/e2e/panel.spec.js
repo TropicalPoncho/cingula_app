@@ -76,6 +76,17 @@ test('nombre de 60 caracteres: título en 2 líneas como máximo y sin desborde 
   expect((await vt.boundingBox()).height).toBeLessThanOrEqual(420);
 });
 
+test('deep link a un path de 32 triggers: facts, huecos y camino de vuelta a la obra', async ({ page }) => {
+  await page.goto(`/?sel=path:${ID.pathA}`);
+  const p = panel(page);
+  await expect(p.getByRole('heading', { name: 'Ruta A' })).toBeVisible();
+  await expect(p.getByText('32 · radio 12 m · cada ≈ 10 m')).toBeVisible();
+  await expect(p.getByText('1 hueco')).toBeVisible();
+  await p.getByRole('button', { name: /Volver a Obra Aurora/ }).click();
+  await expect(p.getByRole('heading', { name: 'Obra Aurora' })).toBeVisible();
+  expect(new URL(page.url()).searchParams.get('sel')).toBe(`obra:${ID.obA}`);
+});
+
 test('< 900 px el panel es una hoja inferior de 55 % [asunción OI-05]', async ({ page }) => {
   await page.setViewportSize({ width: 800, height: 700 });
   await page.goto(`/?sel=obra:${ID.obA}`);
