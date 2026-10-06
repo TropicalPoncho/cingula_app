@@ -110,6 +110,9 @@ cuando no hay archivo todavía", no subir/gestionar archivos).
   violeta = acción primaria. Íconos: SVG inline en el prototipo; en la implementación usar `lucide-react`
   (el sistema declara Lucide, sin confirmar).
 
+### Decisiones de implementación (2026-10-06, tras el research)
+- **D-19:** La SPA es **JavaScript (sin TypeScript)** con **router propio** (~40 líneas, `useSyncExternalStore` + `history`), sin react-router ni librería de estado. Razón: coherencia con `web/api/` (JS puro), pocas dependencias (varias marcadas "too-new" en el Package Legitimacy Audit del research), y los tests de contrato contra `TABLE_SPEC` reemplazan el tipado del modelo del pull. Costo aceptado: sin chequeo estático de la forma del modelo de vista; mantener el router (atrás/adelante y enlaces profundos).
+
 ### Claude's Discretion
 - Densidad exacta de los listados (Obras, Artistas).
 - Estados vacíos y manejo de errores de pull más allá del criterio de "estado honesto" ya establecido.
