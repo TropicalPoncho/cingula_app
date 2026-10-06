@@ -4,6 +4,7 @@ import { getKey } from './session.js';
 import { useStore, load } from '../data/store.js';
 import Shell from './Shell.jsx';
 import Acceso from '../pages/Acceso.jsx';
+import MapPage from '../pages/MapPage.jsx';
 
 export default function App() {
   const route = matchRoute(useLocation().split('?')[0]);
@@ -24,6 +25,6 @@ export default function App() {
 
   if (name === 'acceso') return <Acceso />;
   if (!authed || !route) return null;
-  // El contenido del home (mapa) lo agrega 12-02; Obras/Artistas, 12-09.
-  return <Shell />;
+  // Obras/Artistas (y sus detalles) los agrega 12-09.
+  return <Shell>{name === 'mapa' && <MapPage />}</Shell>;
 }

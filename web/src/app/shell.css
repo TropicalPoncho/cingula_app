@@ -45,6 +45,19 @@ h1, h2, h3, h4 {
 .sp { flex: 1; }
 .shell-main { height: calc(100vh - 56px); overflow: hidden; position: relative; }
 
+/* Estados del mapa (E1) y leyenda de conteos */
+.mapstate {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--sp-2); padding: var(--sp-6); text-align: center; background: var(--surface-veil);
+}
+.mapstate p { margin: 0; }
+.mapstate .perr { align-items: flex-start; text-align: left; max-width: 440px; }
+.legend {
+  position: absolute; left: var(--sp-4); bottom: var(--sp-4); padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-pill); background: var(--surface-veil); border: 1px solid var(--border-hairline);
+  font-size: var(--fs-xs); color: var(--text-secondary);
+}
+
 /* Pill de sync (44 px, D-13) */
 .pill {
   display: flex; align-items: center; gap: var(--sp-3); min-height: var(--touch-min); padding: 0 var(--sp-4);

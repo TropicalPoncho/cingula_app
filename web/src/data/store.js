@@ -1,7 +1,7 @@
 // Estado de datos y de sync de la pestaña. Sin librería de estado: useSyncExternalStore.
-import { useSyncExternalStore } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
 import { pullAll, HttpError } from './pull.js';
-import { applyRows, emptyTables } from './model.js';
+import { applyRows, buildModel, emptyTables } from './model.js';
 import { getKey, clearKey } from '../app/session.js';
 import { navigate } from '../app/router.jsx';
 
@@ -25,6 +25,12 @@ const set = (patch) => {
 
 export const useStore = () =>
   useSyncExternalStore((f) => (subs.add(f), () => subs.delete(f)), () => state);
+
+// Memo por identidad de `tables`: el modelo se calcula una vez por pull.
+export function useModel() {
+  const { tables } = useStore();
+  return useMemo(() => buildModel(tables), [tables]);
+}
 
 // Salir de la web / clave vencida: ningún dato del servidor sobrevive a la sesión.
 export function resetStore() {
