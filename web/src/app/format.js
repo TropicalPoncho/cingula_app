@@ -2,7 +2,7 @@
 export const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
 
 // Separador de miles: espacio común (`1 200`).
-const miles = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+export const miles = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
 export const fms = (ms) => `+${miles(ms)} ms`;
 
