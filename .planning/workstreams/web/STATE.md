@@ -3,17 +3,19 @@ gsd_state_version: "1.0"
 milestone: v1.0
 milestone_name: (Web de gestión, lectura)
 current_phase: 12
-current_plan: 12-02
+current_phase_name: Web de lectura
+current_plan: 12-03
 status: executing
-stopped_at: Completed 12-01-PLAN.md
-last_updated: "2026-10-06T22:47:51.889Z"
+stopped_at: Completed 12-02-PLAN.md
+last_updated: "2026-10-06T23:13:35.468Z"
 last_activity: 2026-10-06
-state_head: b4df18a2d9f69370f4b4cdfeec588538113b7e04
+last_activity_desc: "12-02 completo (pull todo-o-nada + store + modelo derivado + pill de lectura + leyenda del home)"
+state_head: 39a4ecb1e32b626bdeca5ed5aed7c5ccea6e1a71
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 19
-  completed_plans: 10
+  completed_plans: 11
   percent: 50
 ---
 
@@ -23,9 +25,9 @@ progress:
 
 Milestone: v1.0 Web de gestión (lectura)
 Phase: 12 (Web de lectura)
-Plan: 1 of 10 complete (12-01 hecho; siguiente 12-02)
+Plan: 2 of 10 complete (12-01 y 12-02 hechos; siguiente 12-03)
 Status: Executing Phase 12
-Last activity: 2026-10-06 — 12-01 completo (SPA + Acceso AUTH-02, entrega validada en Preview: SMOKE OK)
+Last activity: 2026-10-06 — 12-02 completo (pull todo-o-nada + store + modelo derivado + pill de lectura + leyenda del home)
 
 ## Progress
 
@@ -50,9 +52,9 @@ Last activity: 2026-10-06 — 12-01 completo (SPA + Acceso AUTH-02, entrega vali
 
 ## Session Continuity
 
-**Last session:** 2026-10-06T22:47:49.927Z
+**Last session:** 2026-10-06T23:13:34.406Z
 
-**Stopped At:** Completed 12-01-PLAN.md
+**Stopped At:** Completed 12-02-PLAN.md
 **Resume File:** None
 
 ## Performance Metrics
@@ -60,8 +62,12 @@ Last activity: 2026-10-06 — 12-01 completo (SPA + Acceso AUTH-02, entrega vali
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 12 P01 | 45min | 3 tasks | 23 files |
+| Phase 12 P02 | 50min | 2 tasks | 19 files |
 
 ## Decisions
 
 - [Phase 12]: 12-01 ADR: SPA Vite en web/ servida desde el mismo proyecto Vercel que web/api/ (vercel.json: /sync primero, fallback SPA con exclusiones api/ sync/ assets/, headers de seguridad); A1 y A2 validadas en Preview real
 - [Phase 12]: 12-01: todas las dependencias del SPA como devDependencies con versión exacta; la clave de acceso sólo en sessionStorage
+- [Phase 12]: 12-02: pull todo-o-nada (reemplazo total del store; relee todo en cada carga hasta que 12-04 agregue refresco incremental)
+- [Phase 12]: 12-02: lista blanca USED_COLUMNS en el ingreso al store (H3); audios sólo exponen has_file; el modelo de vista es un grafo con referencias de objeto (no serializable)
+- [Phase 12]: 12-02: counts.portales cuenta paths kind=portal aunque no tengan trigger; 12-07 decide si la leyenda filtrada los excluye

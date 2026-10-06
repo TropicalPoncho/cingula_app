@@ -72,10 +72,10 @@ Plans:
   3. El usuario ve listado y detalle de recorridos (con créditos calculados por unión de los artistas de sus obras), artistas (con sus obras), obras (filtrables por recorrido y visibilidad, con cobertura y paths), paths (kind, audio, grabación de origen, tolerance_meters, triggers en mapa y lista ordenada por position) y audios (metadata y en qué paths se usa cada uno).
   4. El usuario ve el estado de sync de la web (cursor, momento del último pull, errores explícitos) con el mismo criterio de "estado honesto" que el celular, y ninguna vista de la web muestra filas con `deleted_at`.
 
-**Plans**: 1/10 plans executed
+**Plans**: 2/10 plans executed
 Plans:
 - [x] 12-01-PLAN.md — compuerta de paquetes/assets, SPA Vite + Acceso (AUTH-02), `vercel.json` (rewrite /sync primero + fallback SPA + headers) validado en Preview con smoke extendido; ADR de entrega (wave 1)
-- [ ] 12-02-PLAN.md — pull paginado todo-o-nada, store con lista blanca (H3) y sin borradas, modelo derivado + geometría, pill de lectura, leyenda del home (wave 2)
+- [x] 12-02-PLAN.md — pull paginado todo-o-nada, store con lista blanca (H3) y sin borradas, modelo derivado + geometría, pill de lectura, leyenda del home (wave 2)
 - [ ] 12-03-PLAN.md — `measure-pull.mjs` + WEB_API_KEY en Production (humano) + cierre de OI-02 con datos reales (wave 3)
 - [ ] 12-04-PLAN.md — estado de sync honesto completo: matriz de la pill, reintento 3 x 30 s, refresco incremental, popover accesible (wave 3)
 - [ ] 12-05-PLAN.md — panel lateral único (5 tipos) + buildView, breadcrumb y Volver a (D-05, D-06, D-12) (wave 3)
@@ -112,7 +112,7 @@ Phase 10 y Phase 11 pueden ejecutarse en paralelo (no comparten archivos de nego
 |-------|----------------|--------|-----------|
 | 10. Pull cerrado + Auth dual-key | 4/4 | Complete    | 2026-09-26 |
 | 11. Infra de deploy (mismo proyecto Vercel) | 5/5 | Complete    | 2026-09-29 |
-| 12. Web de lectura | 1/10 | In Progress|  |
+| 12. Web de lectura | 2/10 | In Progress|  |
 | 13. Storage de audio + reproducción en la web | 0/TBD | Not started | - |
 
 ## Backlog
