@@ -1,6 +1,8 @@
 import { ArrowLeft, Maximize2 } from 'lucide-react';
 import { A } from '../app/router.jsx';
 import AudioCard from './AudioCard.jsx';
+import CoverageStrip from './CoverageStrip.jsx';
+import PortalTable from './PortalTable.jsx';
 
 const COMPACT_ROWS = 4;
 
@@ -36,6 +38,34 @@ function Facts({ facts, onSelect }) {
   );
 }
 
+function Row({ r, onSelect }) {
+  return (
+    <li>
+      <button type="button" className="row" title={`${r.label} · ${r.sub}`} onClick={() => onSelect(r.sel)}>
+        <span className="rt">
+          <span className="t">{r.label}</span>
+          <span className="u">{r.sub}</span>
+        </span>
+      </button>
+    </li>
+  );
+}
+
+// Vecinos en el path (alternativa no espacial al mapa): Anterior / Siguiente con la distancia en m.
+function Neighbors({ neighbors, onSelect }) {
+  if (!neighbors) return null;
+  return (
+    <section>
+      <h3 className="lbl sect">Vecinos en el path</h3>
+      <ul className="plist">
+        {[neighbors.prev, neighbors.next].filter(Boolean).map((r) => (
+          <Row key={r.sel} r={r} onSelect={onSelect} />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function Lists({ lists, limit, onSelect, onExpand }) {
   return lists.map((l) => {
     const shown = limit ? l.rows.slice(0, limit) : l.rows;
@@ -45,14 +75,7 @@ function Lists({ lists, limit, onSelect, onExpand }) {
         <h3 className="lbl sect">{l.title}</h3>
         <ul className="plist">
           {shown.map((r) => (
-            <li key={r.sel}>
-              <button type="button" className="row" title={`${r.label} · ${r.sub}`} onClick={() => onSelect(r.sel)}>
-                <span className="rt">
-                  <span className="t">{r.label}</span>
-                  <span className="u">{r.sub}</span>
-                </span>
-              </button>
-            </li>
+            <Row key={r.sel} r={r} onSelect={onSelect} />
           ))}
         </ul>
         {more > 0 && (
@@ -64,6 +87,9 @@ function Lists({ lists, limit, onSelect, onExpand }) {
 }
 
 export default function EntityDetail({ view, expanded, onSelect, onExpand }) {
+  // La tabla reemplaza a la lista del mismo título en el expandido (UI-SPEC: lista sólo en compacto).
+  const lists = view.table ? view.lists.filter((l) => l.title !== view.table.title) : view.lists;
+  const note = view.note && <p className="dim note">{view.note}</p>;
   return (
     <>
       <span className="lbl">{view.typeLabel}</span>
@@ -83,13 +109,20 @@ export default function EntityDetail({ view, expanded, onSelect, onExpand }) {
           </div>
           <div>
             {view.type === 'path' && <AudioCard audio={view.audio} />}
-            <Lists lists={view.lists} onSelect={onSelect} onExpand={onExpand} />
+            <CoverageStrip strip={view.strip} />
+            {view.type === 'path' && !view.strip && <p className="dim note">0 triggers</p>}
+            {note}
+            <Lists lists={lists} onSelect={onSelect} onExpand={onExpand} />
+            <Neighbors neighbors={view.neighbors} onSelect={onSelect} />
+            <PortalTable table={view.table} onSelect={onSelect} />
           </div>
         </div>
       ) : (
         <>
           <Facts facts={view.facts} onSelect={onSelect} />
+          {note}
           <Lists lists={view.lists} limit={COMPACT_ROWS} onSelect={onSelect} onExpand={onExpand} />
+          <Neighbors neighbors={view.neighbors} onSelect={onSelect} />
           <button type="button" className="btn btn-p full" onClick={() => onExpand(true)}>
             <Maximize2 size={16} aria-hidden="true" /> Ver detalle completo
           </button>

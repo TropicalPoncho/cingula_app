@@ -111,3 +111,24 @@ a.lnk { text-decoration: none; }
 }
 .emptyt { display: block; color: var(--c-ambar); font-weight: var(--fw-regular); }
 .emptyd { margin: var(--sp-1) 0 0; color: var(--text-secondary); overflow-wrap: anywhere; }
+
+/* Tira de cobertura (E7): un cuadro por trigger, hueco ámbar punteado; envuelve con 30+ triggers. */
+.strip { display: flex; flex-wrap: wrap; gap: var(--sp-1); margin: 0 0 var(--sp-3); }
+.sg { display: block; flex: none; width: 6px; height: 20px; border-radius: 2px; background: var(--c-azure); }
+.sg.gap { width: 18px; background: rgba(255, 188, 0, .12); border: 1px dashed var(--c-ambar); box-sizing: border-box; }
+.stripnote, .note { margin: 0 0 var(--sp-5); overflow-wrap: anywhere; }
+
+/* Tabla "Portales de la obra" (E8): scrollea dentro de `.pbody`, nombres largos con elipsis. */
+.tblwrap { overflow-x: auto; margin: 0 0 var(--sp-5); }
+.tbl { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.tbl th {
+  text-align: left; font: var(--type-label); letter-spacing: var(--ls-label); text-transform: uppercase;
+  color: var(--text-secondary); padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--border-strong); white-space: nowrap;
+}
+.tbl td { padding: 0 var(--sp-3); height: 52px; border-bottom: 1px solid var(--border-hairline); white-space: nowrap; }
+.tbl tr:hover td { background: rgba(244, 241, 247, .03); }
+.tblbtn {
+  display: block; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  border: 0; background: none; padding: 0; cursor: pointer; color: var(--text-link); text-align: left; font: inherit;
+}
+.tblbtn:hover { color: var(--text-link-hover); text-decoration: underline; }

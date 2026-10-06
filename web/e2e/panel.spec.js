@@ -108,3 +108,29 @@ test('WEB-06: el path de la obra B muestra "Sin archivo todavía" y el portal de
   await expect(p.getByText('Archivo en el servidor')).toBeVisible();
   await expect(p.locator('.card button')).toHaveCount(0);
 });
+
+test('WEB-05: path expandido con tira de huecos y tabla; el nombre de un portal lo abre sin recargar', async ({ page }) => {
+  await page.goto(`/?sel=path:${ID.pathA}&x=1`);
+  const p = panel(page);
+  await expect(p.getByRole('img', { name: '32 triggers, 1 hueco' })).toBeVisible();
+  await expect(p.getByText('Hueco de ≈ 40 m entre el trigger 016 y el 017.')).toBeVisible();
+  await expect(p.getByRole('columnheader', { name: 'Offset' })).toBeVisible();
+  // la tira envuelve y no desborda el cuerpo del panel
+  expect(await p.locator('.pbody').evaluate((e) => e.scrollWidth <= e.clientWidth)).toBe(true);
+  const before = await page.evaluate(() => history.length);
+  await p.getByRole('table').getByRole('button', { name: 'Portal A' }).click();
+  await expect(p.getByRole('heading', { name: 'Portal A' })).toBeVisible();
+  expect(new URL(page.url()).searchParams.get('sel')).toBe(`portal:${ID.portalA}`);
+  expect(await page.evaluate(() => history.length)).toBe(before);
+});
+
+test('trigger: nota fija, Siguiente cambia al trigger vecino y Volver a lleva al path', async ({ page }) => {
+  await page.goto(`/?sel=trigger:${ID.trA(8)}`);
+  const p = panel(page);
+  await expect(p.getByRole('heading', { name: 'Trigger 009' })).toBeVisible();
+  await expect(p.getByText(/Los triggers sólo marcan el camino/)).toBeVisible();
+  await p.getByRole('button', { name: /Siguiente/ }).click();
+  await expect(p.getByRole('heading', { name: 'Trigger 010' })).toBeVisible();
+  await p.getByRole('button', { name: /Volver a Ruta A/ }).click();
+  await expect(p.getByRole('heading', { name: 'Ruta A' })).toBeVisible();
+});
