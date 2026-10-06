@@ -61,3 +61,8 @@ node_modules/
 .vercel/
 .vercel
 .env*
+
+# web (Fase 12): build de la SPA y artefactos de Playwright
+web/dist/
+web/test-results/
+web/playwright-report/

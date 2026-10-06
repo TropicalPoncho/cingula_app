@@ -2,11 +2,32 @@
   "name": "cingula-sync-backend",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "test": "node --test"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node --test \"api/**/*.test.js\" \"scripts/**/*.test.js\"",
+    "test:ui": "vitest run",
+    "test:e2e": "playwright test -c e2e/playwright.config.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.7",
+    "@vitejs/plugin-react": "6.1.2",
+    "jsdom": "30.1.2",
+    "leaflet": "1.9.4",
+    "lucide-react": "1.52.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "vite": "8.3.2",
+    "vitest": "5.0.3"
   }
 }

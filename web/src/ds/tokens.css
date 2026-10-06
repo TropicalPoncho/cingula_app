@@ -1,0 +1,163 @@
+/* Cíngula Design System — generated from tokens.json */
+:root, [data-theme="oscuro"] {
+  --c-mint: #8ae2c8;
+  --c-azure: #578ccb;
+  --c-violeta: #9900ff;
+  --c-magenta: #ff0074;
+  --c-ambar: #ffbc00;
+  --c-ink: #111111;
+  --c-paper: #ffffff;
+  --ink-900: #08070b;
+  --ink-800: #0d0c12;
+  --ink-700: #111111;
+  --ink-600: #17151e;
+  --ink-500: #221f2c;
+  --ink-400: #332f41;
+  --ink-300: #4b4658;
+  --ink-200: #6e6880;
+  --ink-100: #9c96ab;
+  --paper-000: #ffffff;
+  --paper-100: #f7f5f2;
+  --paper-200: #ede9e3;
+  --paper-300: #ddd7ce;
+  --mint-soft: #c6f1e4;
+  --mint-deep: #3e9e85;
+  --azure-soft: #a8c6e7;
+  --azure-deep: #31578a;
+  --violeta-soft: #c77cff;
+  --violeta-deep: #5c009b;
+  --magenta-soft: #ff6ba8;
+  --magenta-deep: #a80049;
+  --ambar-soft: #ffd980;
+  --ambar-deep: #b37f00;
+  --surface-base: var(--ink-900);
+  --surface-raised: var(--ink-800);
+  --surface-card: var(--ink-600);
+  --surface-sunken: #050409;
+  --surface-inverse: var(--paper-100);
+  --surface-veil: rgba(8,7,11,.72);
+  --text-primary: #f4f1f7;
+  --text-secondary: var(--ink-100);
+  --text-muted: var(--ink-200);
+  --text-inverse: var(--ink-700);
+  --text-accent: var(--c-mint);
+  --text-link: var(--c-mint);
+  --text-link-hover: var(--mint-soft);
+  --border-hairline: rgba(244,241,247,.12);
+  --border-strong: rgba(244,241,247,.28);
+  --border-accent: var(--c-violeta);
+  --action-primary: var(--c-violeta);
+  --action-primary-hover: var(--violeta-soft);
+  --action-primary-text: #ffffff;
+  --action-secondary-border: rgba(244,241,247,.28);
+  --focus-ring: var(--c-mint);
+  --state-live: var(--c-magenta);
+  --state-ready: var(--c-mint);
+  --state-waiting: var(--c-ambar);
+  --state-offline: var(--ink-200);
+  --state-info: var(--c-azure);
+  --shadow-sunken: inset 0 1px 0 rgba(244,241,247,.05);
+  --shadow-card: 0 1px 0 rgba(244,241,247,.06),0 18px 40px -24px rgba(0,0,0,.9);
+  --shadow-raised: 0 2px 0 rgba(244,241,247,.07),0 34px 70px -34px rgba(0,0,0,.95);
+  --shadow-print: 0 12px 32px -18px rgba(17,17,17,.35);
+  --glow-mint: 0 0 0 1px rgba(138,226,200,.5),0 0 28px -4px rgba(138,226,200,.45);
+  --glow-violeta: 0 0 0 1px rgba(153,0,255,.55),0 0 34px -4px rgba(153,0,255,.5);
+  --glow-magenta: 0 0 0 1px rgba(255,0,116,.55),0 0 34px -4px rgba(255,0,116,.5);
+}
+[data-theme="claro"] {
+  --surface-base: var(--paper-100);
+  --surface-raised: var(--paper-000);
+  --surface-card: var(--paper-000);
+  --surface-sunken: var(--paper-200);
+  --surface-inverse: var(--ink-900);
+  --surface-veil: rgba(255,255,255,.78);
+  --text-primary: var(--ink-700);
+  --text-secondary: var(--ink-300);
+  --text-muted: var(--ink-200);
+  --text-inverse: var(--paper-000);
+  --text-accent: var(--violeta-deep);
+  --text-link: var(--violeta-deep);
+  --text-link-hover: var(--c-violeta);
+  --border-hairline: rgba(17,17,17,.12);
+  --border-strong: rgba(17,17,17,.3);
+  --action-primary-text: #ffffff;
+  --action-secondary-border: rgba(17,17,17,.28);
+}
+:root {
+  --sp-0: 0;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+  --sp-20: 80px;
+  --sp-24: 96px;
+  --sp-32: 128px;
+  --sp-40: 160px;
+  --container-narrow: 44rem;
+  --container-text: 60rem;
+  --container-wide: 80rem;
+  --touch-min: 44px;
+  --bw-hairline: 1px;
+  --bw-line: 1.5px;
+  --bw-heavy: 3px;
+  --blur-veil: 14px;
+  --blur-heavy: 28px;
+  --wave-stroke: 1.25px;
+  --r-none: 0;
+  --r-xs: 4px;
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 22px;
+  --r-xl: 34px;
+  --r-pill: 999px;
+  --fs-3xs: 11px;
+  --fs-2xs: 12px;
+  --fs-xs: 13px;
+  --fs-sm: 15px;
+  --fs-base: 17px;
+  --fs-md: 20px;
+  --fs-lg: 25px;
+  --fs-xl: 32px;
+  --fs-2xl: 40px;
+  --fs-3xl: 52px;
+  --fs-4xl: 68px;
+  --fs-5xl: 92px;
+  --fs-6xl: 124px;
+  --fw-extralight: 200;
+  --fw-light: 300;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --lh-tight: 1.02;
+  --lh-snug: 1.14;
+  --lh-normal: 1.35;
+  --lh-relaxed: 1.62;
+  --ls-portal: .42em;
+  --ls-wide: .22em;
+  --ls-label: .12em;
+  --ls-normal: 0;
+  --ls-tight: -.015em;
+  --grain-opacity: .055;
+  --font-display: "Chillax","Futura","Avenir Next",system-ui,sans-serif;
+  --font-text: "Synonym","Inter",system-ui,sans-serif;
+  --font-mono: ui-monospace,"SFMono-Regular","Menlo",monospace;
+}
+.type-display { font-family: var(--font-display); font-size: 68px; line-height: 1.02; font-weight: 300; }
+.type-title { font-family: var(--font-display); font-size: 40px; line-height: 1.14; font-weight: 400; }
+.type-heading { font-family: var(--font-display); font-size: 25px; line-height: 1.14; font-weight: 500; }
+.type-subheading { font-family: var(--font-display); font-size: 20px; line-height: 1.35; font-weight: 500; }
+.type-body { font-family: var(--font-text); font-size: 17px; line-height: 1.62; font-weight: 400; }
+.type-body-sm { font-family: var(--font-text); font-size: 15px; line-height: 1.62; font-weight: 400; }
+.type-label { font-family: var(--font-display); font-size: 12px; line-height: 1.2; font-weight: 500; }
+.type-caption { font-family: var(--font-text); font-size: 13px; line-height: 1.35; font-weight: 400; }
+@font-face { font-family: "Chillax"; src: url("fonts/Chillax-Light.woff2") format("woff2"); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: "Chillax"; src: url("fonts/Chillax-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Synonym"; src: url("fonts/Synonym-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+/* ponytail: sólo se cargan los 3 pesos que usa el contrato (Chillax 300/400, Synonym 400, UI-SPEC R10/R14); los pesos 200/500/600/700 y Synonym 300/500/600/700 no se usan. */
