@@ -5,7 +5,11 @@ export const KEY = 'clave-buena';
 
 // `limit` es el tamaño de página del mock (el cliente siempre pide 1000); `failPage` = número de
 // request de /sync/pull (1-based) que responde `failStatus`; esa página (mismo cursor) falla `failTimes` veces.
+// PNG 1x1 transparente: los tests nunca le pegan a tile.openstreetmap.org (política de uso de OSM).
+const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
+
 export async function mockApi(page, { rows = makeRows(), limit = 1000, failPage, failTimes = 1, failStatus = 500, stateStatus = 200 } = {}) {
+  await page.route('https://tile.openstreetmap.org/**', (route) => route.fulfill({ body: PNG, contentType: 'image/png' }));
   let n = 0;
   let failCursor;
   let failed = 0;
