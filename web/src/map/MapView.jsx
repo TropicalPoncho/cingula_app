@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './map.css';
-import { PANES, buildLayers, syncGroups, coverBounds, targetBounds } from './layers.js';
+import { PANES, buildLayers, applySelection, syncGroups, coverBounds, targetBounds } from './layers.js';
 
 // Único centro fijo permitido (D-02): sólo cuando ninguna obra visible tiene cobertura.
 const FALLBACK = { center: [-42.08, -71.62], zoom: 11 };
@@ -19,6 +19,8 @@ export default function MapView({ model, obras, capas, sel, fitKey, fitTarget, o
   const lastFit = useRef(); // fitKey ya aplicado a ESTE mapa
   const pendingFit = useRef(null); // encuadre a reintentar cuando el contenedor tenga tamaño
   const onSelectRef = useRef(onSelect);
+  const capasRef = useRef(capas); // los efectos de capas leen el último valor sin depender de él
+  const selRef = useRef(sel);
   useEffect(() => { onSelectRef.current = onSelect; });
 
   // Ciclo de vida. StrictMode monta dos veces: sin map.remove() en la limpieza, "already initialized" (Pitfall 4).
@@ -50,22 +52,32 @@ export default function MapView({ model, obras, capas, sel, fitKey, fitTarget, o
     };
   }, []);
 
-  // Capas: se reconstruyen sólo si cambian modelo u obras visibles.
+  // Capas: se reconstruyen sólo si cambian modelo u obras visibles (Pitfall 7: selección y casillas no reconstruyen).
   useEffect(() => {
     const map = mapRef.current;
-    const b = buildLayers(L, model, { obras, onSelect: (s) => onSelectRef.current(s) });
+    const b = buildLayers(L, model, { obras, zoom: map.getZoom(), onSelect: (s) => onSelectRef.current(s) });
     built.current = b;
-    syncGroups(map, b.groups, capas);
+    syncGroups(map, b.groups, capasRef.current);
+    applySelection(b.index, selRef.current, model);
+    const onZoom = () => b.rescale(map.getZoom());
+    map.on('zoomend', onZoom); // el corredor mide metros: su ancho en px cambia con el zoom
     return () => {
+      map.off('zoomend', onZoom);
       Object.values(b.groups).forEach((g) => g.remove());
       built.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `capas` tiene su propio efecto
   }, [model, obras]);
 
   useEffect(() => {
+    capasRef.current = capas;
     if (built.current) syncGroups(mapRef.current, built.current.groups, capas);
   }, [capas]);
+
+  useEffect(() => {
+    selRef.current = sel;
+    if (built.current) applySelection(built.current.index, sel, model);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- el modelo nuevo ya aplica la selección al reconstruir
+  }, [sel]);
 
   // Encuadre (D-02, H4): pide a Leaflet recién con el contenedor medido; si todavía mide 0 queda pendiente.
   const requestFit = (bounds) => {

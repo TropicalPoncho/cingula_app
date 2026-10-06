@@ -41,3 +41,34 @@ test('clic en una cobertura abre el panel de la obra; expandir no rompe el mapa'
   const box = await page.locator('.mapview').boundingBox();
   expect(box.width).toBeGreaterThan(0);
 });
+
+test('capas: corredor por tramo, un hueco ámbar punteado y etiquetas de obra', async ({ page }) => {
+  await page.goto('/');
+  await expect(covers(page)).toHaveCount(2);
+  await expect(page.locator('path[stroke-dasharray="4 4"]')).toHaveCount(1); // el hueco de la ruta A
+  await expect(page.locator('.obra-label')).toHaveCount(2);
+  await expect(page.locator('.obra-label span', { hasText: 'Obra Aurora' })).toBeVisible();
+});
+
+test('teclado: Enter abre el panel de una obra, de un path y de un portal', async ({ page }) => {
+  await page.goto('/');
+  await expect(covers(page)).toHaveCount(2);
+  for (const [name, heading] of [
+    ['Obra Obra Aurora', 'Obra Aurora'],
+    ['Path Ruta A', 'Ruta A'],
+    ['Portal Portal A, radio 15 m', 'Portal A'],
+  ]) {
+    await page.getByRole('button', { name, exact: true }).focus();
+    await page.keyboard.press('Enter');
+    await expect(panel(page).getByRole('heading', { name: heading })).toBeVisible();
+  }
+});
+
+test('foco visible sobre una cobertura: trazo de 3,5 px', async ({ page }) => {
+  await page.goto('/');
+  await expect(covers(page)).toHaveCount(2);
+  await page.keyboard.press('Shift'); // última interacción por teclado: el foco programático cuenta como :focus-visible
+  await page.getByRole('button', { name: 'Obra Obra Aurora', exact: true }).focus();
+  const sw = await page.locator(':focus').evaluate((e) => getComputedStyle(e).strokeWidth);
+  expect(parseFloat(sw)).toBeCloseTo(3.5, 1);
+});

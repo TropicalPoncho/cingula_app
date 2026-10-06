@@ -21,6 +21,21 @@
 }
 .mapview.leaflet-container .leaflet-bar a:hover { background: var(--surface-raised); }
 
+/* Etiqueta de obra: centrada en la cobertura, no envuelve y no captura el puntero. */
+.obra-label { width: 0; height: 0; pointer-events: none; }
+.obra-label span {
+  display: inline-block; transform: translate(-50%, -50%); white-space: nowrap; pointer-events: none;
+  font-family: var(--font-display); font-size: var(--fs-xs); font-weight: 400; text-transform: uppercase;
+  letter-spacing: .12em; color: rgba(244, 241, 247, .85); text-shadow: 0 0 4px var(--surface-sunken), 0 0 8px var(--surface-sunken);
+}
+
+/* Objetivo de teclado/clic del portal: 44 px transparentes sobre el círculo en metros. */
+.portal-hit { background: transparent; border-radius: 50%; cursor: pointer; }
+
+/* Foco visible (R9): box-shadow no pinta en SVG, por eso el trazo; el divIcon sí usa box-shadow. */
+.mapview .leaflet-interactive:focus-visible { outline: none; stroke: var(--text-primary); stroke-width: 3.5px; stroke-opacity: 1; }
+.mapview .portal-hit:focus-visible { box-shadow: var(--glow-focus); }
+
 /* Velo, leyenda y barra por encima del mapa (el mapa queda en z-index 0). */
 .mapwrap .mapstate, .mapwrap .legend, .mapwrap .mapbar { z-index: 3; }
 /* La leyenda no tapa la atribución ni el zoom: se corta antes y no envuelve. */
