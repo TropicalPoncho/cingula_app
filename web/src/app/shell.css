@@ -78,6 +78,12 @@ h1, h2, h3, h4 {
 .pop .r > span:last-child, .pop .perr > span { overflow-wrap: anywhere; }
 .popfoot { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
 .popfoot .dim { font-size: var(--fs-xs); }
+/* Responsive [ASUNCIÓN OI-05, sin validar]: < 900 px la pill queda en punto + ícono y el popover a ancho completo */
+@media (max-width: 899px) {
+  .pill-t { display: none; }
+  .syncwrap { position: static; }
+  .pop { position: fixed; left: var(--sp-2); right: var(--sp-2); top: 60px; width: auto; max-width: none; }
+}
 
 /* Botones */
 .btn {

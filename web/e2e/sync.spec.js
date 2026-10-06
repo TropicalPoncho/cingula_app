@@ -61,7 +61,7 @@ test('pull fallido: la pill lo dice, el popover explica el intento y "Reintentar
   await expect(pill).toContainText('Error de pull · sin datos');
   await pill.click();
   const dialog = page.getByRole('dialog', { name: 'Detalle del estado de sync' });
-  const linea = dialog.getByRole('alert');
+  const linea = dialog.locator('.perr'); // abierto después del error: no re-anuncia (role=alert sólo al aparecer)
   await expect(linea).toContainText('GET /sync/pull?cursor=');
   await expect(linea).toContainText('→ 500 mock failure (página 2)');
   await expect(dialog).not.toContainText('Bearer');
