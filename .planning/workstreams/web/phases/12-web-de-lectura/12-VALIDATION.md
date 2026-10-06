@@ -37,38 +37,70 @@ created: "2026-10-06"
 
 ## Per-Task Verification Map
 
-Se completa cuando existan los PLAN.md (una fila por tarea). Mapa requisito → prueba (del research):
+Una fila por tarea de los PLAN.md (completado al planificar, 2026-10-06). Los comandos corren desde la raíz del repo; `cd web` donde se indica. El plan 12-10 Task 2 actualiza la columna Status con lo que de verdad corrió.
 
-| Req | Behavior | Test Type | Automated Command | File Exists |
-|-----|----------|-----------|-------------------|-------------|
-| AUTH-02 | Login valida con `/sync/state`, guarda en `sessionStorage`, 401 limpia y redirige; ninguna clave en `src/`/`dist/` | unit + e2e + grep | `npx vitest run src/app/session.spec.js` · `npx playwright test e2e/acceso.spec.js` · `! grep -rEn "VITE_[A-Z_]*KEY" src vite.config.js` | ❌ W0 |
-| WEB-01 | Capas por defecto, filtro por recorrido, auto-ajuste de bbox, clic abre panel | unit + e2e | `npx vitest run src/map src/data/geometry.spec.js` · `npx playwright test e2e/mapa.spec.js` | ❌ W0 |
-| WEB-02 | Créditos = unión de artistas de las obras; obras del recorrido en el panel | unit | `npx vitest run src/panel/buildView.spec.js -t recorrido` | ❌ W0 |
-| WEB-03 | Artista con sus obras (sin borradas) | unit + componente | `npx vitest run src/data/model.spec.js -t artistas` | ❌ W0 |
-| WEB-04 | Filtros recorrido y visibilidad; "Sin cobertura todavía" | unit + componente | `npx vitest run src/pages/Obras.spec.jsx` | ❌ W0 |
-| WEB-05 | Path: kind, tolerancia, grabación, audio, triggers `(position, uuid)` anónimos, huecos; portal = path `kind='portal'` hijo de la obra | unit | `npx vitest run src/data/geometry.spec.js src/panel/buildView.spec.js -t path` | ❌ W0 |
-| WEB-06 | AudioCard: 3 estados inline en path/portal, sin listado propio | componente | `npx vitest run src/panel/AudioCard.spec.jsx` | ❌ W0 |
-| WEB-07 | Estados de la pill (leyendo / al día / desactualizado / error con y sin datos / sin conexión); reintento 3 × 30 s (fake timers) | unit + componente | `npx vitest run src/app/syncState.spec.js src/app/SyncPill.spec.jsx` | ❌ W0 |
-| WEB-08 | Ninguna colección contiene `deleted_at != null`; hijos de padres borrados descartados; `share_token`/`owner_id`/`user_id` no se propagan | unit | `npx vitest run src/data/model.spec.js src/data/store.spec.js` | ❌ W0 |
-| Cross | Cliente de pull: páginas, cursor string, guarda anti-bucle; columnas usadas ⊆ `TABLE_SPEC` | unit | `npx vitest run src/data/pull.spec.js src/data/model.spec.js` | ❌ W0 |
-| Cross | Ruteo de plataforma: `/sync/*` y `/api/sync/*` JSON, deep link SPA HTML, asset faltante no-HTML | smoke (Preview) | `bash web/scripts/smoke-preview.sh <preview-url>` (ampliar) | ⚠ ampliar |
-| Cross | Teclado del mapa: Tab llega al portal, Enter abre, flechas recorren triggers, Esc contrae | e2e | `npx playwright test e2e/teclado.spec.js` (red y tiles mockeados) | ❌ W0 |
-| Backend | Sin regresión del backend | node:test | `cd web && npm test` | ✅ |
+| Task ID | Plan | Wave | Requirement | Threat Ref | Test Type | Automated Command | File Exists | Status |
+|---------|------|------|-------------|------------|-----------|-------------------|-------------|--------|
+| 12-01-01 | 01 | 1 | AUTH-02 (prerrequisito) | T-12-SC | manual (checkpoint blocking-human: legitimidad de paquetes + fuentes/logo) | — (verificación humana en npmjs.com) | n/a | ⬜ pending |
+| 12-01-02 | 01 | 1 | AUTH-02 | T-12-01, T-12-04 | tracer: unit + node:test + build + e2e | `cd web && npm run test:ui && npm test && npm run build && npx playwright test -c e2e/playwright.config.js e2e/acceso.spec.js` | ❌ W0 (crea session/router specs, acceso.spec.js, configs) | ⬜ pending |
+| 12-01-03 | 01 | 1 | AUTH-02, INFRA-01 (regresión) | T-12-01, T-12-02, T-12-03, T-12-05, T-12-07 | config + smoke Preview + canario de bundle | `bash -n web/scripts/smoke-preview.sh` + chequeo de vercel.json · `bash web/scripts/smoke-preview.sh "$PREVIEW_URL"` · build con canario + `! grep -rq <canario> web/dist` | ⚠ amplía smoke-preview.sh | ⬜ pending |
+| 12-02-01 | 02 | 2 | WEB-07, WEB-08, AUTH-02 | T-12-08, T-12-09, T-12-11, T-12-12 | tracer: unit + e2e | `cd web && npx vitest run src/data src/app && npx playwright test -c e2e/playwright.config.js e2e/sync.spec.js` | ❌ W0 (crea fixtures.js, mock-api.js, pull/model/store specs) | ⬜ pending |
+| 12-02-02 | 02 | 2 | WEB-08, WEB-02, WEB-03 | T-12-10 | unit (TDD) + e2e | `cd web && npx vitest run src/data src/app/format.spec.js && npx playwright test -c e2e/playwright.config.js e2e/sync.spec.js && npm run build` | ❌ W0 (geometry/format specs) | ⬜ pending |
+| 12-03-01 | 03 | 3 | WEB-01, WEB-08 | T-12-13 | tracer: node:test con servidor HTTP local | `cd web && node --test scripts/measure-pull.test.js && npm test` | ❌ W0 | ⬜ pending |
+| 12-03-02 | 03 | 3 | WEB-01 | T-12-14, T-12-15, T-12-16 | manual (human-action: WEB_API_KEY en Production + medición) + curl | `curl -s -o /dev/null -w '%{http_code} %{content_type}' https://cingula.vercel.app/sync/state` -> `401 application/json` | n/a | ⬜ pending |
+| 12-03-03 | 03 | 3 | WEB-01 | — | doc (OI-02 cerrado) | `grep -c "CIRCLES_MIN_ZOOM" .planning/workstreams/web/phases/12-web-de-lectura/12-UI-SPEC.md` | ✅ (UI-SPEC existe) | ⬜ pending |
+| 12-04-01 | 04 | 3 | WEB-07 | T-12-17, T-12-20 | tracer: e2e falla -> reintento | `cd web && npx playwright test -c e2e/playwright.config.js e2e/sync.spec.js && npx vitest run src/app src/data` | ✅ (sync.spec.js de 12-02) | ⬜ pending |
+| 12-04-02 | 04 | 3 | WEB-07, WEB-08 | T-12-18, T-12-19 | unit (TDD, fake timers) + componente + e2e | `cd web && npx vitest run src/app/syncState.spec.js src/data/store.spec.js src/app/SyncPill.spec.jsx && npx playwright test -c e2e/playwright.config.js e2e/sync.spec.js` | ❌ W0 (syncState/SyncPill specs) | ⬜ pending |
+| 12-05-01 | 05 | 3 | WEB-04, WEB-08 | T-12-21, T-12-22 | tracer: unit + e2e deep link | `cd web && npx vitest run src/panel && npx playwright test -c e2e/playwright.config.js e2e/panel.spec.js` | ❌ W0 (buildView.spec.js, panel.spec.js) | ⬜ pending |
+| 12-05-02 | 05 | 3 | WEB-08 (stale), D-05 | T-12-21 | componente (TDD) + e2e | `cd web && npx vitest run src/panel && npx playwright test -c e2e/playwright.config.js e2e/panel.spec.js` | ❌ W0 (SidePanel.spec.jsx) | ⬜ pending |
+| 12-05-03 | 05 | 3 | WEB-02, WEB-05 | T-12-22 | unit (TDD) filtrado por tipo | `cd web && npx vitest run src/panel/buildView.spec.js -t recorrido && npx vitest run src/panel/buildView.spec.js -t path && npx vitest run src/panel` | ✅ (de 12-05-01) | ⬜ pending |
+| 12-06-01 | 06 | 4 | WEB-06 | T-12-23, T-12-24 | tracer: componente + e2e | `cd web && npx vitest run src/panel/AudioCard.spec.jsx && npx playwright test -c e2e/playwright.config.js e2e/panel.spec.js` | ❌ W0 (AudioCard.spec.jsx) | ⬜ pending |
+| 12-06-02 | 06 | 4 | WEB-05 | T-12-24 | componente (TDD) + e2e + build | `cd web && npx vitest run src/panel && npx playwright test -c e2e/playwright.config.js e2e/panel.spec.js && npm run build` | ❌ W0 (widgets.spec.jsx) | ⬜ pending |
+| 12-07-01 | 07 | 4 | WEB-01 | T-12-26 | tracer: e2e con tiles mockeados + build | `cd web && npx playwright test -c e2e/playwright.config.js e2e/mapa.spec.js && npm run build` | ❌ W0 (mapa.spec.js) | ⬜ pending |
+| 12-07-02 | 07 | 4 | WEB-01 | T-12-25 | unit (TDD, jsdom) + e2e | `cd web && npx vitest run src/map && npx playwright test -c e2e/playwright.config.js e2e/mapa.spec.js` | ❌ W0 (layers.spec.js) | ⬜ pending |
+| 12-07-03 | 07 | 4 | WEB-01, WEB-02 | T-12-27, T-12-28 | e2e + suite + build | `cd web && npx playwright test -c e2e/playwright.config.js e2e/mapa.spec.js e2e/panel.spec.js && npx vitest run && npm run build` | ✅ (de 12-07-01) | ⬜ pending |
+| 12-08-01 | 08 | 5 | WEB-01 | T-12-29 | tracer: e2e modo Círculos | `cd web && npx playwright test -c e2e/playwright.config.js e2e/mapa.spec.js && npx vitest run src/map` | ✅ | ⬜ pending |
+| 12-08-02 | 08 | 5 | WEB-01, WEB-05 | T-12-29, T-12-30 | unit (TDD) + e2e teclado | `cd web && npx vitest run src/map && npx playwright test -c e2e/playwright.config.js e2e/teclado.spec.js e2e/mapa.spec.js && npm run build` | ❌ W0 (teclado.spec.js) | ⬜ pending |
+| 12-09-01 | 09 | 6 | WEB-04 | T-12-32, T-12-33 | tracer: componente + e2e | `cd web && npx vitest run src/pages/Obras.spec.jsx && npx playwright test -c e2e/playwright.config.js e2e/obras.spec.js` | ❌ W0 (Obras.spec.jsx, obras.spec.js) | ⬜ pending |
+| 12-09-02 | 09 | 6 | WEB-03 | T-12-31, T-12-33 | componente (TDD) + e2e | `cd web && npx vitest run src/pages && npx playwright test -c e2e/playwright.config.js e2e/obras.spec.js` | ❌ W0 (Artistas.spec.jsx) | ⬜ pending |
+| 12-09-03 | 09 | 6 | WEB-04 (D-12) | T-12-32 | e2e + suite + build | `cd web && npx playwright test -c e2e/playwright.config.js e2e/obras.spec.js e2e/mapa.spec.js e2e/teclado.spec.js && npx vitest run && npm run build` | ✅ | ⬜ pending |
+| 12-10-01 | 10 | 7 | todos | T-12-36 | tracer: e2e del recorrido completo (+ CSP) | `cd web && npx playwright test -c e2e/playwright.config.js e2e/journey.spec.js && npm run build` | ❌ (journey.spec.js) | ⬜ pending |
+| 12-10-02 | 10 | 7 | todos | T-12-35 | auditoría ponytail + suite completa + web/api sin cambios | `cd web && npm test && npm run test:ui && npm run test:e2e && npm run build && test -z "$(git diff <commit de planificación> -- api)"` | ✅ | ⬜ pending |
+| 12-10-03 | 10 | 7 | todos, INFRA-01 (regresión) | T-12-34, T-12-37 | manual (human-action: UAT Preview + merge + celular) + smoke producción | `bash web/scripts/smoke-preview.sh https://cingula.vercel.app` -> `SMOKE OK` | ✅ | ⬜ pending |
 
 *Status por tarea: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+
+Mapa requisito → prueba (del research, con los nombres de archivo que fijaron los planes):
+
+| Req | Behavior | Test Type | Automated Command | Plan/Task |
+|-----|----------|-----------|-------------------|-----------|
+| AUTH-02 | Login valida con `/sync/state`, guarda en `sessionStorage`, 401 limpia y redirige; ninguna clave en `src/`/`dist/` | unit + e2e + canario | `npx vitest run src/app/session.spec.js` · `npx playwright test -c e2e/playwright.config.js e2e/acceso.spec.js` · build con canario | 12-01-02, 12-01-03, 12-02-01 |
+| WEB-01 | Capas por defecto, filtro por recorrido, auto-ajuste de bbox, clic abre panel, Círculos | unit + e2e | `npx vitest run src/map src/data/geometry.spec.js` · `npx playwright test -c e2e/playwright.config.js e2e/mapa.spec.js` | 12-07, 12-08 |
+| WEB-02 | Créditos = unión de artistas de las obras; obras del recorrido en el panel | unit + e2e | `npx vitest run src/panel/buildView.spec.js -t recorrido` | 12-02-02, 12-05-03, 12-07-03 |
+| WEB-03 | Artista con sus obras (sin borradas) | unit + componente | `npx vitest run src/data/model.spec.js src/pages/Artistas.spec.jsx` | 12-02-02, 12-09-02 |
+| WEB-04 | Filtros recorrido y visibilidad; "Sin cobertura todavía" | componente + e2e | `npx vitest run src/pages/Obras.spec.jsx` · `npx playwright test -c e2e/playwright.config.js e2e/obras.spec.js` | 12-05-01, 12-09-01, 12-09-03 |
+| WEB-05 | Path: kind, tolerancia, grabación, audio, triggers `(position, uuid)` anónimos, huecos; portal = path `kind='portal'` hijo de la obra | unit + componente | `npx vitest run src/data/geometry.spec.js src/panel/buildView.spec.js -t path src/panel/widgets.spec.jsx` | 12-05-03, 12-06-02, 12-08-02 |
+| WEB-06 | AudioCard: 3 estados inline en path/portal, sin listado propio | componente | `npx vitest run src/panel/AudioCard.spec.jsx` | 12-06-01 |
+| WEB-07 | Estados de la pill; reintento 3 × 30 s (fake timers); refresco incremental | unit + componente + e2e | `npx vitest run src/app/syncState.spec.js src/app/SyncPill.spec.jsx src/data/store.spec.js` | 12-02-01, 12-04 |
+| WEB-08 | Sin `deleted_at` ni huérfanos; columnas sensibles fuera del modelo | unit | `npx vitest run src/data/model.spec.js src/data/store.spec.js` | 12-02, 12-04-02, 12-05-02 |
+| Cross | Cliente de pull: páginas, cursor string, anti-bucle; columnas usadas ⊆ `TABLE_SPEC` | unit | `npx vitest run src/data/pull.spec.js src/data/model.spec.js` | 12-02-01 |
+| Cross | Ruteo de plataforma: `/sync/*` y `/api/sync/*` JSON, deep link SPA HTML, asset faltante no-HTML, headers | smoke (Preview y producción) | `bash web/scripts/smoke-preview.sh <url>` | 12-01-03, 12-10-03 |
+| Cross | Teclado del mapa: Tab llega al portal, Enter abre, flechas recorren triggers, Esc devuelve foco | e2e | `npx playwright test -c e2e/playwright.config.js e2e/teclado.spec.js` | 12-08-02 |
+| Cross | CSP real sin violaciones en el recorrido completo | e2e remoto | `E2E_BASE_URL=<preview> npx playwright test -c e2e/playwright.config.js e2e/journey.spec.js` | 12-10-01, 12-10-03 |
+| Backend | Sin regresión del backend | node:test | `cd web && npm test` | todas |
 
 ---
 
 ## Wave 0 Requirements
 
-- [ ] `web/vite.config.js` con bloque `test` (include `src/**/*.spec.{js,jsx}`, jsdom) y `web/src/test-setup.js`
-- [ ] `web/e2e/playwright.config.js` (`webServer: vite`; `page.route` para `/sync/**` y tiles de OSM, para no pegarle a OSM)
-- [ ] Fábrica `makePull()` en `src/test/fixtures.js`, generada desde `TABLE_SPEC` (no copiar datos del prototipo, OI-03)
-- [ ] Specs de la tabla anterior (todos nuevos)
-- [ ] Ampliar `web/scripts/smoke-preview.sh` con chequeos de ruteo SPA
-- [ ] Scripts de `package.json` (`dev/build/preview/test/test:ui/test:e2e`) y restringir `test` (backend) a globs, para que `node --test` no recoja los specs de la SPA y Vitest no recoja `api/**/*.test.js`
-- [ ] `.vercelignore`: `**/*.spec.js`, `**/*.spec.jsx`, `e2e/`
-- [ ] Instalación de devDependencies (con `checkpoint:human-verify` por los paquetes marcados "too-new" en el research)
+- [ ] `web/vite.config.js` con bloque `test` (include `src/**/*.spec.{js,jsx}`, jsdom) y `web/src/test-setup.js` — 12-01-02
+- [ ] `web/e2e/playwright.config.js` (`webServer: vite`) — 12-01-02; `page.route` para `/sync/**` (`e2e/mock-api.js`, 12-02-01) y para tiles de OSM (12-07-01), para no pegarle a OSM
+- [ ] Fábrica de filas sintéticas en `src/test/fixtures.js` (`makeRows`/`makePages`), generada desde `TABLE_SPEC` (no copiar datos del prototipo, OI-03) — 12-02-01
+- [ ] Specs de la tabla anterior (todos nuevos) — cada uno en la tarea indicada
+- [ ] Ampliar `web/scripts/smoke-preview.sh` con chequeos de ruteo SPA, funciones y headers — 12-01-03
+- [ ] Scripts de `package.json` (`dev/build/preview/test/test:ui/test:e2e`) y restringir `test` (backend) a globs, para que `node --test` no recoja los specs de la SPA y Vitest no recoja `api/**/*.test.js` — 12-01-02
+- [ ] `.vercelignore`: `**/*.spec.js`, `**/*.spec.jsx`, `e2e/`, `src/test/` — 12-01-03
+- [ ] Instalación de devDependencies (con `checkpoint:human-verify` `blocking-human` por los paquetes marcados "too-new" en el research) — 12-01-01 / 12-01-02
 
 ---
 
@@ -80,7 +112,9 @@ Se completa cuando existan los PLAN.md (una fila por tarea). Mapa requisito → 
 | Nombre de 60 caracteres | UI Considerations (long-text) | Prueba visual | Cargar una obra con nombre largo; verificar elipsis y riel |
 | Responsive < 900 px | OI-05 | Regla [DEFAULT] sin validar | Revisar a 800 px con el usuario |
 | Contraste del peso 400 en etiquetas 13 px | R14 | Juicio visual | Revisar sobre `--surface-card` |
-| Conteo real de triggers (umbral y tope de Círculos) | OI-02 | Requiere `WEB_API_KEY` del usuario | Correr `web/scripts/measure-pull.mjs` con la clave en sesión |
+| Conteo real de triggers (umbral y tope de Círculos) | OI-02 | Requiere `WEB_API_KEY` del usuario (Production no la tenía al planificar: la crea el usuario en 12-03-02) | Correr `WEB_API_KEY=<clave> node web/scripts/measure-pull.mjs` en la terminal del usuario (12-03-02) |
+| Push real del celular antes y después del merge a `main` | INFRA-01 (regresión por `web/vercel.json`) | Requiere el dispositivo físico | 12-10-03 pasos 2 y 5 |
+| Login real en producción con la `WEB_API_KEY` de Production | AUTH-02 | Requiere la clave del usuario | 12-10-03 paso 4 |
 
 ---
 

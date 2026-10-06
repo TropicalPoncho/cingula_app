@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Obras</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/cingula/tokens.css">
+<link rel="stylesheet" href="ds/cingula/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;overflow:hidden}
+*{box-sizing:border-box}
+button,select,input{font:inherit;color:inherit}
+.app{width:100%;height:900px;display:flex;flex-direction:column;background:var(--surface-base);color:var(--text-primary);font:var(--type-body-sm);overflow:hidden}
+.lbl{font:var(--type-label);letter-spacing:var(--ls-label);text-transform:uppercase;color:var(--text-secondary)}
+.mono{font-family:var(--font-mono);font-size:13px;letter-spacing:0}
+.dim{color:var(--text-secondary)}
+.hdr{position:relative;z-index:30;height:56px;flex:none;display:flex;align-items:center;gap:var(--sp-6);padding:0 var(--sp-5);background:var(--surface-raised);border-bottom:1px solid var(--border-hairline)}
+.brand{display:flex;align-items:baseline;gap:var(--sp-4);border:0;color:var(--text-primary)}
+.brand:hover{color:var(--text-primary)}
+.bw{font-size:13px;font-weight:500}
+.nav{display:flex;gap:var(--sp-1);align-self:stretch}
+.nl{display:flex;align-items:center;padding:0 var(--sp-4);border:0;border-bottom:2px solid transparent;color:var(--text-secondary);font:var(--type-label);font-size:14px;letter-spacing:var(--ls-label);text-transform:uppercase}
+.nl:hover{color:var(--text-primary);border-bottom-color:var(--border-strong)}
+.nl.on{color:var(--text-primary);border-bottom-color:var(--c-mint)}
+.sp{flex:1}
+.syncwrap{position:relative}
+.pill{display:flex;align-items:center;gap:var(--sp-3);min-height:44px;padding:0 var(--sp-4);border-radius:var(--r-pill);background:transparent;border:1px solid var(--border-strong);cursor:pointer;transition:var(--transition-ui)}
+.pill:hover{border-color:rgba(244,241,247,.5);background:rgba(244,241,247,.04)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex:none}
+.pop{position:absolute;right:0;top:52px;width:400px;padding:var(--sp-5);border-radius:var(--r-lg);background:var(--surface-card);border:1px solid var(--border-hairline);box-shadow:var(--shadow-raised);display:flex;flex-direction:column;gap:var(--sp-3)}
+.pop .r{display:grid;grid-template-columns:104px 1fr;gap:var(--sp-3);align-items:baseline}
+.perr{padding:var(--sp-3) var(--sp-4);border-radius:var(--r-md);background:rgba(255,188,0,.08);border:1px solid rgba(255,188,0,.4);display:flex;flex-direction:column;gap:6px}
+.quiet{border:0;color:var(--text-secondary);font-size:14px;padding:0 var(--sp-2);min-height:44px;display:flex;align-items:center}
+.quiet:hover{color:var(--text-primary)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--sp-2);min-height:44px;padding:0 var(--sp-5);border-radius:var(--r-pill);border:1px solid var(--action-secondary-border);background:transparent;color:var(--text-primary);font:var(--type-label);font-size:13px;letter-spacing:var(--ls-label);text-transform:uppercase;cursor:pointer;transition:var(--transition-ui)}
+.btn:hover{border-color:rgba(244,241,247,.5);background:rgba(244,241,247,.05);color:var(--text-primary)}
+.btn:active{transform:scale(var(--press-scale))}
+.btn-p{background:var(--action-primary);border-color:transparent;color:#fff}
+.btn-p:hover{background:var(--action-primary-hover);color:var(--ink-900);border-color:transparent}
+.ib{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:var(--r-pill);border:1px solid transparent;background:transparent;color:var(--text-secondary);cursor:pointer;transition:var(--transition-ui)}
+.ib:hover{color:var(--text-primary);border-color:var(--border-strong)}
+.lnk{border:0;background:none;padding:0;color:var(--text-link);cursor:pointer;text-align:left;border-bottom:1px solid color-mix(in oklab,var(--text-link) 40%,transparent)}
+.lnk:hover{color:var(--text-link-hover);border-bottom-color:currentColor}
+.crumb{border:0;background:none;padding:0 2px;min-height:28px;color:var(--text-secondary);cursor:pointer;font-size:13px}
+.crumb:hover{color:var(--text-primary)}
+.sel,.inp{min-height:44px;padding:0 var(--sp-4);border-radius:var(--r-md);background:var(--surface-raised);border:1px solid var(--border-strong);color:var(--text-primary)}
+.inp::placeholder{color:var(--text-muted)}
+.mapwrap{flex:1;min-width:0;position:relative;background:var(--surface-sunken);overflow:hidden}
+.mapbar{position:absolute;top:var(--sp-4);left:var(--sp-4);right:var(--sp-4);display:flex;flex-wrap:wrap;gap:var(--sp-3);align-items:stretch;pointer-events:none}
+.mapbar>*{pointer-events:auto}
+.mcard{display:flex;align-items:center;flex-wrap:wrap;gap:var(--sp-3) var(--sp-4);padding:var(--sp-2) var(--sp-4);border-radius:var(--r-lg);background:var(--surface-veil);backdrop-filter:var(--backdrop-veil);border:1px solid var(--border-hairline)}
+.chk{display:flex;align-items:center;gap:var(--sp-2);min-height:44px;cursor:pointer;font-size:14px}
+.chk input{width:18px;height:18px;accent-color:var(--c-mint)}
+.sw{width:18px;height:0;border-top-width:2px;border-top-style:solid;flex:none}
+.legend{position:absolute;left:var(--sp-4);bottom:var(--sp-4);padding:var(--sp-2) var(--sp-4);border-radius:var(--r-pill);background:var(--surface-veil);backdrop-filter:var(--backdrop-veil);border:1px solid var(--border-hairline);font-size:13px;color:var(--text-secondary)}
+.attr{position:absolute;right:var(--sp-4);bottom:var(--sp-4);font-size:12px;color:var(--text-secondary);text-align:right}
+.mk{cursor:pointer}
+.mk:focus-visible{outline:none}
+.panel{flex:none;display:flex;flex-direction:column;min-height:0;background:var(--surface-card);border-right:1px solid var(--border-hairline);box-shadow:var(--shadow-card);transition:width var(--dur-base) var(--ease-drift)}
+.rail{display:flex;flex-direction:column;align-items:center;gap:var(--sp-4);padding:var(--sp-2) 0 var(--sp-5)}
+.rail .vt{writing-mode:vertical-rl;transform:rotate(180deg);color:var(--text-secondary);font:var(--type-label);letter-spacing:var(--ls-label);text-transform:uppercase;max-height:420px;overflow:hidden;white-space:nowrap}
+.phead{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-2);padding:var(--sp-2) var(--sp-3) var(--sp-2) var(--sp-5);border-bottom:1px solid var(--border-hairline);flex:none}
+.crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:2px;min-width:0}
+.crumbs .s{color:var(--text-muted);font-size:13px}
+.crumbs .cur{font-size:13px;color:var(--text-primary);padding:0 2px}
+.ptools{display:flex;flex:none}
+.pbody{flex:1;min-height:0;overflow:auto;padding:var(--sp-5)}
+.ptitle{font:var(--type-heading);margin:var(--sp-1) 0 var(--sp-2)}
+.dtitle{font-family:var(--font-display);font-weight:var(--fw-light);font-size:var(--fs-2xl);line-height:var(--lh-snug);margin:var(--sp-1) 0 var(--sp-2)}
+.sub{margin:0 0 var(--sp-5);color:var(--text-secondary)}
+.facts{margin:0 0 var(--sp-5)}
+.fact{display:grid;grid-template-columns:124px 1fr;gap:var(--sp-3);padding:10px 0;border-top:1px solid var(--border-hairline);align-items:baseline}
+.fact dt{margin:0}.fact dd{margin:0;display:flex;align-items:center;gap:var(--sp-2);min-width:0}
+.row{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);width:100%;min-height:52px;padding:var(--sp-2) var(--sp-4);border-radius:var(--r-md);background:transparent;border:1px solid var(--border-hairline);cursor:pointer;text-align:left;margin-bottom:var(--sp-2);transition:var(--transition-ui)}
+.row:hover{border-color:var(--border-strong);background:rgba(244,241,247,.04)}
+.row.on{border-color:var(--c-mint);background:rgba(138,226,200,.07)}
+.row .t{display:block;font-size:15px;color:var(--text-primary)}
+.row .u{display:block;font-size:13px;color:var(--text-secondary)}
+.more{font-size:13px;color:var(--text-secondary);margin:0 0 var(--sp-5)}
+.dgrid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:var(--sp-8);align-items:start}
+.card{padding:var(--sp-5);border-radius:var(--r-lg);background:var(--surface-raised);border:1px solid var(--border-hairline);margin-bottom:var(--sp-5)}
+.card h4{margin:var(--sp-2) 0 var(--sp-2);font-size:20px}
+.empty{display:flex;gap:var(--sp-3);align-items:flex-start;padding:var(--sp-4);border-radius:var(--r-md);border:1px dashed rgba(255,188,0,.55);background:rgba(255,188,0,.06)}
+.player{display:flex;align-items:center;gap:var(--sp-4);margin-top:var(--sp-4)}
+.bars{flex:1;display:flex;align-items:center;gap:2px;height:40px}
+.bars i{display:block;width:3px;border-radius:2px;flex:none}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{text-align:left;font:var(--type-label);letter-spacing:var(--ls-label);text-transform:uppercase;color:var(--text-secondary);padding:var(--sp-2) var(--sp-3);border-bottom:1px solid var(--border-strong)}
+.tbl td{padding:0 var(--sp-3);height:52px;border-bottom:1px solid var(--border-hairline)}
+.tbl tr:hover td{background:rgba(244,241,247,.03)}
+.tblbtn{border:0;background:none;padding:0;cursor:pointer;color:var(--text-link);text-align:left;font-size:15px}
+.tblbtn:hover{color:var(--text-link-hover);text-decoration:underline}
+.sect{margin:0 0 var(--sp-3)}
+.toolbar{flex:none;display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-4);padding:var(--sp-3) var(--sp-5);border-bottom:1px solid var(--border-hairline);background:var(--surface-base)}
+.fld{display:flex;align-items:center;gap:var(--sp-3)}
+.split{flex:1;min-height:0;display:flex}
+.listpane{flex:none;width:560px;overflow:auto;padding:var(--sp-5);border-right:1px solid var(--border-hairline)}
+.detpane{flex:1;min-width:0;overflow:auto;padding:var(--sp-8) var(--sp-8)}
+.ent{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-4);width:100%;min-height:64px;padding:var(--sp-3) var(--sp-4);border-radius:var(--r-md);background:transparent;border:1px solid var(--border-hairline);cursor:pointer;text-align:left;margin-bottom:var(--sp-2);transition:var(--transition-ui)}
+.ent:hover{border-color:var(--border-strong);background:rgba(244,241,247,.04)}
+.ent.on{border-color:var(--c-mint);background:rgba(138,226,200,.07)}
+.ent .t{display:block;font:var(--type-subheading);font-size:17px}
+.ent .u{display:block;font-size:13px;color:var(--text-secondary);margin-top:2px}
+.seg{min-height:44px;padding:0 var(--sp-4);border-radius:var(--r-pill);border:1px solid var(--border-strong);background:transparent;color:var(--text-secondary);cursor:pointer;font-size:14px;transition:var(--transition-ui)}
+.seg[aria-pressed="true"]{background:rgba(138,226,200,.12);border-color:var(--c-mint);color:var(--text-primary)}
+.strip{display:flex;flex-wrap:wrap;gap:3px;margin:0 0 var(--sp-3)}
+.vis{display:inline-flex;align-items:center;gap:var(--sp-2);font-size:13px;color:var(--text-primary);white-space:nowrap}
+</style>
+</helmet>
+<div class="app">
+<header class="hdr">
+<a class="brand" href="Main.dc.html"><span class="cg-portal-type bw">Cíngula</span><span class="lbl">Web de lectura</span></a>
+<nav class="nav" aria-label="Secciones"><a class="nl" href="Main.dc.html">Mapa</a><a class="nl on" href="Obras.dc.html">Obras</a><a class="nl" href="Artistas.dc.html">Artistas</a></nav>
+<div class="sp"></div>
+<div class="syncwrap">
+<button class="pill" onClick="{{toggleSync}}" aria-haspopup="true" aria-label="Estado de sync">
+<span class="dot" style="{{syncDotStyle}}"></span>
+<sc-if value="{{hasSyncErr}}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;color:var(--c-ambar)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg></span></sc-if>
+<span style="font-size:14px">{{syncPill}}</span><span class="mono dim">{{syncCursor}}</span>
+</button>
+<sc-if value="{{syncOpen}}" hint-placeholder-val="{{ false }}">
+<div class="pop" role="dialog" aria-label="Detalle del estado de sync">
+<div class="lbl">Estado de sync</div>
+<sc-for list="{{syncRows}}" as="r" hint-placeholder-count="3"><div class="r"><span class="lbl">{{r.k}}</span><span class="{{r.cls}}" style="font-size:14px">{{r.v}}</span></div></sc-for>
+<sc-if value="{{hasSyncErr}}" hint-placeholder-val="{{ false }}"><div class="perr" role="alert"><span class="lbl" style="color:var(--ambar-soft)">Errores</span>
+<sc-for list="{{syncErrors}}" as="e" hint-placeholder-count="2"><div style="font-size:13px"><span class="mono dim">{{e.t}}</span> &nbsp;{{e.m}}</div></sc-for></div></sc-if>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><span class="dim" style="font-size:13px">{{syncNote}}</span><button class="btn" style="min-height:44px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg> Reintentar</button></div>
+</div></sc-if>
+</div>
+<a class="quiet" href="Acceso.dc.html">Salir</a>
+</header>
+<div class="toolbar">
+<h1 style="font:var(--type-heading);margin:0 var(--sp-4) 0 0">Obras</h1>
+<div class="fld"><label class="lbl" for="fr">Recorrido</label><select id="fr" class="sel" value="{{fr}}" onChange="{{onFr}}"><sc-for list="{{recOptions}}" as="o" hint-placeholder-count="3"><option value="{{o.value}}">{{o.label}}</option></sc-for></select></div>
+<div class="fld"><label class="lbl" for="fv">Visibilidad</label><select id="fv" class="sel" value="{{fv}}" onChange="{{onFv}}"><sc-for list="{{visOptions}}" as="o" hint-placeholder-count="4"><option value="{{o.value}}">{{o.label}}</option></sc-for></select></div>
+<span class="dim" style="font-size:14px">{{countText}}</span>
+</div>
+<div class="split">
+<div class="listpane" role="list" aria-label="Listado de obras">
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="4"><button class="{{r.cls}}" onClick="{{r.pick}}" role="listitem"><span><span class="t">{{r.name}}</span><span class="u">{{r.sub}}</span></span><span class="vis"><span class="dot" style="{{r.dot}}"></span>{{r.vis}}</span></button></sc-for>
+<sc-if value="{{noRows}}" hint-placeholder-val="{{ false }}"><p class="dim">Ninguna obra coincide con los filtros.</p></sc-if>
+</div>
+<section class="detpane" aria-label="Detalle">
+<sc-if value="{{hasSel}}" hint-placeholder-val="{{ true }}"><div style="margin-bottom:var(--sp-4)"><div class="crumbs" aria-label="Ruta"><sc-for list="{{v.crumbs}}" as="c" hint-placeholder-count="3">
+<sc-if value="{{c.sep}}" hint-placeholder-val="{{ false }}"><span class="s">/</span></sc-if>
+<sc-if value="{{c.last}}" hint-placeholder-val="{{ false }}"><span class="cur">{{c.label}}</span></sc-if>
+<sc-if value="{{c.notLast}}" hint-placeholder-val="{{ true }}"><button class="crumb" onClick="{{c.go}}">{{c.label}}</button></sc-if>
+</sc-for></div></div><div class="lbl">{{v.kind}}</div>
+<h2 class="dtitle">{{v.title}}</h2>
+<p class="sub">{{v.sub}}</p>
+<sc-if value="{{v.hasBack}}" hint-placeholder-val="{{ false }}"><div style="margin:0 0 20px"><button class="btn" onClick="{{v.back.go}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg> Volver a {{v.back.label}}</button></div></sc-if>
+<div class="dgrid">
+<div>
+<dl class="facts"><sc-for list="{{v.facts}}" as="f" hint-placeholder-count="5"><div class="fact"><dt class="lbl">{{f.k}}</dt><dd>
+<sc-if value="{{f.dot}}" hint-placeholder-val="{{ false }}"><span class="dot" style="{{f.dotStyle}}"></span></sc-if>
+<sc-if value="{{f.isGo}}" hint-placeholder-val="{{ false }}"><button class="lnk" onClick="{{f.go}}">{{f.v}}</button></sc-if>
+<sc-if value="{{f.isArt}}" hint-placeholder-val="{{ false }}"><a href="Artistas.dc.html">{{f.v}}</a></sc-if>
+<sc-if value="{{f.plain}}" hint-placeholder-val="{{ true }}"><span class="{{f.cls}}">{{f.v}}</span></sc-if>
+</dd></div></sc-for></dl>
+<sc-if value="{{v.hasDesc}}" hint-placeholder-val="{{ false }}"><div class="lbl sect">{{v.descLabel}}</div><p style="margin:0 0 20px;font-size:15px">{{v.desc}}</p></sc-if>
+</div>
+<div>
+<sc-if value="{{v.hasAudio}}" hint-placeholder-val="{{ false }}"><section class="card"><div class="lbl">{{v.audioLabel}}</div><h4>{{v.audio.title}}</h4>
+<p style="margin:0 0 6px;font-size:15px;color:var(--text-secondary)">{{v.audio.desc}}</p><span class="mono dim">kind: {{v.audio.kind}}</span>
+<sc-if value="{{v.audio.has}}" hint-placeholder-val="{{ true }}"><div class="player"><button class="ib" aria-label="Reproducir" style="border-color:var(--border-strong);color:var(--text-primary)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l14 9-14 9z"></path></svg></button><div class="bars" aria-hidden="true"><sc-for list="{{v.bars}}" as="b" hint-placeholder-count="56"><i style="{{b.style}}"></i></sc-for></div></div></sc-if>
+<sc-if value="{{v.audio.none}}" hint-placeholder-val="{{ false }}"><div class="empty" style="margin-top:16px"><span class="dot" style="background:var(--c-ambar);margin-top:6px"></span><div><div style="font-size:15px">Sin archivo todavía</div><div class="dim" style="font-size:13px">El audio está registrado en el path, pero su archivo aún no existe en el servidor.</div></div></div></sc-if>
+</section></sc-if>
+<sc-if value="{{v.hasMini}}" hint-placeholder-val="{{ false }}"><div class="lbl sect">Mapa</div>
+<svg viewBox="{{v.mini.vb}}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Mapa del elemento con sus triggers" style="width:100%;height:240px;display:block;background:var(--surface-sunken);border-radius:14px;border:1px solid var(--border-hairline);margin-bottom:20px">
+<sc-for list="{{v.mini.polys}}" as="p" hint-placeholder-count="1"><polygon points="{{p.pts}}" style="{{p.style}}"></polygon></sc-for>
+<sc-for list="{{v.mini.lines}}" as="l" hint-placeholder-count="1"><polyline points="{{l.pts}}" style="{{l.style}}"></polyline></sc-for>
+<sc-for list="{{v.mini.circles}}" as="c" hint-placeholder-count="3"><circle cx="{{c.cx}}" cy="{{c.cy}}" r="{{c.r}}" style="{{c.style}}"></circle></sc-for>
+<sc-for list="{{v.mini.ports}}" as="c" hint-placeholder-count="2"><circle cx="{{c.cx}}" cy="{{c.cy}}" r="{{c.r}}" style="{{c.style}}"></circle></sc-for>
+</svg></sc-if>
+<sc-if value="{{v.hasStrip}}" hint-placeholder-val="{{ false }}"><div class="lbl sect">Cobertura del path · un cuadro por trigger</div>
+<div class="strip" role="img" aria-label="Secuencia de triggers del path; los cuadros ámbar son huecos"><sc-for list="{{v.cells}}" as="c" hint-placeholder-count="30"><i style="{{c.style}}"></i></sc-for></div>
+<p style="margin:0 0 20px;font-size:14px;color:var(--text-secondary)">{{v.stripNote}}</p></sc-if>
+<sc-if value="{{v.showLists}}" hint-placeholder-val="{{ true }}"><sc-for list="{{v.lists}}" as="l" hint-placeholder-count="1"><div class="lbl sect">{{l.title}}</div>
+<sc-for list="{{l.items}}" as="it" hint-placeholder-count="2"><button class="row" onClick="{{it.go}}"><span><span class="t">{{it.label}}</span><span class="u">{{it.sub}}</span></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button></sc-for></sc-for></sc-if>
+<sc-if value="{{v.hasTable}}" hint-placeholder-val="{{ false }}"><div class="lbl sect">{{v.tableTitle}}</div>
+<table class="tbl"><thead><tr><th>#</th><th>Nombre</th><th>Radio</th><th>Offset</th><th>Posición</th></tr></thead><tbody>
+<sc-for list="{{v.table}}" as="t" hint-placeholder-count="3"><tr><td class="mono">{{t.pos}}</td><td><button class="tblbtn" onClick="{{t.go}}">{{t.name}}</button></td><td>{{t.r}}</td><td class="mono">{{t.off}}</td><td class="mono dim">{{t.ll}}</td></tr></sc-for>
+</tbody></table></sc-if>
+</div></div></sc-if>
+<sc-if value="{{noSel}}" hint-placeholder-val="{{ false }}"><p class="dim">Elegí una obra del listado para ver su detalle.</p></sc-if>
+</section></div></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900},"syncError":{"editor":"boolean","default":false},"syncOpen":{"editor":"boolean","default":false}}'>
+
+const MPP = 1.5; // metros por unidad de mapa
+const STEP = 14; // separación entre triggers consecutivos (unidades de mapa ≈ 21 m)
+const D = {
+  recorridos: [
+    { id: 'r1', name: 'Sendero del Lago', obras: ['o1', 'o2'] },
+    { id: 'r2', name: 'Camino al Río Azul', obras: ['o3', 'o4'] }],
+  artistas: [
+    { id: 'a1', name: 'Lucía Marín' }, { id: 'a2', name: 'Tomás Ibarra' }, { id: 'a3', name: 'Eliana Quiroga' }],
+  obras: [
+    { id: 'o1', name: 'Umbral', vis: 'publicada', rec: 'r1', art: ['a1', 'a2'], paths: ['p1', 'p2'],
+      poly: [[140,500],[190,390],[300,320],[420,250],[520,150],[610,160],[620,300],[540,360],[420,410],[300,470],[210,530]] },
+    { id: 'o2', name: 'Murmullos de ribera', vis: 'borrador', rec: 'r1', art: ['a2'], paths: ['p3'],
+      poly: [[620,540],[660,450],[760,400],[860,370],[960,330],[990,400],[930,460],[820,500],[720,550]] },
+    { id: 'o3', name: 'Frecuencia del arroyo', vis: 'publicada', rec: 'r2', art: ['a3'], paths: ['p4'],
+      poly: [[170,690],[210,610],[320,560],[450,550],[470,620],[380,670],[260,710]] },
+    { id: 'o4', name: 'Cuarto volcán', vis: 'oculta', rec: 'r2', art: ['a1', 'a3'], paths: ['p5'],
+      poly: [[900,280],[960,190],[1060,120],[1110,180],[1060,260],[980,300]] }],
+  paths: [
+    { id: 'p1', obra: 'o1', name: 'Camino de entrada', kind: 'walk', tol: 15, rad: 20, rec: 'rec-2026-03-14-a',
+      pts: [[180,470],[250,430],[310,400],[380,360],[450,340],[520,290]],
+      audio: { title: 'Entrada al bosque', desc: 'Capas de viento y pasos; el registro grave aparece al cruzar el arroyo.', kind: 'ambient', file: true } },
+    { id: 'p2', obra: 'o1', name: 'Retorno por la ladera', kind: 'walk', tol: 20, rad: 20, rec: 'rec-2026-03-14-b',
+      pts: [[520,290],[560,230],[520,170],[450,150]],
+      audio: { title: 'Ladera', desc: 'Voz grabada en el lugar sobre una base de frecuencias lentas.', kind: 'voz', file: true } },
+    { id: 'p3', obra: 'o2', name: 'Ribera norte', kind: 'walk', tol: 15, rad: 18, rec: 'rec-2026-04-02-a', skip: [6, 10],
+      pts: [[640,520],[720,480],[800,440],[880,420],[940,380]],
+      audio: { title: 'Murmullo de orilla', desc: 'Pendiente de mezcla final.', kind: 'ambient', file: false } },
+    { id: 'p4', obra: 'o3', name: 'Subida al mirador', kind: 'walk', tol: 25, rad: 22, rec: 'rec-2026-05-19-a',
+      pts: [[200,660],[290,630],[360,600],[430,590]],
+      audio: { title: 'Frecuencia del arroyo', desc: 'Sonido de agua filtrado en bandas que se abren con la altura.', kind: 'ambient', file: true } },
+    { id: 'p5', obra: 'o4', name: 'Ascenso al cráter', kind: 'walk', tol: 30, rad: 25, rec: 'rec-2026-06-07-a',
+      pts: [[930,260],[1000,220],[1070,170]],
+      audio: { title: 'Cráter', desc: 'Pieza en preparación.', kind: 'ambient', file: false } }],
+  portales: [
+    { id: 'po1', path: 'p1', name: 'Umbral',           r: 30, off: 0,    x: 250, y: 430, desc: 'Primer cruce. El sonido empieza solo al entrar en el radio.', audio: { title: 'Umbral', desc: 'Entrada con viento y una voz lejana.', kind: 'portal', file: true } },
+    { id: 'po2', path: 'p1', name: 'Cruce del arroyo', r: 25, off: 1200, x: 380, y: 360, desc: 'El registro grave entra 1,2 s después de pisar el agua.', audio: { title: 'Arroyo grave', desc: 'Frecuencias bajas sobre el agua.', kind: 'portal', file: true } },
+    { id: 'po3', path: 'p1', name: 'Claro',            r: 40, off: 0,    x: 520, y: 290, desc: 'Espacio abierto; el sonido se expande y se queda.', audio: { title: 'Claro', desc: 'Pendiente de mezcla final.', kind: 'portal', file: false } },
+    { id: 'po4', path: 'p2', name: 'Ladera',           r: 30, off: 800,  x: 560, y: 230, desc: 'Entra la voz sobre la base de frecuencias lentas.', audio: { title: 'Voz de ladera', desc: 'Voz grabada en el lugar.', kind: 'portal', file: true } },
+    { id: 'po5', path: 'p3', name: 'Orilla',           r: 30, off: 0,    x: 720, y: 480, desc: 'Entrada a la ribera.', audio: { title: 'Orilla', desc: 'Agua baja y viento.', kind: 'portal', file: false } },
+    { id: 'po6', path: 'p3', name: 'Sauce',            r: 28, off: 500,  x: 880, y: 420, desc: 'Bajo el sauce el sonido se vuelve íntimo.', audio: { title: 'Sauce', desc: 'Susurro cercano.', kind: 'portal', file: false } },
+    { id: 'po7', path: 'p4', name: 'Puente',           r: 30, off: 0,    x: 290, y: 630, desc: 'Inicio del filtrado por bandas.', audio: { title: 'Puente', desc: 'Pasos sobre madera.', kind: 'portal', file: true } },
+    { id: 'po8', path: 'p4', name: 'Mirador',          r: 45, off: 2000, x: 430, y: 590, desc: 'Apertura total de las bandas.', audio: { title: 'Mirador', desc: 'Cierre abierto con todo el espectro.', kind: 'portal', file: true } },
+    { id: 'po9', path: 'p5', name: 'Cráter',           r: 40, off: 0,    x: 1000,y: 220, desc: 'Punto más alto del recorrido.', audio: { title: 'Cráter', desc: 'En preparación.', kind: 'portal', file: false } }],
+  triggers: []
+};
+// triggers: círculos anónimos consecutivos que sólo marcan el camino
+D.paths.forEach(p => {
+  const out = [p.pts[0]]; let acc = 0;
+  for (let i = 0; i < p.pts.length - 1; i++) {
+    const a = p.pts[i], b = p.pts[i + 1], L = Math.hypot(b[0] - a[0], b[1] - a[1]); let t = STEP - acc;
+    while (t <= L) { out.push([a[0] + (b[0] - a[0]) * t / L, a[1] + (b[1] - a[1]) * t / L]); t += STEP; }
+    acc = L - (t - STEP);
+  }
+  const keep = out.filter((q, i) => !(p.skip && i >= p.skip[0] && i < p.skip[1]));
+  p.tr = keep.map((q, i) => ({ id: p.id + '-t' + (i + 1), path: p.id, pos: i + 1, x: Math.round(q[0] * 10) / 10, y: Math.round(q[1] * 10) / 10, r: p.rad }));
+  p.tr.forEach(t => D.triggers.push(t));
+  p.gaps = []; p.runs = [[[p.tr[0].x, p.tr[0].y]]];
+  for (let i = 0; i < p.tr.length - 1; i++) {
+    const a = p.tr[i], b = p.tr[i + 1], d = Math.hypot(a.x - b.x, a.y - b.y);
+    if (d > (a.r + b.r) / MPP) { p.gaps.push({ a: a, b: b, m: Math.round(d * MPP) }); p.runs.push([[b.x, b.y]]); }
+    else p.runs[p.runs.length - 1].push([b.x, b.y]);
+  }
+  p.portales = D.portales.filter(q => q.path === p.id).map(q => q.id);
+});
+const byId = (a, id) => a.find(x => x.id === id);
+const VIS = { publicada: 'var(--c-mint)', borrador: 'var(--c-ambar)', oculta: 'var(--ink-200)' };
+const VL = { publicada: 'Pública', borrador: 'Borrador', oculta: 'Oculta' };
+const pstr = a => a.map(p => p[0] + ',' + p[1]).join(' ');
+const ll = (x, y) => (-42.082 - y * 0.000013).toFixed(5) + ', ' + (-71.625 + x * 0.000017).toFixed(5);
+const pad2 = n => (n < 10 ? '0' : '') + n;
+const fms = n => '+' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' ms';
+const boundsOf = pts => {
+  let a = 1e9, b = 1e9, c = -1e9, d = -1e9;
+  pts.forEach(p => { a = Math.min(a, p[0]); b = Math.min(b, p[1]); c = Math.max(c, p[0]); d = Math.max(d, p[1]); });
+  return [a, b, c, d];
+};
+const vbOf = (pts, pad) => { const q = boundsOf(pts); return [q[0] - pad, q[1] - pad, q[2] - q[0] + 2 * pad, q[3] - q[1] + 2 * pad].join(' '); };
+
+const F = (k, val, o) => {
+  o = o || {};
+  return { k: k, v: val, go: o.go, isGo: !!o.go, isArt: !!o.art, plain: !(o.go || o.art), dot: !!o.dot,
+    dotStyle: o.dot ? 'background:' + o.dot : '', cls: o.mono ? 'mono' : '' };
+};
+
+function miniFor(obraIds, hlP, hlT, hlPo) {
+  const pts = [], polys = [], lines = [], circles = [], ports = [];
+  obraIds.forEach(oid => {
+    const o = byId(D.obras, oid);
+    o.poly.forEach(q => pts.push(q));
+    polys.push({ pts: pstr(o.poly), style: 'fill:rgba(244,241,247,.04);stroke:rgba(156,150,171,.7);stroke-width:1.25;stroke-dasharray:5 4;vector-effect:non-scaling-stroke' });
+    o.paths.forEach(pid => {
+      const p = byId(D.paths, pid), hl = hlP === pid;
+      lines.push({ pts: pstr(p.pts), style: 'fill:none;stroke:' + (hl ? 'var(--azure-soft)' : 'var(--c-azure)') + ';stroke-width:' + (hl ? 2.5 : 1.5) + ';stroke-linejoin:round;vector-effect:non-scaling-stroke' });
+      p.tr.forEach(t => { const s = hlT === t.id; circles.push({ cx: t.x, cy: t.y, r: t.r / MPP, style: 'fill:rgba(87,140,203,' + (s ? .45 : .1) + ');stroke:' + (s ? 'var(--text-primary)' : 'var(--c-azure)') + ';stroke-width:' + (s ? 2 : 1) + ';vector-effect:non-scaling-stroke' }); });
+      p.gaps.forEach(g => lines.push({ pts: pstr([[g.a.x, g.a.y], [g.b.x, g.b.y]]), style: 'fill:none;stroke:var(--c-ambar);stroke-width:2;stroke-dasharray:4 3;vector-effect:non-scaling-stroke' }));
+      p.portales.forEach(qid => { const q = byId(D.portales, qid), s = hlPo === qid; ports.push({ cx: q.x, cy: q.y, r: q.r / MPP, style: 'fill:rgba(138,226,200,' + (s ? .35 : .15) + ');stroke:' + (s ? 'var(--text-primary)' : 'var(--c-mint)') + ';stroke-width:' + (s ? 3 : 2) + ';vector-effect:non-scaling-stroke' }); });
+    });
+  });
+  return { vb: vbOf(pts, 40), polys: polys, lines: lines, circles: circles, ports: ports };
+}
+
+function ownerObra(sel) {
+  if (!sel) return null;
+  const sp = sel.split(':'), k = sp[0], id = sp[1];
+  if (k === 'obra') return id;
+  const pid = k === 'path' ? id : k === 'portal' ? byId(D.portales, id).path : k === 'trigger' ? byId(D.triggers, id).path : null;
+  return pid ? byId(D.paths, pid).obra : null;
+}
+
+// vista unificada: el MISMO objeto alimenta el panel del mapa y el detalle de la página Obras
+function buildView(key, go, o) {
+  o = o || {};
+  if (!key) return null;
+  const sp = key.split(':'), k = sp[0], id = sp[1];
+  const R = i => byId(D.recorridos, i), O = i => byId(D.obras, i), P = i => byId(D.paths, i), Po = i => byId(D.portales, i), A = i => byId(D.artistas, i);
+  const cr = (label, key2, last) => ({ label: label, go: go(key2), last: !!last });
+  const root = o.pageObras ? [cr('Obras', null)] : [];
+  const pad3 = n => (n < 10 ? '00' : n < 100 ? '0' : '') + n;
+  const sing = (n, a, b) => n + ' ' + (n === 1 ? a : b);
+  const portItem = q => ({ label: q.name, sub: 'radio ' + q.r + ' m · ' + fms(q.off) + ' · ' + (q.audio.file ? 'con archivo' : 'sin archivo todavía'), go: go('portal:' + q.id) });
+  const place = (p) => { const ob = O(p.obra); return { ob: ob, r: R(ob.rec) }; };
+  let v;
+  if (k === 'recorrido') {
+    const r = R(id), obras = r.obras.map(O);
+    const arts = [...new Set(obras.flatMap(x => x.art))].map(i => A(i).name);
+    const ps = obras.flatMap(x => x.paths).map(P);
+    v = { kind: 'Recorrido', title: r.name, sub: 'Créditos calculados: unión de los artistas de sus obras.',
+      crumbs: [cr(r.name, key, true)],
+      facts: [F('Obras', String(obras.length)), F('Paths', String(ps.length)), F('Portales', String(ps.reduce((n, p) => n + p.portales.length, 0))), F('Triggers', String(ps.reduce((n, p) => n + p.tr.length, 0))), F('Créditos', arts.join(' · '), { art: true })],
+      lists: [{ title: 'Obras', items: obras.map(x => ({ label: x.name, sub: VL[x.vis] + ' · ' + sing(x.paths.length, 'path', 'paths'), go: go('obra:' + x.id) })) }],
+      mini: o.mini ? miniFor(r.obras) : null };
+  } else if (k === 'obra') {
+    const ob = O(id), r = R(ob.rec), ps = ob.paths.map(P), pos = ps.flatMap(p => p.portales).map(Po);
+    v = { kind: 'Obra', title: ob.name, sub: r.name,
+      crumbs: root.concat(o.pageObras ? [] : [cr(r.name, 'recorrido:' + r.id)], [cr(ob.name, key, true)]),
+      facts: [F('Visibilidad', VL[ob.vis], { dot: VIS[ob.vis] }), F('Recorrido', r.name, { go: go('recorrido:' + r.id) }),
+        F('Artistas', ob.art.map(i => A(i).name).join(' · '), { art: true }),
+        F('Cobertura', 'Polígono · ' + ob.poly.length + ' vértices'), F('Paths', String(ps.length)), F('Portales', String(pos.length))],
+      lists: [{ title: 'Paths', items: ps.map(p => ({ label: p.name, sub: p.kind + ' · ' + sing(p.tr.length, 'trigger', 'triggers') + (p.gaps.length ? ' · ' + sing(p.gaps.length, 'hueco', 'huecos') : ''), go: go('path:' + p.id) })) },
+        { title: 'Portales', items: pos.map(portItem) }],
+      mini: o.mini ? miniFor([id]) : null };
+  } else if (k === 'path') {
+    const p = P(id), pl = place(p), ob = pl.ob, r = pl.r, pos = p.portales.map(Po);
+    const cells = [];
+    p.tr.forEach((t, i) => {
+      cells.push({ style: 'width:6px;height:20px;border-radius:2px;background:var(--c-azure)' });
+      const g = p.gaps.find(x => x.a === t); if (g) cells.push({ style: 'width:18px;height:20px;border-radius:2px;border:1px dashed var(--c-ambar);background:rgba(255,188,0,.12)' });
+    });
+    const gtxt = p.gaps.map(g => 'Hueco de ≈ ' + g.m + ' m entre el trigger ' + pad3(g.a.pos) + ' y el ' + pad3(g.b.pos)).join('. ');
+    v = { kind: 'Path', title: p.name, sub: ob.name + ' · ' + r.name,
+      crumbs: root.concat(o.pageObras ? [] : [cr(r.name, 'recorrido:' + r.id)], [cr(ob.name, 'obra:' + ob.id), cr(p.name, key, true)]),
+      back: { label: ob.name, go: go('obra:' + ob.id) },
+      facts: [F('Obra', ob.name, { go: go('obra:' + ob.id) }), F('kind', p.kind, { mono: true }), F('tolerance_meters', p.tol + ' m', { mono: true }),
+        F('Grabación de origen', p.rec, { mono: true }),
+        F('Triggers', p.tr.length + ' · radio ' + p.rad + ' m · cada ≈ ' + Math.round(STEP * MPP) + ' m'),
+        F('Huecos', p.gaps.length ? sing(p.gaps.length, 'hueco', 'huecos') : 'Ninguno', { dot: p.gaps.length ? 'var(--c-ambar)' : 'var(--c-mint)' }),
+        F('Portales', String(pos.length))],
+      audioLabel: 'Audio del path', audio: p.audio, cells: cells, stripNote: p.gaps.length ? gtxt + '.' : 'Los triggers se solapan de punta a punta: el path no tiene huecos.',
+      lists: [{ title: 'Portales · por posición', items: pos.map(portItem) }],
+      tableTitle: 'Portales · con sonido propio',
+      table: pos.map((q, i) => ({ pos: pad2(i + 1), name: q.name, r: q.r + ' m', off: fms(q.off), ll: ll(q.x, q.y), go: go('portal:' + q.id) })),
+      mini: o.mini ? miniFor([ob.id], id) : null };
+  } else if (k === 'portal') {
+    const q = Po(id), p = P(q.path), pl = place(p), ob = pl.ob, r = pl.r, sib = p.portales.filter(x => x !== id).map(Po);
+    v = { kind: 'Portal', title: q.name, sub: p.name + ' · ' + ob.name, desc: q.desc, descLabel: 'Descripción',
+      crumbs: root.concat(o.pageObras ? [] : [cr(r.name, 'recorrido:' + r.id)], [cr(ob.name, 'obra:' + ob.id), cr(p.name, 'path:' + p.id), cr(q.name, key, true)]),
+      back: { label: p.name, go: go('path:' + p.id) },
+      facts: [F('Path', p.name, { go: go('path:' + p.id) }), F('Posición', ll(q.x, q.y), { mono: true }), F('Radio', q.r + ' m'),
+        F('Offset', fms(q.off), { mono: true }), F('Orden', (p.portales.indexOf(id) + 1) + ' de ' + p.portales.length + ' en el path')],
+      audioLabel: 'Audio del portal', audio: q.audio, lists: sib.length ? [{ title: 'Otros portales del path', items: sib.map(portItem) }] : [],
+      mini: o.mini ? miniFor([ob.id], p.id, null, id) : null };
+  } else {
+    const t = byId(D.triggers, id), p = P(t.path), pl = place(p), ob = pl.ob, r = pl.r, i = t.pos - 1, nb = [];
+    if (p.tr[i - 1]) nb.push({ label: 'Anterior · trigger ' + pad3(i), sub: 'a ' + Math.round(Math.hypot(t.x - p.tr[i - 1].x, t.y - p.tr[i - 1].y) * MPP) + ' m', go: go('trigger:' + p.tr[i - 1].id) });
+    if (p.tr[i + 1]) nb.push({ label: 'Siguiente · trigger ' + pad3(i + 2), sub: 'a ' + Math.round(Math.hypot(t.x - p.tr[i + 1].x, t.y - p.tr[i + 1].y) * MPP) + ' m', go: go('trigger:' + p.tr[i + 1].id) });
+    v = { kind: 'Trigger', title: 'Trigger ' + pad3(t.pos), sub: p.name + ' · ' + ob.name,
+      desc: 'Los triggers sólo marcan el camino: no tienen nombre ni sonido propio. El sonido del path suena mientras el celular esté dentro de alguno.', descLabel: 'Nota',
+      crumbs: root.concat(o.pageObras ? [] : [cr(r.name, 'recorrido:' + r.id)], [cr(ob.name, 'obra:' + ob.id), cr(p.name, 'path:' + p.id), cr('Trigger ' + pad3(t.pos), key, true)]),
+      back: { label: p.name, go: go('path:' + p.id) },
+      facts: [F('Path', p.name, { go: go('path:' + p.id) }), F('Posición', ll(t.x, t.y), { mono: true }), F('Radio', t.r + ' m'), F('Orden', t.pos + ' de ' + p.tr.length)],
+      lists: nb.length ? [{ title: 'Vecinos en el path', items: nb }] : [],
+      mini: o.mini ? miniFor([ob.id], p.id, id) : null };
+  }
+  v.crumbs = v.crumbs.map((c, i) => Object.assign({}, c, { sep: i > 0 }));
+  if (!v.descLabel) v.descLabel = 'Descripción';
+  if (v.audio) {
+    v.audio = Object.assign({}, v.audio, { has: v.audio.file, none: !v.audio.file });
+    v.bars = [];
+    for (let i = 0; i < 56; i++) { const h = 6 + Math.abs(Math.sin(i * 0.7) + Math.sin(i * 0.23 + 1)) * 13; v.bars.push({ style: 'height:' + h.toFixed(0) + 'px;background:' + (i < 18 ? 'var(--c-mint)' : 'var(--ink-300)') }); }
+  }
+  v.hasBack = !!v.back; v.hasAudio = !!v.audio; v.hasMini = !!v.mini; v.hasTable = !!v.table; v.hasDesc = !!v.desc; v.hasStrip = !!v.cells;
+  v.showLists = !v.table && v.lists.length > 0;
+  return v;
+}
+
+// estado de sync (header, visible en todas las pantallas)
+function syncVals(c, P) {
+  const st = c.state || {};
+  const err = P.syncError === undefined ? false : !!P.syncError;
+  const open = 'syncOpen' in st ? st.syncOpen : !!P.syncOpen;
+  const base = err
+    ? { pill: 'Error de pull · datos de hace 30 min', cursor: 'cursor 48213', dot: 'var(--c-ambar)',
+        rows: [{ k: 'Último pull OK', v: 'hoy 14:02:41 · hace 30 min' }, { k: 'Cursor', v: '48213 (no avanzó)', mono: true }, { k: 'Estado', v: 'Pull incompleto: se muestran los datos del último pull completo.' }],
+        errors: [{ t: '14:32:08', m: 'GET /sync/pull?cursor=48213 → 503 Service Unavailable (página 3)' }, { t: '14:31:38', m: 'GET /sync/pull?cursor=48213 → 503 (reintento 1 de 3)' }],
+        note: 'Próximo reintento automático en 30 s.' }
+    : { pill: 'Sync al día · pull hace 2 min', cursor: 'cursor 48213', dot: 'var(--c-mint)',
+        rows: [{ k: 'Último pull', v: 'hoy 14:32:08 · hace 2 min' }, { k: 'Cursor', v: '48213', mono: true }, { k: 'Filas leídas', v: '612 · 37 con deleted_at descartadas' }, { k: 'Estado', v: 'Sin errores' }],
+        errors: [], note: 'Sólo lectura · requiere conexión.' };
+  return { syncOpen: open, toggleSync: () => c.setState({ syncOpen: !open }), syncPill: base.pill, syncCursor: base.cursor,
+    syncDotStyle: 'background:' + base.dot, syncRows: base.rows.map(r => Object.assign({ cls: r.mono ? 'mono' : '' }, r)),
+    syncErrors: base.errors, hasSyncErr: err, syncNote: base.note };
+}
+
+
+class Component extends DCLogic {
+  g(k, d) { const s = this.state || {}; return k in s ? s[k] : d; }
+  renderVals() {
+    const self = this, P = this.props;
+    const sel = this.g('sel', 'obra:o1'), fr = this.g('fr', 'all'), fv = this.g('fv', 'all');
+    const go = key => () => self.setState({ sel: key });
+    const v = buildView(sel, go, { mini: true, pageObras: true });
+    if (v) v.crumbs.forEach(c => { c.notLast = !c.last; });
+    const curO = ownerObra(sel);
+    const list = D.obras.filter(o => (fr === 'all' || o.rec === fr) && (fv === 'all' || o.vis === fv));
+    return Object.assign({
+      v: v, hasSel: !!v, noSel: !v, fr: fr, fv: fv,
+      recOptions: [{ value: 'all', label: 'Todos' }].concat(D.recorridos.map(r => ({ value: r.id, label: r.name }))),
+      visOptions: [{ value: 'all', label: 'Todas' }, { value: 'publicada', label: 'Pública' }, { value: 'borrador', label: 'Borrador' }, { value: 'oculta', label: 'Oculta' }],
+      onFr: e => self.setState({ fr: e.target.value }), onFv: e => self.setState({ fv: e.target.value }),
+      countText: list.length + (list.length === 1 ? ' obra' : ' obras'), noRows: list.length === 0,
+      rows: list.map(o => ({ name: o.name, cls: 'ent' + (o.id === curO ? ' on' : ''), pick: go('obra:' + o.id),
+        sub: byId(D.recorridos, o.rec).name + ' · ' + o.art.map(i => byId(D.artistas, i).name).join(', '),
+        vis: VL[o.vis], dot: 'background:' + VIS[o.vis] }))
+    }, syncVals(this, P));
+  }
+}
+
+</script>
+</body>
+</html>
