@@ -4,6 +4,9 @@ import { plural } from '../app/format.js';
 import { useQuery, setParams } from '../app/router.jsx';
 import { buildView } from '../panel/buildView.js';
 import SidePanel from '../panel/SidePanel.jsx';
+import MapView from '../map/MapView.jsx';
+
+const CAPAS = { cobertura: true, paths: true, portales: true };
 
 // Contenido del área del mapa. El lienzo Leaflet lo agrega 12-07 alrededor de esta leyenda y de
 // estos estados (E1).
@@ -63,8 +66,7 @@ export default function MapPage() {
   const select = (s) => {
     setFold(null);
     setParams({ sel: s });
-  };
-  // 12-08 devuelve acá el foco al marcador del mapa que abrió el panel.
+  };  // 12-08 devuelve acá el foco al marcador del mapa que abrió el panel.
   const close = () => {
     setFold(null);
     setParams({ sel: null, x: null });
@@ -82,6 +84,7 @@ export default function MapPage() {
         onClose={close}
       />
       <div className="mapwrap">
+        <MapView model={model} obras={model.obras} capas={CAPAS} sel={sel} fitKey={ready ? 'all' : null} fitTarget={null} onSelect={select} />
         <MapArea counts={model.counts} />
       </div>
     </div>

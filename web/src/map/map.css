@@ -1,0 +1,27 @@
+/* Mapa (UI-SPEC "Mapa general"). `.mapwrap` (panel.css) es flex:1; min-width:0: el ancho lo manda el panel
+   y MapView llama invalidateSize con un ResizeObserver. */
+.mapbox { position: absolute; inset: 0; }
+/* z-index:0 aísla los z-index internos de Leaflet (hasta 1000): mapbar, leyenda y velos van por encima. */
+.mapview { position: absolute; inset: 0; z-index: 0; background: var(--surface-sunken); font: inherit; }
+.mapview.leaflet-container { background: var(--surface-sunken); font: inherit; }
+
+/* Tiles OSM oscurecidos sólo por CSS [DEFAULT, OI-07]: no cambia las peticiones. */
+.mapview .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.8) contrast(.9); }
+
+/* Atribución abajo a la derecha; el zoom se sube para que no la tape. */
+.attr {
+  position: absolute; right: var(--sp-4); bottom: var(--sp-4); z-index: 2;
+  font-size: var(--fs-xs); color: var(--text-secondary); text-align: right; text-decoration: none;
+}
+.attr:hover { color: var(--text-primary); text-decoration: underline; }
+.mapview .leaflet-bottom.leaflet-right { bottom: 44px; }
+.mapview.leaflet-container .leaflet-bar a {
+  width: var(--touch-min); height: var(--touch-min); line-height: var(--touch-min);
+  background: var(--surface-veil); color: var(--text-primary); border-color: var(--border-hairline);
+}
+.mapview.leaflet-container .leaflet-bar a:hover { background: var(--surface-raised); }
+
+/* Velo, leyenda y barra por encima del mapa (el mapa queda en z-index 0). */
+.mapwrap .mapstate, .mapwrap .legend, .mapwrap .mapbar { z-index: 3; }
+/* La leyenda no tapa la atribución ni el zoom: se corta antes y no envuelve. */
+.mapwrap .legend { max-width: calc(100% - 260px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
