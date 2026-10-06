@@ -45,6 +45,15 @@ h1, h2, h3, h4 {
 .sp { flex: 1; }
 .shell-main { height: calc(100vh - 56px); overflow: hidden; position: relative; }
 
+/* Pill de sync (44 px, D-13) */
+.pill {
+  display: flex; align-items: center; gap: var(--sp-3); min-height: var(--touch-min); padding: 0 var(--sp-4);
+  border-radius: var(--r-pill); background: transparent; border: 1px solid var(--border-strong);
+  font-size: var(--fs-sm); cursor: pointer; transition: var(--transition-ui);
+}
+.pill:hover { border-color: rgba(244, 241, 247, .5); background: rgba(244, 241, 247, .04); }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex: none; }
+
 /* Botones */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);

@@ -1,7 +1,9 @@
 import { clearKey } from './session.js';
 import { navigate } from './router.jsx';
+import SyncPill from './SyncPill.jsx';
+import { resetStore } from '../data/store.js';
 
-// La SyncPill la monta 12-02 y la nav Mapa/Obras/Artistas la monta 12-09.
+// La nav Mapa/Obras/Artistas la monta 12-09.
 export default function Shell({ children }) {
   return (
     <div className="app">
@@ -11,11 +13,13 @@ export default function Shell({ children }) {
           <span className="lbl">Web de lectura</span>
         </div>
         <div className="sp" />
+        <SyncPill />
         <button
           type="button"
           className="quiet"
           onClick={() => {
             clearKey();
+            resetStore();
             navigate('/acceso');
           }}
         >

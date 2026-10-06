@@ -3,6 +3,10 @@ import { test, expect } from '@playwright/test';
 // Red mockeada: ninguna request sale a un servidor real.
 const GOOD = 'clave-buena';
 async function mockState(page, { abort = false } = {}) {
+  // Tras entrar, el shell lee el servidor: pull vacío para que ninguna request salga a la red real.
+  await page.route('**/sync/pull**', (route) =>
+    route.fulfill({ json: { changes: [], nextCursor: '0', hasMore: false } }),
+  );
   await page.route('**/sync/state', (route) => {
     if (abort) return route.abort();
     const auth = route.request().headers()['authorization'];
