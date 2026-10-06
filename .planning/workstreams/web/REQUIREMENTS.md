@@ -28,7 +28,7 @@
 ### Acceso (BE-03)
 
 - [x] **AUTH-01**: El backend acepta `WEB_API_KEY` además de `SYNC_API_KEY`, cada una revocable por separado; si una variable falta, esa clave no da acceso (nunca abre) (BE-03, ADR-007)
-- [ ] **AUTH-02**: El usuario ingresa `WEB_API_KEY` una vez en una pantalla de acceso; ninguna clave va dentro del bundle de la web
+- [x] **AUTH-02**: El usuario ingresa `WEB_API_KEY` una vez en una pantalla de acceso; ninguna clave va dentro del bundle de la web
 
 ### Infraestructura
 
@@ -85,7 +85,7 @@
 | INFRA-01 | Phase 11 | Complete |
 | INFRA-02 | Phase 11 | Complete |
 | INFRA-03 | Phase 11 | Complete |
-| AUTH-02 | Phase 12 | Pending |
+| AUTH-02 | Phase 12 | Complete |
 | WEB-01 | Phase 12 | Pending |
 | WEB-02 | Phase 12 | Pending |
 | WEB-03 | Phase 12 | Pending |

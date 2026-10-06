@@ -1,17 +1,20 @@
 ---
-gsd_state_version: 1.0
+gsd_state_version: "1.0"
 milestone: v1.0
-milestone_name: milestone
-current_plan: Not started
+milestone_name: (Web de gestión, lectura)
+current_phase: 12
+current_plan: 12-02
 status: executing
-stopped_at: Phase 12 context gathered
-last_updated: "2026-09-30T04:08:19.980Z"
-last_activity: 2026-09-29
+stopped_at: Completed 12-01-PLAN.md
+last_updated: "2026-10-06T22:47:51.889Z"
+last_activity: 2026-10-06
+state_head: b4df18a2d9f69370f4b4cdfeec588538113b7e04
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 9
-  completed_plans: 9
+  total_plans: 19
+  completed_plans: 10
+  percent: 50
 ---
 
 # Project State
@@ -19,15 +22,15 @@ progress:
 ## Current Position
 
 Milestone: v1.0 Web de gestión (lectura)
-Phase: 12
-Plan: 4 of 5
-Status: Executing Phase 11
-Last activity: 2026-09-29
+Phase: 12 (Web de lectura)
+Plan: 1 of 10 complete (12-01 hecho; siguiente 12-02)
+Status: Executing Phase 12
+Last activity: 2026-10-06 — 12-01 completo (SPA + Acceso AUTH-02, entrega validada en Preview: SMOKE OK)
 
 ## Progress
 
-**Phases Complete:** 1/4
-**Current Plan:** Not started
+**Phases Complete:** 2/4
+**Current Plan:** 12-02
 
 ## Accumulated Context
 
@@ -47,5 +50,18 @@ Last activity: 2026-09-29
 
 ## Session Continuity
 
-**Stopped At:** Phase 12 context gathered
-**Resume File:** .planning/workstreams/web/phases/12-web-de-lectura/12-CONTEXT.md
+**Last session:** 2026-10-06T22:47:49.927Z
+
+**Stopped At:** Completed 12-01-PLAN.md
+**Resume File:** None
+
+## Performance Metrics
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 12 P01 | 45min | 3 tasks | 23 files |
+
+## Decisions
+
+- [Phase 12]: 12-01 ADR: SPA Vite en web/ servida desde el mismo proyecto Vercel que web/api/ (vercel.json: /sync primero, fallback SPA con exclusiones api/ sync/ assets/, headers de seguridad); A1 y A2 validadas en Preview real
+- [Phase 12]: 12-01: todas las dependencias del SPA como devDependencies con versión exacta; la clave de acceso sólo en sessionStorage
