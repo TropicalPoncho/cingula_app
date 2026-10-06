@@ -6,10 +6,10 @@ current_phase: 12
 current_phase_name: Web de lectura
 current_plan: 12-03
 status: executing
-stopped_at: Completed 12-02-PLAN.md
-last_updated: "2026-10-06T23:13:35.468Z"
+stopped_at: "Completed 12-04 and 12-05 (wave 3); 12-03 waiting on user action (Production WEB_API_KEY + measurement)"
+last_updated: "2026-10-06T23:45:00.000Z"
 last_activity: 2026-10-06
-last_activity_desc: "12-02 completo (pull todo-o-nada + store + modelo derivado + pill de lectura + leyenda del home)"
+last_activity_desc: "12-04 (sync honesto) y 12-05 (panel lateral) completos; 12-03 espera la medición del usuario"
 state_head: 39a4ecb1e32b626bdeca5ed5aed7c5ccea6e1a71
 progress:
   total_phases: 4
