@@ -39,11 +39,11 @@
 ### Web de lectura
 
 - [ ] **WEB-01**: El usuario ve un mapa general con la cobertura de cada obra, sus paths y sus triggers (círculos de `radius_meters`), puede filtrar por recorrido y navegar desde el mapa al detalle
-- [ ] **WEB-02**: El usuario ve el listado y detalle de recorridos, con sus obras y sus créditos (unión de los artistas de sus obras, calculada)
+- [ ] **WEB-02**: El usuario ve el detalle de un recorrido, con sus obras y sus créditos (unión de los artistas de sus obras, calculada), dentro del panel lateral del mapa (sin página propia, D-10); seleccionar el recorrido en el filtro del mapa lo abre
 - [ ] **WEB-03**: El usuario ve el listado y detalle de artistas, con las obras en las que figuran
 - [ ] **WEB-04**: El usuario ve el listado de obras (filtrable por recorrido y visibilidad) y su detalle: visibilidad, recorrido, artistas, cobertura y paths
 - [ ] **WEB-05**: El usuario ve el detalle de un path: `kind`, audio que suena, grabación de origen, `tolerance_meters`, y sus triggers en un mapa y en una lista ordenada por `position` (posición, radio, `offset_ms`; los triggers NO tienen nombre — el nombre es del path, también el de los paths `kind=portal`)
-- [ ] **WEB-06**: El usuario ve el listado de audios con su metadata (título, descripción, `kind`) y en qué paths se usa cada uno
+- [ ] **WEB-06**: El usuario ve la metadata del audio (título, descripción, `kind`) inline en el detalle del path o portal que lo usa, sin listado propio de audios (D-11)
 - [ ] **WEB-07**: El usuario ve el estado de sync de la web: cursor, momento del último pull y errores explícitos (mismo criterio de "estado honesto" que el celular)
 - [ ] **WEB-08**: Ninguna vista muestra filas con `deleted_at`
 
