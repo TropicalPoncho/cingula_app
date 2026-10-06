@@ -96,3 +96,15 @@ test('< 900 px el panel es una hoja inferior de 55 % [asunción OI-05]', async (
   expect(box.height).toBeCloseTo(700 * 0.55, 0);
   expect(box.y + box.height).toBeCloseTo(700, 0);
 });
+
+test('WEB-06: el path de la obra B muestra "Sin archivo todavía" y el portal de la obra A "Archivo en el servidor"', async ({ page }) => {
+  await page.goto(`/?sel=path:${ID.pathB}&x=1`);
+  const p = panel(page);
+  await expect(p.getByText('Audio del path')).toBeVisible();
+  await expect(p.getByText('Audio sin archivo')).toBeVisible();
+  await expect(p.getByText('Sin archivo todavía')).toBeVisible();
+  await page.goto(`/?sel=portal:${ID.portalA}&x=1`);
+  await expect(p.getByText('Audio del portal')).toBeVisible();
+  await expect(p.getByText('Archivo en el servidor')).toBeVisible();
+  await expect(p.locator('.card button')).toHaveCount(0);
+});

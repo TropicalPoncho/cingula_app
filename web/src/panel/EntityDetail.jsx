@@ -1,5 +1,6 @@
 import { ArrowLeft, Maximize2 } from 'lucide-react';
 import { A } from '../app/router.jsx';
+import AudioCard from './AudioCard.jsx';
 
 const COMPACT_ROWS = 4;
 
@@ -78,8 +79,10 @@ export default function EntityDetail({ view, expanded, onSelect, onExpand }) {
           <div>
             <Facts facts={view.facts} onSelect={onSelect} />
             {view.description && <p className="desc">{view.description}</p>}
+            {view.type === 'portal' && <AudioCard audio={view.audio} />}
           </div>
           <div>
+            {view.type === 'path' && <AudioCard audio={view.audio} />}
             <Lists lists={view.lists} onSelect={onSelect} onExpand={onExpand} />
           </div>
         </div>

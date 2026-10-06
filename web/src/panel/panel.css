@@ -96,3 +96,18 @@ a.lnk { text-decoration: none; }
   .panel.rail .vt { writing-mode: horizontal-tb; transform: none; max-height: none; max-width: 420px; }
   .dgrid { grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); }
 }
+
+/* Tarjeta de audio (E6): 3 estados. El slot del reproductor queda vacío hasta la Fase 13 (R7). */
+.card { padding: var(--sp-5); border-radius: var(--r-lg); background: var(--surface-raised); border: 1px solid var(--border-hairline); margin: 0 0 var(--sp-5); }
+.cardt { margin: var(--sp-2) 0; font-size: var(--fs-md); font-weight: var(--fw-regular); overflow-wrap: anywhere; }
+.cardd { margin: 0 0 var(--sp-2); color: var(--text-secondary); overflow-wrap: anywhere; }
+.cardm { margin: 0 0 var(--sp-4); color: var(--text-secondary); }
+.cardnone { margin: var(--sp-2) 0 0; }
+.cardfile { display: flex; align-items: center; gap: var(--sp-2); margin: 0; }
+.player-slot { height: 40px; margin-top: var(--sp-4); }
+.empty {
+  display: flex; gap: var(--sp-3); align-items: flex-start; padding: var(--sp-4); border-radius: var(--r-md);
+  border: 1px dashed rgba(255, 188, 0, .55); background: rgba(255, 188, 0, .06);
+}
+.emptyt { display: block; color: var(--c-ambar); font-weight: var(--fw-regular); }
+.emptyd { margin: var(--sp-1) 0 0; color: var(--text-secondary); overflow-wrap: anywhere; }
