@@ -4,12 +4,12 @@ milestone: v1.0
 milestone_name: (Web de gestión, lectura)
 current_phase: 12
 current_phase_name: Web de lectura
-current_plan: 12-09
+current_plan: 12-10
 status: executing
-stopped_at: "Completed 12-08 (wave 5); next wave 6 (12-09)"
-last_updated: "2026-10-08T01:00:00.000Z"
+stopped_at: "Completed 12-09 (wave 6); next wave 7 (12-10: e2e, ponytail audit, Preview UAT, merge)"
+last_updated: "2026-10-08T03:00:00.000Z"
 last_activity: 2026-10-06
-last_activity_desc: "12-08 completo: modo Circulos y teclado; sigue 12-09"
+last_activity_desc: "12-09 completo: Obras y Artistas; falta 12-10"
 state_head: 39a4ecb1e32b626bdeca5ed5aed7c5ccea6e1a71
 progress:
   total_phases: 4
