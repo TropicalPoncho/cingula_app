@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useModel, useStore, load } from '../data/store.js';
 import { plural } from '../app/format.js';
 import { useQuery, setParams } from '../app/router.jsx';
@@ -54,6 +54,9 @@ export default function MapPage() {
   const expanded = q.get('x') === '1';
   const [capas, setCapas] = useState({ cobertura: true, paths: true, portales: true });
   const [fitTarget, setFitTarget] = useState(null);
+  const modo = q.get('modo') === 'circ' ? 'circ' : 'corr'; // D-17: ausente = corredor; no entra en fitKey (D-02)
+  // Último elemento del mapa (obra, path, portal, trigger) que tuvo el foco: Esc/cerrar le devuelve el foco (R9).
+  const lastMapEl = useRef(null);
   // Plegado = el `sel` que estaba abierto al plegar: elegir otro elemento lo despliega solo, sin efectos.
   const [fold, setFold] = useState(null);
   const collapsed = fold !== null && fold === sel;
@@ -88,10 +91,14 @@ export default function MapPage() {
     select(s);
     setFitTarget({ sel: s });
   };
-  // 12-08 devuelve acá el foco al marcador del mapa que abrió el panel.
+  // Se recuerda el foco de capas del mapa (no los controles de zoom); al cerrar vuelve ahí si el nodo sigue en el DOM.
+  const rememberFocus = (e) => {
+    if (e.target.closest?.('.mapview .leaflet-interactive')) lastMapEl.current = e.target;
+  };
   const close = () => {
     setFold(null);
     setParams({ sel: null, x: null });
+    if (lastMapEl.current?.isConnected) lastMapEl.current.focus();
   };
   // D-04 + D-10 en una sola interacción: elegir un recorrido filtra y abre su panel; Todos / Sin recorrido
   // quitan el filtro y cierran el panel si era el de un recorrido.
@@ -116,14 +123,14 @@ export default function MapPage() {
         onCollapse={(on) => setFold(on ? sel : null)}
         onClose={close}
       />
-      <div className="mapwrap">
+      <div className="mapwrap" onFocus={rememberFocus}>
         <MapView
-          model={model} obras={obras} capas={capas} sel={sel}
+          model={model} obras={obras} capas={capas} modo={modo} sel={sel}
           fitKey={ready ? `rec:${recVal}` : null} fitTarget={fitTarget} onSelect={select}
         />
         <MapBar
           recorridos={model.recorridos} rec={recVal} hasSinRecorrido={hasSinRecorrido}
-          capas={capas} onRec={onRec} onCapas={setCapas} disabled={!ready}
+          capas={capas} modo={modo} onRec={onRec} onCapas={setCapas} onModo={(m) => setParams({ modo: m === 'circ' ? 'circ' : null })} disabled={!ready}
         />
         <MapOverlay counts={counts} total={model.counts.obras} />
       </div>

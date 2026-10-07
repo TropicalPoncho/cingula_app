@@ -1,9 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import L from 'leaflet';
 import { emptyTables, applyRows, buildModel } from '../data/model.js';
 import { corridorPx } from '../data/geometry.js';
 import { makeRows, ID, HTML_NAME } from '../test/fixtures.js';
-import { buildLayers, styleFor, applySelection, coverBounds, targetBounds } from './layers.js';
+import {
+  buildLayers, styleFor, applySelection, coverBounds, targetBounds, syncCircles, clearCircles, CIRCLES_MIN_ZOOM, CIRCLES_MAX,
+} from './layers.js';
 
 // Modelo de las fixtures; `tweak` edita las filas antes de armarlo (p. ej. darle cobertura a la obra C).
 function modelOf(tweak) {
@@ -172,6 +174,128 @@ describe('applySelection', () => {
     expect(circle.options.weight).toBe(2.5);
     expect(dot.getRadius()).toBe(3.5);
     expect(rectOf(ID.obA).options.weight).toBe(1.25);
+  });
+});
+
+describe('modo Círculos (R6, R9)', () => {
+  const m = modelOf();
+  const trig = (i) => m.byId.trigger.get(ID.trA(i));
+  // Bounds con altura (los triggers de A están sobre una misma latitud) que cubren los triggers 0..15.
+  const half = L.latLngBounds([trig(0).latitude - 0.001, trig(0).longitude], [trig(0).latitude + 0.001, trig(15).longitude]);
+  const everything = L.latLngBounds([-43, -72], [-41, -71]);
+  const fresh = (onSelect = noop, obras = m.obras) => {
+    const b = buildLayers(L, m, { obras, onSelect });
+    const sync = (o) => syncCircles(b.circles, { L, paths: b.paths, bounds: everything, ...o });
+    return { b, sync, byUuid: b.circles.byUuid };
+  };
+
+  it('valores medidos en 12-03', () => {
+    expect(CIRCLES_MIN_ZOOM).toBe(16);
+    expect(CIRCLES_MAX).toBe(600);
+  });
+
+  it('con bounds sobre la mitad del path agrega sólo los de adentro (ampliados 20 %) y círculos en metros', () => {
+    const { b, sync, byUuid } = fresh(noop, [obra(m, ID.obA)]);
+    const { added } = sync({ bounds: half, sel: null });
+    const padded = half.pad(0.2);
+    expect(added).toContain(ID.trA(0));
+    expect(added).not.toContain(ID.trA(31));
+    expect(added.length).toBeGreaterThan(10);
+    expect(added.length).toBeLessThan(32);
+    for (const u of added) expect(padded.contains([m.byId.trigger.get(u).latitude, m.byId.trigger.get(u).longitude])).toBe(true);
+    expect(byUuid.get(ID.trA(0)).getRadius()).toBe(12);
+    expect(b.circles.group.getLayers()).toHaveLength(added.length);
+  });
+
+  it('nunca quita el seleccionado ni el enfocado aunque salgan de los bounds', () => {
+    const { sync, byUuid } = fresh(noop, [obra(m, ID.obA)]);
+    sync({ sel: null }); // los 32
+    expect(byUuid.size).toBe(32);
+    const { removed } = sync({ bounds: half, sel: `trigger:${ID.trA(31)}`, focusedUuid: ID.trA(30) });
+    expect(removed).not.toContain(ID.trA(31));
+    expect(removed).not.toContain(ID.trA(30));
+    expect(removed).toContain(ID.trA(29));
+    expect(byUuid.has(ID.trA(31))).toBe(true);
+    expect(byUuid.has(ID.trA(30))).toBe(true);
+    expect(byUuid.get(ID.trA(31)).options.weight).toBe(2.5); // sólo setStyle: la selección no reconstruye
+    expect(byUuid.get(ID.trA(31)).getRadius()).toBe(12);
+  });
+
+  it('más visibles que el tope: sólo los del path resaltado o seleccionado (T-12-29)', () => {
+    const { sync, byUuid } = fresh();
+    sync({ max: 10, sel: `path:${ID.pathB}` });
+    expect([...byUuid.keys()].sort()).toEqual([ID.trB(0), ID.trB(1), ID.trB(2)]);
+    sync({ max: 10, sel: `trigger:${ID.trA(3)}` });
+    expect(byUuid.size).toBe(32);
+    expect([...byUuid.keys()].every((u) => u.startsWith('trg-A-'))).toBe(true);
+    sync({ max: 10, sel: null }); // nada resaltado: ninguno
+    expect(byUuid.size).toBe(0);
+  });
+
+  it('roving tabindex: un tab stop por path (el seleccionado o el primero), role=button y aria-label', () => {
+    const { sync, byUuid } = fresh();
+    sync({ sel: null });
+    const tabs = (prefix) => [...byUuid].filter(([u]) => u.startsWith(prefix)).map(([u, c]) => [u, c.options.cgTab]);
+    expect(tabs('trg-A-').filter(([, t]) => t === 0)).toEqual([[ID.trA(0), 0]]);
+    expect(tabs('trg-B-').filter(([, t]) => t === 0)).toEqual([[ID.trB(0), 0]]);
+    sync({ sel: `trigger:${ID.trA(5)}` });
+    expect(tabs('trg-A-').filter(([, t]) => t === 0)).toEqual([[ID.trA(5), 0]]);
+    expect(tabs('trg-A-').filter(([, t]) => t === -1)).toHaveLength(31);
+    expect(tabs('trg-B-').filter(([, t]) => t === 0)).toHaveLength(1);
+
+    const c = byUuid.get(ID.trA(5));
+    const el = document.createElement('div'); // jsdom no trae renderer SVG: nodo simulado
+    c.getElement = () => el;
+    c.fire('add');
+    expect(el.getAttribute('role')).toBe('button');
+    expect(el.getAttribute('aria-label')).toBe('Trigger 6 de 32, radio 12 m');
+    expect(el.getAttribute('tabindex')).toBe('0');
+  });
+
+  it('flechas: derecha/abajo = siguiente, izquierda/arriba = anterior; en los extremos nada; Enter selecciona', () => {
+    const picks = [];
+    const { b, sync, byUuid } = fresh((s) => picks.push(s));
+    sync({ sel: null });
+    const key = (u, k) => {
+      const preventDefault = vi.fn();
+      byUuid.get(u).fire('keydown', { originalEvent: { key: k, preventDefault } });
+      return preventDefault;
+    };
+    expect(key(ID.trA(5), 'ArrowRight')).toHaveBeenCalled();
+    expect(picks.at(-1)).toBe(`trigger:${ID.trA(6)}`);
+    expect(b.circles.pendingFocus).toBe(ID.trA(6));
+    key(ID.trA(5), 'ArrowDown');
+    expect(picks.at(-1)).toBe(`trigger:${ID.trA(6)}`);
+    key(ID.trA(5), 'ArrowLeft');
+    expect(picks.at(-1)).toBe(`trigger:${ID.trA(4)}`);
+    key(ID.trA(5), 'ArrowUp');
+    expect(picks.at(-1)).toBe(`trigger:${ID.trA(4)}`);
+    const n = picks.length;
+    key(ID.trA(0), 'ArrowLeft');
+    key(ID.trA(31), 'ArrowRight');
+    key(ID.trA(5), 'a');
+    expect(picks).toHaveLength(n);
+    key(ID.trA(5), 'Enter');
+    expect(picks.at(-1)).toBe(`trigger:${ID.trA(5)}`);
+  });
+
+  it('el siguiente sync enfoca el trigger pendiente y lo limpia', () => {
+    const { b, sync, byUuid } = fresh();
+    sync({ sel: null });
+    const focus = vi.fn();
+    byUuid.get(ID.trA(6)).getElement = () => ({ setAttribute() {}, focus });
+    b.circles.pendingFocus = ID.trA(6);
+    sync({ sel: `trigger:${ID.trA(6)}` });
+    expect(focus).toHaveBeenCalledTimes(1);
+    expect(b.circles.pendingFocus).toBeNull();
+  });
+
+  it('fuera de modo/zoom se limpia todo', () => {
+    const { b, sync, byUuid } = fresh();
+    sync({ sel: null });
+    clearCircles(b.circles);
+    expect(byUuid.size).toBe(0);
+    expect(b.circles.group.getLayers()).toHaveLength(0);
   });
 });
 

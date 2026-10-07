@@ -6,6 +6,12 @@ import { meters } from '../app/format.js';
 // Tokens del DS como literales: Leaflet los escribe en atributos SVG, donde var() no es fiable.
 const C = { text: '#f4f1f7', mint: '#8ae2c8', azure: '#578ccb', azureSoft: '#a8c6e7', ambar: '#ffbc00', grey: '#9c96ab' };
 
+// Modo Círculos (R6, D-17). Valores medidos con datos reales en 12-03 (OI-02, UI-SPEC "Escalado de Círculos"):
+// mediana de radio 12 m -> 12 m / (0,563 m/px a z16 en el ecuador) = 6,8 px >= 6 px (z15 daría 3,4 px), por eso z16;
+// p95 de triggers por obra = 26 y máx 35, así que 600 nunca actúa con datos reales: es sólo defensa (T-12-29).
+export const CIRCLES_MIN_ZOOM = 16;
+export const CIRCLES_MAX = 600;
+
 // zIndex de las panes propias (de abajo hacia arriba). markerPane (600) queda para etiquetas y objetivos.
 export const PANES = { cover: 410, corridor: 420, line: 430, gap: 440, circles: 450, portals: 460 };
 
@@ -27,6 +33,11 @@ const STYLES = {
     selected: { color: C.text, weight: 3.5, opacity: 1, fillColor: C.mint, fillOpacity: 0.35 },
   },
   dot: { normal: { radius: 3.5 }, selected: { radius: 5 } },
+  trigger: {
+    normal: { color: C.azure, weight: 1, opacity: 1, fillColor: C.azure, fillOpacity: 0.1 },
+    highlighted: { color: C.azure, weight: 1, opacity: 1, fillColor: C.azure, fillOpacity: 0.2 },
+    selected: { color: C.text, weight: 2.5, opacity: 1, fillColor: C.azure, fillOpacity: 0.5 },
+  },
 };
 STYLES.corridor.selected = STYLES.corridor.highlighted;
 STYLES.line.selected = hi;
@@ -35,12 +46,13 @@ STYLES.line.selected = hi;
 export const styleFor = (kind, state) => STYLES[kind][state] ?? STYLES[kind].normal;
 
 // Foco y Enter/Espacio sobre capas vectoriales (R9, Pitfall 8): Leaflet 1.9 no convierte Enter en click.
-// `setAttribute` y nada de HTML: el label lleva nombres del servidor.
+// `setAttribute` y nada de HTML: el label lleva nombres del servidor. El tabindex sale de `options.cgTab`
+// (0 por defecto; los triggers lo mueven con roving tabindex) para que sobreviva a recrear el nodo.
 function makeInteractive(layer, { label, onSelect }) {
   const apply = () => {
     const el = layer.getElement?.();
     if (!el) return;
-    el.setAttribute('tabindex', '0');
+    el.setAttribute('tabindex', String(layer.options.cgTab ?? 0));
     el.setAttribute('role', 'button');
     el.setAttribute('aria-label', label);
   };
@@ -61,8 +73,10 @@ const ll = (t) => [t.latitude, t.longitude];
 // Devuelve los grupos por capa, un índice sel -> capas con estilo propio (para applySelection) y `rescale`
 // (ancho del corredor en px según el zoom; MapView lo llama en zoomend). `zoom` sólo siembra el ancho inicial.
 export function buildLayers(L, model, { obras, onSelect, zoom = 16 }) {
-  const groups = Object.fromEntries(['cover', 'labels', 'corridor', 'lines', 'gaps', 'portals'].map((g) => [g, L.layerGroup()]));
+  const groups = Object.fromEntries(['cover', 'labels', 'corridor', 'lines', 'gaps', 'circles', 'portals'].map((g) => [g, L.layerGroup()]));
   const index = new Map();
+  const routes = []; // paths dibujables: syncCircles los recorre
+  const circles = { group: groups.circles, byUuid: new Map(), onSelect, pendingFocus: null };
   const reg = (sel, layer) => (index.has(sel) ? index.get(sel).push(layer) : index.set(sel, [layer]));
   const pick = (sel) => () => onSelect(sel);
 
@@ -88,6 +102,7 @@ export function buildLayers(L, model, { obras, onSelect, zoom = 16 }) {
       if (!ts.length) continue; // "0 triggers": se lista en el panel, no se dibuja
       const psel = `path:${p.uuid}`;
       const label = `Path ${p.name}`;
+      routes.push(p);
       if (ts.length === 1) { // un solo trigger: sólo el círculo
         const c = L.circle(ll(ts[0]), {
           radius: ts[0].radius_meters, pane: 'line', cgKind: 'line', fillColor: C.azure, fillOpacity: 0.1, ...styleFor('line', 'normal'),
@@ -136,7 +151,82 @@ export function buildLayers(L, model, { obras, onSelect, zoom = 16 }) {
   }
 
   const rescale = (z) => groups.corridor.eachLayer((l) => l.setStyle({ weight: corridorPx(l.options.cgRadius, l.options.cgLat, z) }));
-  return { groups, index, rescale };
+  return { groups, index, rescale, circles, paths: routes };
+}
+
+const ARROWS = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 };
+
+// Círculos de trigger (modo Círculos): diff por uuid contra los bounds del mapa ampliados 20 %. Nunca quita el
+// trigger seleccionado ni el enfocado (Pitfall 7: el foco sobrevive); sólo setStyle/tabindex sobre los que quedan.
+// Sobre `max` se dibujan sólo los del path resaltado/seleccionado. Un tab stop por path (roving, R9).
+// ponytail: si el path activo solo ya supera `max`, se dibuja entero; con datos reales (máx 35) no ocurre.
+export function syncCircles(state, { L, paths, bounds, sel, focusedUuid, max = CIRCLES_MAX }) {
+  const { byUuid, group } = state;
+  focusedUuid ??= [...byUuid].find(([, c]) => c.getElement?.() && c.getElement() === document.activeElement)?.[0];
+  const byId = new Map(paths.flatMap((p) => p.triggers).map((t) => [t.uuid, t]));
+  const [type, id] = sel?.split(/:(.*)/s) ?? [];
+  const selTrig = type === 'trigger' && byId.has(id) ? id : null;
+  const activePath = type === 'path' ? id : selTrig ? byId.get(selTrig).path.uuid : null;
+
+  const box = bounds.pad(0.2);
+  let want = [...byId.values()].filter((t) => box.contains([t.latitude, t.longitude]));
+  if (want.length > max) want = want.filter((t) => t.path.uuid === activePath);
+  const keep = new Set(want.map((t) => t.uuid));
+  for (const u of [selTrig, focusedUuid]) if (byId.has(u)) keep.add(u);
+
+  const removed = [];
+  const added = [];
+  for (const [u, c] of byUuid) {
+    if (keep.has(u)) continue;
+    group.removeLayer(c);
+    byUuid.delete(u);
+    removed.push(u);
+  }
+  for (const u of keep) {
+    if (byUuid.has(u)) continue;
+    const t = byId.get(u);
+    const c = L.circle([t.latitude, t.longitude], { radius: t.radius_meters, pane: 'circles', cgKind: 'trigger', cgPath: t.path.uuid, cgTab: -1 });
+    const pick = () => state.onSelect(`trigger:${u}`);
+    makeInteractive(c, { label: `Trigger ${t.index + 1} de ${t.path.triggers.length}, radio ${meters(t.radius_meters)}`, onSelect: pick });
+    c.on('keydown', (e) => {
+      const step = ARROWS[e.originalEvent.key];
+      if (!step) return;
+      e.originalEvent.preventDefault(); // sin esto la flecha scrollea la página
+      const next = t.path.triggers[t.index + step];
+      if (!next) return; // extremos: nada
+      state.pendingFocus = next.uuid; // el nodo del siguiente puede no existir todavía: se enfoca al terminar el próximo sync
+      state.onSelect(`trigger:${next.uuid}`);
+    });
+    group.addLayer(c);
+    byUuid.set(u, c);
+    added.push(u);
+  }
+
+  // Roving tabindex: por path, el seleccionado o, si no, el de menor `index`.
+  const stop = new Map();
+  for (const u of byUuid.keys()) {
+    const t = byId.get(u);
+    const best = stop.get(t.path.uuid);
+    if (!best || u === selTrig || (best !== selTrig && t.index < byId.get(best).index)) stop.set(t.path.uuid, u);
+  }
+  for (const [u, c] of byUuid) {
+    const t = byId.get(u);
+    c.options.cgTab = stop.get(t.path.uuid) === u ? 0 : -1;
+    c.getElement?.()?.setAttribute('tabindex', String(c.options.cgTab));
+    c.setStyle(styleFor('trigger', u === selTrig ? 'selected' : t.path.uuid === activePath ? 'highlighted' : 'normal'));
+  }
+
+  if (state.pendingFocus) {
+    byUuid.get(state.pendingFocus)?.getElement?.()?.focus();
+    state.pendingFocus = null;
+  }
+  return { added, removed };
+}
+
+export function clearCircles(state) {
+  state.group.clearLayers();
+  state.byUuid.clear();
+  state.pendingFocus = null;
 }
 
 // Estilos por estado de selección sin reconstruir capas (Pitfall 7: el foco no se pierde).
@@ -165,11 +255,13 @@ export function applySelection(index, sel, model) {
 }
 
 // Cada grupo pertenece a una casilla de capas; apagar una quita el grupo del mapa sin tocar el índice.
-const CAPA_OF = { cover: 'cobertura', labels: 'cobertura', corridor: 'paths', lines: 'paths', gaps: 'paths', portals: 'portales' };
+const CAPA_OF = { cover: 'cobertura', labels: 'cobertura', corridor: 'paths', lines: 'paths', gaps: 'paths', circles: 'paths', portals: 'portales' };
 
-export function syncGroups(map, groups, capas) {
+// `circulos` = modo Círculos con zoom suficiente: el corredor se oculta y entran los círculos (línea, huecos y portales siguen).
+export function syncGroups(map, groups, capas, circulos = false) {
   for (const [name, g] of Object.entries(groups)) {
-    if (capas[CAPA_OF[name]]) map.addLayer(g);
+    const on = capas[CAPA_OF[name]] && (name === 'corridor' ? !circulos : name === 'circles' ? circulos : true);
+    if (on) map.addLayer(g);
     else map.removeLayer(g);
   }
 }

@@ -1,5 +1,6 @@
-// Barra del mapa (D-03, D-04): selector de recorrido y casillas de capas. Controles nativos.
-// `rec` = '' (todos) | 'none' (sin recorrido) | uuid. 12-08 agrega el segmentado Corredor/Círculos acá.
+// Barra del mapa (D-03, D-04, D-17): selector de recorrido, casillas de capas y segmentado de modo de paths.
+// `rec` = '' (todos) | 'none' (sin recorrido) | uuid. `modo` = 'corr' | 'circ'.
+const MODOS = [['corr', 'Corredor'], ['circ', 'Círculos']];
 const SW = {
   cobertura: { borderTopStyle: 'dashed', borderTopColor: 'var(--text-secondary)' },
   paths: { borderTopColor: 'var(--c-azure)' },
@@ -7,7 +8,7 @@ const SW = {
 };
 const LABELS = { cobertura: 'Cobertura', paths: 'Paths', portales: 'Portales' };
 
-export default function MapBar({ recorridos, rec, hasSinRecorrido, capas, onRec, onCapas, disabled }) {
+export default function MapBar({ recorridos, rec, hasSinRecorrido, capas, modo, onRec, onCapas, onModo, disabled }) {
   return (
     <div className="mapbar">
       <div className="mcard">
@@ -27,6 +28,14 @@ export default function MapBar({ recorridos, rec, hasSinRecorrido, capas, onRec,
             {LABELS[k]}
           </label>
         ))}
+      </div>
+      <div className="mcard" role="group" aria-label="Paths">
+        <span className="mlbl" aria-hidden="true">Paths</span>
+        <div className="seg">
+          {MODOS.map(([v, text]) => (
+            <button key={v} type="button" aria-pressed={modo === v} disabled={disabled} onClick={() => onModo(v)}>{text}</button>
+          ))}
+        </div>
       </div>
     </div>
   );

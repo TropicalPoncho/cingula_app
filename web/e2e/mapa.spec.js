@@ -158,3 +158,53 @@ test('la mapbar envuelve a 1000 px y el mapa conserva el resto del ancho [asunci
   expect(bar.x + bar.width).toBeLessThanOrEqual(view.x + view.width);
   expect(view.width).toBeGreaterThan(500);
 });
+
+// D-17 / R6: modo Círculos (CIRCLES_MIN_ZOOM = 16 medido en 12-03).
+const triggers = (page) => page.getByRole('button', { name: /^Trigger \d+ de \d+, radio/ });
+const hint = (page) => page.getByText('Acercá el mapa para ver los círculos.');
+
+test('modo Círculos: pista bajo z16, 32 círculos al encuadrar el path y clic abre el trigger', async ({ page }) => {
+  await page.goto('/');
+  await expect(covers(page)).toHaveCount(2);
+  await page.getByRole('button', { name: 'Círculos' }).click();
+  expect(new URL(page.url()).searchParams.get('modo')).toBe('circ');
+  await expect(page.getByRole('button', { name: 'Círculos' })).toHaveAttribute('aria-pressed', 'true');
+
+  // Vista general (zoom bajo): se ve el corredor y la pista, sin círculos.
+  const out = page.getByRole('button', { name: 'Zoom out' });
+  for (let i = 0; i < 4; i++) {
+    await out.click();
+    await page.waitForTimeout(400); // Leaflet ignora el siguiente clic mientras anima el zoom
+  }
+  await expect(hint(page)).toBeVisible();
+  await expect(triggers(page)).toHaveCount(0);
+
+  // Desde el panel: elegir el path encuadra sus triggers (fitTarget, 12-07) y entran los 32 círculos.
+  await page.getByRole('button', { name: 'Obra Obra Aurora' }).dispatchEvent('click');
+  await panel(page).getByRole('button', { name: /^Ruta A/ }).click();
+  await expect(hint(page)).toHaveCount(0);
+  await expect(triggers(page)).toHaveCount(35); // 32 del path A + 3 del path B, que cae dentro del viewport
+  await expect(page.getByRole('button', { name: /^Trigger \d+ de 32, radio/ })).toHaveCount(32);
+  await expect(page.locator('path[stroke-dasharray="4 4"]')).toHaveCount(1); // el hueco sigue en ámbar en este modo
+
+  await triggers(page).nth(4).dispatchEvent('click');
+  await expect(panel(page).getByRole('heading', { name: 'Trigger 005' })).toBeVisible();
+  await expect(panel(page).getByText('5 de 32')).toBeVisible();
+  expect(new URL(page.url()).searchParams.get('sel')).toBe(`trigger:${ID.trA(4)}`);
+
+  // Volver a Corredor quita los círculos y el modo sale de la URL.
+  await page.getByRole('button', { name: 'Corredor' }).click();
+  await expect(triggers(page)).toHaveCount(0);
+  expect(new URL(page.url()).searchParams.get('modo')).toBeNull();
+});
+
+test('cambiar de modo no re-encuadra el mapa (D-02)', async ({ page }) => {
+  await page.goto('/');
+  await expect(covers(page)).toHaveCount(2);
+  const before = await covers(page).first().boundingBox();
+  await page.getByRole('button', { name: 'Círculos' }).click();
+  await page.getByRole('button', { name: 'Corredor' }).click();
+  await page.waitForTimeout(400);
+  const after = await covers(page).first().boundingBox();
+  expect(Math.abs(after.x - before.x) + Math.abs(after.y - before.y)).toBeLessThan(2);
+});
