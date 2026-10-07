@@ -119,5 +119,4 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,[t
 ::selection{background:var(--c-violeta);color:#fff}
 small{font-size:var(--fs-xs)}
 hr{border:none;border-top:var(--bw-hairline) solid var(--border-hairline);margin:var(--sp-8) 0}
-.cg-label{font:var(--type-label);letter-spacing:var(--ls-label);text-transform:uppercase;color:var(--text-secondary)}
 .cg-portal-type{font-family:var(--font-display);letter-spacing:var(--ls-portal);text-transform:uppercase}

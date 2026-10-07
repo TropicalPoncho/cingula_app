@@ -16,6 +16,7 @@ export function median(xs) {
   return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2;
 }
 
+// ponytail: un solo ancho de corredor por path (mediana de radios, OI-10); radios mixtos >10 % se dibujan con el ancho mediano. Upgrade: ancho por tramo.
 export const medianRadius = (ts) => median(ts.map((t) => t.radius_meters));
 
 // `ts` ya ordenados por (position, uuid). Hueco = distancia > r_a + r_b (regla de la UI-SPEC).

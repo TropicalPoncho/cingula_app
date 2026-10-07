@@ -21,10 +21,7 @@ export function navigate(to, { replace = false } = {}) {
 // El panel del mapa nunca crea entradas de historial: siempre replaceState. Valor null borra el param.
 export function setParams(patch) {
   const u = new URL(location.href);
-  for (const [k, v] of Object.entries(patch)) {
-    if (v == null) u.searchParams.delete(k);
-    else u.searchParams.set(k, v);
-  }
+  for (const [k, v] of Object.entries(patch)) v == null ? u.searchParams.delete(k) : u.searchParams.set(k, v);
   navigate(u.pathname + u.search, { replace: true });
 }
 
@@ -48,18 +45,13 @@ export function matchRoute(pathname) {
 const plainLeftClick = (e) =>
   e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && !e.defaultPrevented;
 
-export function A({ href, onClick, ...rest }) {
-  return (
-    <a
-      href={href}
-      onClick={(e) => {
-        onClick?.(e);
-        if (plainLeftClick(e)) {
-          e.preventDefault();
-          navigate(href);
-        }
-      }}
-      {...rest}
-    />
-  );
-}
+export const A = ({ href, onClick, ...rest }) => (
+  <a
+    href={href}
+    onClick={(e) => {
+      onClick?.(e);
+      if (plainLeftClick(e)) (e.preventDefault(), navigate(href));
+    }}
+    {...rest}
+  />
+);

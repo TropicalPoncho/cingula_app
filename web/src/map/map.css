@@ -5,7 +5,8 @@
 .mapview { position: absolute; inset: 0; z-index: 0; background: var(--surface-sunken); font: inherit; }
 .mapview.leaflet-container { background: var(--surface-sunken); font: inherit; }
 
-/* Tiles OSM oscurecidos sólo por CSS [DEFAULT, OI-07]: no cambia las peticiones. */
+/* Tiles OSM oscurecidos sólo por CSS [DEFAULT, OI-07]: no cambia las peticiones.
+   ponytail: filtro sobre todo el pane (invierte también los rótulos); techo: legibilidad a validar en el Preview, upgrade = capa de tiles oscura propia. */
 .mapview .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.8) contrast(.9); }
 
 /* Atribución abajo a la derecha; el zoom se sube para que no la tape. */
@@ -17,6 +18,7 @@
 .mapview .leaflet-bottom.leaflet-right { bottom: 44px; }
 .mapview.leaflet-container .leaflet-bar a {
   width: var(--touch-min); height: var(--touch-min); line-height: var(--touch-min);
+  font-size: var(--fs-md); font-weight: var(--fw-regular);
   background: var(--surface-veil); color: var(--text-primary); border-color: var(--border-hairline);
 }
 .mapview.leaflet-container .leaflet-bar a:hover { background: var(--surface-raised); }

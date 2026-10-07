@@ -1,4 +1,5 @@
 // Estado de datos y de sync de la pestaña. Sin librería de estado: useSyncExternalStore.
+// ponytail: un único store global de módulo (una pestaña, un usuario); si hicieran falta varias instancias (multiusuario) pasa a fábrica + Context.
 import { useMemo, useSyncExternalStore } from 'react';
 import { pullAll, HttpError } from './pull.js';
 import { applyRows, buildModel, emptyTables } from './model.js';
