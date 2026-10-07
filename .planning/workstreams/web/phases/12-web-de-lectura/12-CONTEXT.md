@@ -218,6 +218,7 @@ ADR-006, alguna pieza nueva a registrar):
 - **Estadísticas de reproducción.**
 - **Reconsiderar Next.js** si el producto se abre a público general con necesidad real de SEO
   (gente externa descubriendo recorridos por búsqueda, no solo editores autenticados) — ver D-01.
+- **Convertir en portales los paths de un solo trigger (agendado 2026-10-07, pedido del usuario):** hoy la app no tiene modo portal, por eso producción no tiene ningún `paths.kind='portal'` (medición de 12-03: `paths_portal: 0`). Los paths `route` con un único trigger deberían pasar a ser portales (`kind='portal'`, el nombre queda en el path, D-16). Es una migración de datos / cambio de la app del celular, no de esta web de solo lectura. Pendiente: definir dónde corre (migración v-next en la app o script sobre Neon), qué hacer con sus triggers (name/description/offset) y cuántos paths son (la medición actual no cuenta los de 1 trigger: p50 = 3 triggers por path). Hasta entonces la web solo valida portales con fixtures sintéticas.
 - **Listado propio de Audios** si algún día se reutilizan entre paths más allá de un caso de debug
   (ver D-11) — revisar si esto pasa antes de asumir que la decisión sigue vigente.
 
