@@ -56,6 +56,9 @@ export default function MapView({ model, obras, capas, modo = 'corr', sel, fitKe
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
+      // ponytail: Leaflet 1.9.4 deja un setTimeout(250 ms) de zoom que corre tras remove() y lanza TypeError
+      // (visto al salir del mapa durante el encuadre animado); apagar su guarda privada lo vuelve no-op.
+      map._animatingZoom = false;
       map.remove();
       mapRef.current = null;
     };
