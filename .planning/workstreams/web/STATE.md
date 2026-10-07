@@ -4,12 +4,12 @@ milestone: v1.0
 milestone_name: (Web de gestión, lectura)
 current_phase: 12
 current_phase_name: Web de lectura
-current_plan: 12-03
+current_plan: 12-08
 status: executing
-stopped_at: "Completed 12-06 and 12-07 (wave 4); 12-03 waiting on user action (Production WEB_API_KEY + measurement), blocks wave 5"
-last_updated: "2026-10-07T01:00:00.000Z"
+stopped_at: "Completed 12-03 (OI-02 closed: CIRCLES_MIN_ZOOM=16, CIRCLES_MAX=600); next wave 5 (12-08)"
+last_updated: "2026-10-07T20:00:00.000Z"
 last_activity: 2026-10-06
-last_activity_desc: "wave 4 completo: 12-06 (audio, tira, tabla) y 12-07 (mapa Leaflet); falta 12-03 (usuario) para 12-08"
+last_activity_desc: "12-03 completo: la medicion real cerro OI-02; hallazgo: prod sin portales ni recorridos ni artistas"
 state_head: 39a4ecb1e32b626bdeca5ed5aed7c5ccea6e1a71
 progress:
   total_phases: 4
