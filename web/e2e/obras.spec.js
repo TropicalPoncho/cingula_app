@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { ID, LONG_NAME } from '../src/test/fixtures.js';
+import { ID, LONG_NAME, makeRows } from '../src/test/fixtures.js';
 import { mockApi, loginAs } from './mock-api.js';
 
 const list = (page) => page.getByRole('list', { name: 'Listado de obras' });
@@ -49,4 +49,54 @@ test('deep link /obras/<uuid A> carga directo', async ({ page }) => {
   await page.goto(`/obras/${ID.obA}`);
   await expect(detail(page).getByRole('heading', { name: 'Obra Aurora' })).toBeVisible();
   await expect(detail(page).getByRole('link', { name: 'Ana Lúcar' })).toHaveAttribute('href', `/artistas/${ID.arA}`);
+});
+
+test('Artistas: listado, detalle con APARECE EN enlazado a la obra y sin usuario', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Artistas' }).click();
+  await expect(page).toHaveURL(/\/artistas$/);
+  await expect(page.getByText('2 artistas')).toBeVisible();
+  await page.getByRole('list', { name: 'Listado de artistas' }).getByRole('link', { name: /Bruno Mayo/ }).click();
+  await expect(page).toHaveURL(new RegExp(`/artistas/${ID.arB}$`));
+  const d = detail(page);
+  await expect(d.getByText('ARTISTA', { exact: true })).toBeVisible();
+  await expect(d.getByRole('heading', { name: 'Bruno Mayo' })).toBeVisible();
+  await expect(d.getByText('APARECE EN', { exact: true })).toBeVisible();
+  await expect(page.getByText('user-secreto')).toHaveCount(0);
+  await d.getByRole('link', { name: /Obra Aurora/ }).click();
+  await expect(page).toHaveURL(new RegExp(`/obras/${ID.obA}$`));
+  await expect(detail(page).getByRole('heading', { name: 'Obra Aurora' })).toBeVisible();
+});
+
+test('Artistas vacío: copy fijo cuando el servidor no tiene artistas', async ({ page }) => {
+  const rows = makeRows().filter((r) => r.table !== 'artistas' && r.table !== 'obra_artistas');
+  await mockApi(page, { rows }); // se registra después del beforeEach: el último route gana
+  await page.goto('/artistas');
+  await expect(page.getByText('Todavía no hay artistas en el servidor.')).toBeVisible();
+});
+
+test('uuid inexistente: No encontramos esta obra + Volver al listado', async ({ page }) => {
+  await page.goto('/obras/no-existe');
+  await expect(page.getByText('No encontramos esta obra.')).toBeVisible();
+  await page.getByRole('link', { name: 'Volver al listado' }).click();
+  await expect(page).toHaveURL(/\/obras$/);
+});
+
+test('< 900 px el detalle reemplaza al listado y Volver al listado lo devuelve [OI-05]', async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 900 });
+  await page.goto('/obras');
+  await expect(list(page)).toBeVisible();
+  await expect(detail(page)).toBeHidden();
+  await list(page).getByRole('link', { name: /Obra Aurora/ }).click();
+  await expect(detail(page).getByRole('heading', { name: 'Obra Aurora' })).toBeVisible();
+  await expect(list(page)).toBeHidden();
+  await detail(page).getByRole('link', { name: 'Volver al listado' }).click();
+  await expect(list(page)).toBeVisible();
+});
+
+test('nombre de 60 caracteres: la fila no crece y el detalle no desborda', async ({ page }) => {
+  await page.goto(`/obras/${ID.obB}`);
+  const row = list(page).getByRole('link', { name: new RegExp(LONG_NAME.slice(0, 20)) });
+  expect((await row.boundingBox()).height).toBeCloseTo(64, 0);
+  expect(await detail(page).evaluate((e) => e.scrollWidth <= e.clientWidth)).toBe(true);
 });

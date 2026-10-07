@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
-import { useModel } from '../data/store.js';
+import { useModel, useStore } from '../data/store.js';
 import { plural } from '../app/format.js';
 import { A, navigate, setParams, useQuery } from '../app/router.jsx';
 import { buildView } from '../panel/buildView.js';
 import { Crumbs } from '../panel/SidePanel.jsx';
 import EntityDetail from '../panel/EntityDetail.jsx';
-import { Vis } from './parts.jsx';
+import { BackToList, ListGate, NotFound, Vis } from './parts.jsx';
 
 const VIS_OPTIONS = [['', 'Todas'], ['public', 'Pública'], ['private', 'Privada'], ['draft', 'Borrador']];
 const noop = () => {};
@@ -33,6 +33,7 @@ const search = ({ rec, vis }) => {
 // D-08 / WEB-04: listado filtrable + el MISMO detalle expandido del panel del mapa (`pageObras`).
 export default function Obras({ uuid }) {
   const model = useModel();
+  const ready = useStore().lastPullAt != null; // sin datos no hay "no existe": un deep link no parpadea mientras se lee
   const filters = useFilters(model);
   const obras = useMemo(
     () =>
@@ -76,27 +77,33 @@ export default function Obras({ uuid }) {
             {VIS_OPTIONS.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
           </select>
         </div>
-        <span className="dim">{plural(obras.length, 'obra', 'obras')}</span>
+        {ready && <span className="dim">{plural(obras.length, 'obra', 'obras')}</span>}
       </div>
-      <div className="split">
-        <div className="listpane" role="list" aria-label="Listado de obras">
-          {obras.map((o) => {
-            const sub = [o.recorrido?.name ?? 'Sin recorrido', o.artistas.map((a) => a.name).join(', ')].filter(Boolean).join(' · ');
-            const on = current?.uuid === o.uuid;
-            return (
-              <div role="listitem" key={o.uuid}>
-                <A className={`ent${on ? ' on' : ''}`} href={`/obras/${encodeURIComponent(o.uuid)}${qs}`} title={`${o.name} · ${sub}`} aria-current={on ? 'true' : undefined}>
-                  <span className="et"><span className="t">{o.name}</span><span className="u">{sub}</span></span>
-                  <Vis value={o.visibility} />
-                </A>
-              </div>
-            );
-          })}
-          {!obras.length && <p className="dim">Ninguna obra coincide con los filtros.</p>}
+      <div className={`split${uuid ? ' has-sel' : ''}`}>
+        <div className="listpane">
+          <ListGate total={model.obras.length} emptyText="Todavía no hay obras en el servidor.">
+            <div role="list" aria-label="Listado de obras">
+              {obras.map((o) => {
+                const sub = [o.recorrido?.name ?? 'Sin recorrido', o.artistas.map((a) => a.name).join(', ')].filter(Boolean).join(' · ');
+                const on = current?.uuid === o.uuid;
+                return (
+                  <div role="listitem" key={o.uuid}>
+                    <A className={`ent${on ? ' on' : ''}`} href={`/obras/${encodeURIComponent(o.uuid)}${qs}`} title={`${o.name} · ${sub}`} aria-current={on ? 'true' : undefined}>
+                      <span className="et"><span className="t">{o.name}</span><span className="u">{sub}</span></span>
+                      <Vis value={o.visibility} />
+                    </A>
+                  </div>
+                );
+              })}
+            </div>
+            {!obras.length && <p className="dim">Ninguna obra coincide con los filtros.</p>}
+          </ListGate>
         </div>
         <section className="detpane" aria-label="Detalle">
+          {ready && uuid && !current && <NotFound text="No encontramos esta obra." href={`/obras${qs}`} />}
           {view && (
             <>
+              {uuid && <BackToList href={`/obras${qs}`} />}
               <Crumbs crumbs={view.crumbs} onSelect={onSelect} />
               <EntityDetail view={view} expanded onSelect={onSelect} onExpand={noop} />
             </>

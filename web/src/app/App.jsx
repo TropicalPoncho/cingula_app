@@ -6,6 +6,7 @@ import Shell from './Shell.jsx';
 import Acceso from '../pages/Acceso.jsx';
 import MapPage from '../pages/MapPage.jsx';
 import Obras from '../pages/Obras.jsx';
+import Artistas from '../pages/Artistas.jsx';
 
 export default function App() {
   const route = matchRoute(useLocation().split('?')[0]);
@@ -31,6 +32,7 @@ export default function App() {
     <Shell>
       {name === 'mapa' && <MapPage />}
       {(name === 'obras' || name === 'obra') && <Obras uuid={uuid} />}
+      {(name === 'artistas' || name === 'artista') && <Artistas uuid={uuid} />}
     </Shell>
   );
 }

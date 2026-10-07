@@ -16,16 +16,33 @@
 /* Fila de listado (64 px): título 20/400 en una línea con elipsis, visibilidad a la derecha. */
 .ent {
   display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); width: 100%; min-height: 64px;
-  padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); background: transparent; border: 1px solid var(--border-hairline);
+  padding: var(--sp-2) var(--sp-4); border-radius: var(--r-md); background: transparent; border: 1px solid var(--border-hairline);
   cursor: pointer; text-align: left; margin-bottom: var(--sp-2); transition: var(--transition-ui); color: inherit; text-decoration: none;
 }
 .ent:hover { border-color: var(--border-strong); background: rgba(244, 241, 247, .04); }
 .ent.on { border-color: var(--c-mint); background: rgba(138, 226, 200, .07); }
 .ent .et { min-width: 0; flex: 1; }
-.ent .t, .ent .u { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ent .t, .ent .u { display: block; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ent .t { font-family: var(--font-display); font-size: var(--fs-md); font-weight: var(--fw-regular); }
-.ent .u { font-size: var(--fs-xs); color: var(--text-secondary); margin-top: var(--sp-1); }
+.ent .u { font-size: var(--fs-xs); color: var(--text-secondary); }
 .vis { display: inline-flex; flex: none; align-items: center; gap: var(--sp-2); font-size: var(--fs-xs); white-space: nowrap; }
 
 /* El breadcrumb de la página va suelto sobre el detalle (en el panel vive dentro de `.phead`). */
 .detpane .crumbs { margin: 0 0 var(--sp-4); }
+
+a.row { text-decoration: none; }
+/* Filas esqueleto (cargando): sin shimmer, sin interacción. */
+.ent.skel { background: var(--surface-raised); border-color: transparent; pointer-events: none; }
+.notfound { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-4); }
+.notfound p { margin: 0; }
+.btn.backlist { display: none; margin: 0 0 var(--sp-4); }
+
+/* [ASUNCIÓN OI-05, sin validar con el usuario] < 900 px el listado ocupa todo el ancho y, con un uuid
+   en la URL, el detalle lo reemplaza con un botón `Volver al listado`. */
+@media (max-width: 899px) {
+  .listpane { width: 100%; border-right: 0; }
+  .split.has-sel .listpane, .split:not(.has-sel) .detpane { display: none; }
+  .btn.backlist { display: inline-flex; }
+  .detpane { padding: var(--sp-5); }
+  .toolbar { padding: var(--sp-3) var(--sp-4); }
+}

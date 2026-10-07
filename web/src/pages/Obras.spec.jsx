@@ -22,6 +22,7 @@ const rowNames = () => within(list()).getAllByRole('listitem').map((li) => li.qu
 
 beforeEach(() => resetStore());
 afterEach(() => {
+  resetStore(); // cancela el reintento automático que deja un pull fallido
   vi.unstubAllGlobals();
   history.replaceState(null, '', '/');
 });
@@ -84,5 +85,49 @@ describe('Obras', () => {
   it('el texto del servidor se muestra como texto (nada de HTML crudo)', async () => {
     await open();
     expect(document.querySelector('img[src="x"]')).toBeNull();
+  });
+});
+
+// Estados de página (E4): la página nunca queda en blanco ante carga, vacío, error o uuid inexistente.
+describe('Obras: estados', () => {
+  it('cargando: 3 filas esqueleto y detalle vacío', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {}))); // el pull nunca termina
+    sessionStorage.setItem('cingula.key', 'K');
+    act(() => { load(); });
+    history.replaceState(null, '', '/obras');
+    const { container } = render(<Obras />);
+    expect(container.querySelectorAll('.ent.skel')).toHaveLength(3);
+    expect(screen.queryByRole('list')).toBeNull();
+    expect(screen.getByRole('region', { name: 'Detalle' })).toBeEmptyDOMElement();
+  });
+
+  it('vacío: copy fijo (y no el de filtros sin coincidencias)', async () => {
+    await open({ rows: [] });
+    expect(screen.getByText('Todavía no hay obras en el servidor.')).toBeInTheDocument();
+    expect(screen.queryByText('Ninguna obra coincide con los filtros.')).toBeNull();
+  });
+
+  it('error de primera lectura: .perr con el código y Reintentar lectura que vuelve a pedir', async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn(async () => ({ ok: false, status: 503, text: async () => '{"error":"boom"}' }));
+    vi.stubGlobal('fetch', fetchMock);
+    sessionStorage.setItem('cingula.key', 'K');
+    await act(() => load());
+    history.replaceState(null, '', '/obras');
+    render(<Obras />);
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveClass('perr');
+    expect(alert).toHaveTextContent('No se pudo leer el servidor.');
+    expect(alert).toHaveTextContent('GET /sync/pull → 503');
+    const calls = fetchMock.mock.calls.length;
+    await user.click(screen.getByRole('button', { name: 'Reintentar lectura' }));
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(calls);
+  });
+
+  it('uuid inexistente: mensaje fijo y Volver al listado; el texto de la URL no se renderiza', async () => {
+    await open({ url: '/obras/<b>zzz</b>', uuid: '<b>zzz</b>' });
+    expect(screen.getByText('No encontramos esta obra.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Volver al listado' })).toHaveAttribute('href', '/obras');
+    expect(document.body).not.toHaveTextContent('zzz');
   });
 });
