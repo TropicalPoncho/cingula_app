@@ -43,7 +43,7 @@
 - [ ] **WEB-03**: El usuario ve el listado y detalle de artistas, con las obras en las que figuran
 - [ ] **WEB-04**: El usuario ve el listado de obras (filtrable por recorrido y visibilidad) y su detalle: visibilidad, recorrido, artistas, cobertura y paths
 - [ ] **WEB-05**: El usuario ve el detalle de un path: `kind`, audio que suena, grabación de origen, `tolerance_meters`, y sus triggers en un mapa y en una lista ordenada por `position` (posición, radio, `offset_ms`; los triggers NO tienen nombre — el nombre es del path, también el de los paths `kind=portal`)
-- [ ] **WEB-06**: El usuario ve la metadata del audio (título, descripción, `kind`) inline en el detalle del path o portal que lo usa, sin listado propio de audios (D-11)
+- [x] **WEB-06**: El usuario ve la metadata del audio (título, descripción, `kind`) inline en el detalle del path o portal que lo usa, sin listado propio de audios (D-11)
 - [x] **WEB-07**: El usuario ve el estado de sync de la web: cursor, momento del último pull y errores explícitos (mismo criterio de "estado honesto" que el celular)
 - [ ] **WEB-08**: Ninguna vista muestra filas con `deleted_at`
 
@@ -91,7 +91,7 @@
 | WEB-03 | Phase 12 | Pending |
 | WEB-04 | Phase 12 | Pending |
 | WEB-05 | Phase 12 | Pending |
-| WEB-06 | Phase 12 | Pending |
+| WEB-06 | Phase 12 | Complete |
 | WEB-07 | Phase 12 | Complete |
 | WEB-08 | Phase 12 | Pending |
 | STOR-01 | Phase 13 | Pending |
