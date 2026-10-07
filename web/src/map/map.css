@@ -57,3 +57,15 @@
 .mapwrap .mapstate, .mapwrap .legend, .mapwrap .mapbar { z-index: 3; }
 /* La leyenda no tapa la atribución ni el zoom: se corta antes y no envuelve. */
 .mapwrap .legend { max-width: calc(100% - 260px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Pista del modo Círculos bajo CIRCLES_MIN_ZOOM: mismo estilo que la leyenda, apilada encima de ella. */
+.mapwrap .legend.circ-hint { bottom: calc(var(--sp-4) + 40px); }
+
+/* Segmentado Corredor / Círculos (D-17): dos botones de 44 px; el activo lleva aria-pressed. */
+.seg { display: flex; border: 1px solid var(--border-strong); border-radius: var(--r-pill); overflow: hidden; }
+.seg button {
+  min-height: var(--touch-min); padding: 0 var(--sp-4); border: 0; background: transparent; color: var(--text-secondary);
+  font: inherit; font-size: var(--fs-sm); cursor: pointer;
+}
+.seg button + button { border-left: 1px solid var(--border-hairline); }
+.seg button[aria-pressed="true"] { background: var(--surface-raised); color: var(--text-primary); box-shadow: inset 0 -2px 0 var(--c-azure); }
+.seg button:disabled { opacity: .5; cursor: default; }

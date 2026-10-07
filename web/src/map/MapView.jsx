@@ -1,8 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './map.css';
-import { PANES, buildLayers, applySelection, syncGroups, coverBounds, targetBounds } from './layers.js';
+import {
+  PANES, CIRCLES_MIN_ZOOM, buildLayers, applySelection, syncGroups, syncCircles, clearCircles, coverBounds, targetBounds,
+} from './layers.js';
 
 // Único centro fijo permitido (D-02): sólo cuando ninguna obra visible tiene cobertura.
 const FALLBACK = { center: [-42.08, -71.62], zoom: 11 };
@@ -12,7 +14,7 @@ const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce
 
 // Leaflet imperativo dentro de React 19 (Pattern 3). Estado de Leaflet en refs; tres grupos de efectos:
 // ciclo de vida del mapa, capas y encuadre. `fitKey` decide cuándo se re-encuadra (nunca por capas ni panel).
-export default function MapView({ model, obras, capas, sel, fitKey, fitTarget, onSelect }) {
+export default function MapView({ model, obras, capas, modo = 'corr', sel, fitKey, fitTarget, onSelect }) {
   const el = useRef(null);
   const mapRef = useRef(null);
   const built = useRef(null); // { groups, index } de las capas actuales
@@ -21,6 +23,8 @@ export default function MapView({ model, obras, capas, sel, fitKey, fitTarget, o
   const onSelectRef = useRef(onSelect);
   const capasRef = useRef(capas); // los efectos de capas leen el último valor sin depender de él
   const selRef = useRef(sel);
+  const modoRef = useRef(modo);
+  const [lowZoom, setLowZoom] = useState(false); // modo Círculos pedido pero zoom < CIRCLES_MIN_ZOOM: pista
   useEffect(() => { onSelectRef.current = onSelect; });
 
   // Ciclo de vida. StrictMode monta dos veces: sin map.remove() en la limpieza, "already initialized" (Pitfall 4).
@@ -52,17 +56,33 @@ export default function MapView({ model, obras, capas, sel, fitKey, fitTarget, o
     };
   }, []);
 
+  // Lo que depende de modo/zoom/viewport/selección: corredor <-> círculos y el diff de círculos por viewport.
+  // No toca `fitKey`: cambiar de modo nunca re-encuadra (D-02). Sólo lee refs, así que sirve a cualquier efecto.
+  const refresh = () => {
+    const map = mapRef.current;
+    const b = built.current;
+    if (!b) return;
+    const circ = modoRef.current === 'circ';
+    const active = circ && map.getZoom() >= CIRCLES_MIN_ZOOM;
+    syncGroups(map, b.groups, capasRef.current, active);
+    if (active) syncCircles(b.circles, { L, paths: b.paths, bounds: map.getBounds(), sel: selRef.current });
+    else clearCircles(b.circles);
+    setLowZoom(circ && !active);
+  };
+
   // Capas: se reconstruyen sólo si cambian modelo u obras visibles (Pitfall 7: selección y casillas no reconstruyen).
   useEffect(() => {
     const map = mapRef.current;
     const b = buildLayers(L, model, { obras, zoom: map.getZoom(), onSelect: (s) => onSelectRef.current(s) });
     built.current = b;
-    syncGroups(map, b.groups, capasRef.current);
     applySelection(b.index, selRef.current, model);
+    refresh();
     const onZoom = () => b.rescale(map.getZoom());
     map.on('zoomend', onZoom); // el corredor mide metros: su ancho en px cambia con el zoom
+    map.on('moveend', refresh); // también tras cada zoom: recorte de círculos por viewport
     return () => {
       map.off('zoomend', onZoom);
+      map.off('moveend', refresh);
       Object.values(b.groups).forEach((g) => g.remove());
       built.current = null;
     };
@@ -70,12 +90,22 @@ export default function MapView({ model, obras, capas, sel, fitKey, fitTarget, o
 
   useEffect(() => {
     capasRef.current = capas;
-    if (built.current) syncGroups(mapRef.current, built.current.groups, capas);
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [capas]);
 
   useEffect(() => {
+    modoRef.current = modo;
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modo]);
+
+  useEffect(() => {
     selRef.current = sel;
-    if (built.current) applySelection(built.current.index, sel, model);
+    if (built.current) {
+      applySelection(built.current.index, sel, model);
+      refresh(); // el seleccionado entra (y se enfoca si venía de una flecha) aunque salga del viewport
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- el modelo nuevo ya aplica la selección al reconstruir
   }, [sel]);
 
@@ -110,6 +140,7 @@ export default function MapView({ model, obras, capas, sel, fitKey, fitTarget, o
   return (
     <div className="mapbox">
       <div className="mapview" ref={el} />
+      {lowZoom && <div className="legend circ-hint" role="status">Acercá el mapa para ver los círculos.</div>}
       <a className="attr" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">
         © OpenStreetMap contributors
       </a>
