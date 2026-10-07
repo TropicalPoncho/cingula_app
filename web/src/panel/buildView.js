@@ -28,7 +28,7 @@ const VIS = {
   private: { label: 'Privada', dot: 'var(--ink-200)' },
 };
 // Un valor fuera del CHECK se muestra crudo en mono (OI-04), nunca se oculta.
-const visOf = (v) => (Object.hasOwn(VIS, v ?? '') ? VIS[v] : { label: v ?? '—', mono: true, dot: 'var(--ink-200)' });
+export const visOf = (v) => (Object.hasOwn(VIS, v ?? '') ? VIS[v] : { label: v ?? '—', mono: true, dot: 'var(--ink-200)' });
 
 const NO_COVER = 'Sin cobertura todavía';
 const NO_COVER_NOTE = 'La obra no tiene triggers, así que no hay dónde dibujarla.';

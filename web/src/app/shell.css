@@ -43,6 +43,15 @@ h1, h2, h3, h4 {
 }
 .brand { display: flex; align-items: baseline; gap: var(--sp-4); }
 .sp { flex: 1; }
+/* Nav de secciones: subrayado mint de 2 px en la activa (aria-current=page). */
+.nav { display: flex; gap: var(--sp-1); align-self: stretch; }
+.nl {
+  display: flex; align-items: center; padding: 0 var(--sp-4); border-bottom: 2px solid transparent; text-decoration: none;
+  color: var(--text-secondary); font-family: var(--font-display); font-size: var(--fs-xs); font-weight: var(--fw-regular);
+  letter-spacing: var(--ls-label); text-transform: uppercase; transition: var(--transition-ui);
+}
+.nl:hover { color: var(--text-primary); border-bottom-color: var(--border-strong); }
+.nl.on { color: var(--text-primary); border-bottom-color: var(--c-mint); }
 .shell-main { height: calc(100vh - 56px); overflow: hidden; position: relative; }
 
 /* Estados del mapa (E1) y leyenda de conteos */

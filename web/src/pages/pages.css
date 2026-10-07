@@ -1,0 +1,31 @@
+/* Páginas Obras y Artistas (UI-SPEC "Pantallas de página"). Portado del prototipo (D-14) con la
+   normalización de tipografía (R10/R14: 13/15/20/40, pesos 300/400) y de espaciado (E1). */
+.page { display: flex; flex-direction: column; height: 100%; }
+.toolbar {
+  flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-4); padding: var(--sp-3) var(--sp-5);
+  border-bottom: 1px solid var(--border-hairline); background: var(--surface-base);
+}
+.toolbar h1 { margin: 0 var(--sp-4) 0 0; }
+.fld { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
+.fld .sel { max-width: 260px; min-width: 0; text-overflow: ellipsis; }
+
+.split { flex: 1; min-height: 0; display: flex; }
+.listpane { flex: none; width: 560px; overflow: auto; padding: var(--sp-5); border-right: 1px solid var(--border-hairline); }
+.detpane { flex: 1; min-width: 0; overflow: auto; padding: var(--sp-8); }
+
+/* Fila de listado (64 px): título 20/400 en una línea con elipsis, visibilidad a la derecha. */
+.ent {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); width: 100%; min-height: 64px;
+  padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); background: transparent; border: 1px solid var(--border-hairline);
+  cursor: pointer; text-align: left; margin-bottom: var(--sp-2); transition: var(--transition-ui); color: inherit; text-decoration: none;
+}
+.ent:hover { border-color: var(--border-strong); background: rgba(244, 241, 247, .04); }
+.ent.on { border-color: var(--c-mint); background: rgba(138, 226, 200, .07); }
+.ent .et { min-width: 0; flex: 1; }
+.ent .t, .ent .u { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ent .t { font-family: var(--font-display); font-size: var(--fs-md); font-weight: var(--fw-regular); }
+.ent .u { font-size: var(--fs-xs); color: var(--text-secondary); margin-top: var(--sp-1); }
+.vis { display: inline-flex; flex: none; align-items: center; gap: var(--sp-2); font-size: var(--fs-xs); white-space: nowrap; }
+
+/* El breadcrumb de la página va suelto sobre el detalle (en el panel vive dentro de `.phead`). */
+.detpane .crumbs { margin: 0 0 var(--sp-4); }

@@ -4,7 +4,7 @@ import { A } from '../app/router.jsx';
 import EntityDetail from './EntityDetail.jsx';
 import './panel.css';
 
-function Crumbs({ crumbs, onSelect }) {
+export function Crumbs({ crumbs, onSelect }) {
   return (
     <nav className="crumbs" aria-label="Ruta">
       {crumbs.map((c, i) => (

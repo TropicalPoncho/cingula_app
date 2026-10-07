@@ -5,6 +5,7 @@ import { useStore, load } from '../data/store.js';
 import Shell from './Shell.jsx';
 import Acceso from '../pages/Acceso.jsx';
 import MapPage from '../pages/MapPage.jsx';
+import Obras from '../pages/Obras.jsx';
 
 export default function App() {
   const route = matchRoute(useLocation().split('?')[0]);
@@ -25,6 +26,11 @@ export default function App() {
 
   if (name === 'acceso') return <Acceso />;
   if (!authed || !route) return null;
-  // Obras/Artistas (y sus detalles) los agrega 12-09.
-  return <Shell>{name === 'mapa' && <MapPage />}</Shell>;
+  const { uuid } = route.params; // sólo /obras/:uuid y /artistas/:uuid lo traen
+  return (
+    <Shell>
+      {name === 'mapa' && <MapPage />}
+      {(name === 'obras' || name === 'obra') && <Obras uuid={uuid} />}
+    </Shell>
+  );
 }
