@@ -14,7 +14,8 @@ const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce
 
 // Leaflet imperativo dentro de React 19 (Pattern 3). Estado de Leaflet en refs; tres grupos de efectos:
 // ciclo de vida del mapa, capas y encuadre. `fitKey` decide cuándo se re-encuadra (nunca por capas ni panel).
-export default function MapView({ model, obras, capas, modo = 'corr', sel, fitKey, fitTarget, onSelect }) {
+// `mini` (mini-mapa de Obras, 12-09): sin zoom ni interacción del usuario, sin foco; `ariaLabel` lo vuelve role=img.
+export default function MapView({ model, obras, capas, modo = 'corr', sel, fitKey, fitTarget, onSelect, mini = false, ariaLabel }) {
   const el = useRef(null);
   const mapRef = useRef(null);
   const built = useRef(null); // { groups, index } de las capas actuales
@@ -29,11 +30,15 @@ export default function MapView({ model, obras, capas, modo = 'corr', sel, fitKe
 
   // Ciclo de vida. StrictMode monta dos veces: sin map.remove() en la limpieza, "already initialized" (Pitfall 4).
   useEffect(() => {
-    const map = L.map(el.current, { zoomControl: false, attributionControl: false });
+    const map = L.map(el.current, {
+      zoomControl: false,
+      attributionControl: false,
+      ...(mini && { dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, touchZoom: false }),
+    });
     map.setView(FALLBACK.center, FALLBACK.zoom);
     for (const [name, z] of Object.entries(PANES)) map.createPane(name).style.zIndex = z;
     L.tileLayer(TILES, { maxZoom: 19 }).addTo(map);
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    if (!mini) L.control.zoom({ position: 'bottomright' }).addTo(map);
     mapRef.current = map;
     lastFit.current = undefined;
     pendingFit.current = null;
@@ -73,7 +78,7 @@ export default function MapView({ model, obras, capas, modo = 'corr', sel, fitKe
   // Capas: se reconstruyen sólo si cambian modelo u obras visibles (Pitfall 7: selección y casillas no reconstruyen).
   useEffect(() => {
     const map = mapRef.current;
-    const b = buildLayers(L, model, { obras, zoom: map.getZoom(), onSelect: (s) => onSelectRef.current(s) });
+    const b = buildLayers(L, model, { obras, zoom: map.getZoom(), mini, onSelect: (s) => onSelectRef.current?.(s) });
     built.current = b;
     applySelection(b.index, selRef.current, model);
     refresh();
@@ -116,7 +121,7 @@ export default function MapView({ model, obras, capas, modo = 'corr', sel, fitKe
       const s = map.getSize();
       if (!(s.x > 0 && s.y > 0)) return false;
       const animate = !reducedMotion();
-      if (bounds) map.fitBounds(bounds, { padding: [70, 70], maxZoom: 18, animate });
+      if (bounds) map.fitBounds(bounds, { padding: mini ? [24, 24] : [70, 70], maxZoom: 18, animate });
       else map.setView(FALLBACK.center, FALLBACK.zoom, { animate });
       return true;
     };
@@ -139,7 +144,7 @@ export default function MapView({ model, obras, capas, modo = 'corr', sel, fitKe
 
   return (
     <div className="mapbox">
-      <div className="mapview" ref={el} />
+      <div className="mapview" ref={el} {...(ariaLabel && { role: 'img', 'aria-label': ariaLabel })} />
       {lowZoom && <div className="legend circ-hint" role="status">Acercá el mapa para ver los círculos.</div>}
       <a className="attr" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">
         © OpenStreetMap contributors

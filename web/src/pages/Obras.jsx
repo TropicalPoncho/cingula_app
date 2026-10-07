@@ -2,13 +2,23 @@ import { useMemo } from 'react';
 import { useModel, useStore } from '../data/store.js';
 import { plural } from '../app/format.js';
 import { A, navigate, setParams, useQuery } from '../app/router.jsx';
-import { buildView } from '../panel/buildView.js';
+import { buildView, parseSel } from '../panel/buildView.js';
 import { Crumbs } from '../panel/SidePanel.jsx';
 import EntityDetail from '../panel/EntityDetail.jsx';
+import MapView from '../map/MapView.jsx';
 import { BackToList, ListGate, NotFound, Vis } from './parts.jsx';
 
 const VIS_OPTIONS = [['', 'Todas'], ['public', 'Pública'], ['private', 'Privada'], ['draft', 'Borrador']];
 const noop = () => {};
+const CAPAS = { cobertura: true, paths: true, portales: true };
+
+// `?sel=` anidado (D-12): sólo un path, portal o trigger de ESTA obra; cualquier otra cosa se ignora (T-12-32).
+function nestedSel(model, sel, obra) {
+  const p = parseSel(model, sel);
+  if (!p || p.stale) return null;
+  const owner = { path: p.entity.obra, portal: p.entity.obra, trigger: p.entity.path?.obra }[p.type];
+  return obra && owner === obra ? sel : null;
+}
 
 // Filtros de la URL comparados contra valores conocidos (T-12-32): uno desconocido equivale a "todos".
 function useFilters(model) {
@@ -49,7 +59,11 @@ export default function Obras({ uuid }) {
 
   // Sin uuid en la URL: la primera obra filtrada [DEFAULT OI-09].
   const current = uuid ? model.byId.obra.get(uuid) : obras[0];
-  const view = current ? buildView(model, `obra:${current.uuid}`, 'pageObras') : null;
+  const sel = nestedSel(model, useQuery().get('sel'), current);
+  const target = current ? (sel ?? `obra:${current.uuid}`) : null; // lo que el mini-mapa resalta y encuadra
+  const view = target && buildView(model, target, 'pageObras');
+  const miniObras = useMemo(() => (current ? [current] : []), [current]);
+  const fitTarget = useMemo(() => target && { sel: target }, [target]);
   // Enlaces del detalle. Los recorridos viven en el panel del mapa (D-10): se abren allá.
   const onSelect = (s) => {
     const type = s.slice(0, s.indexOf(':'));
@@ -106,6 +120,16 @@ export default function Obras({ uuid }) {
               {uuid && <BackToList href={`/obras${qs}`} />}
               <Crumbs crumbs={view.crumbs} onSelect={onSelect} />
               <EntityDetail view={view} expanded onSelect={onSelect} onExpand={noop} />
+              {current.cover && (
+                <>
+                  <h3 className="lbl sect">Mapa</h3>
+                  <div className="minimap">
+                    <MapView
+                      mini ariaLabel={`Mapa de ${current.name}`} model={model} obras={miniObras} capas={CAPAS} sel={target} fitTarget={fitTarget}
+                    />
+                  </div>
+                </>
+              )}
             </>
           )}
         </section>

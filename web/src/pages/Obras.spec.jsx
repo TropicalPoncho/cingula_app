@@ -131,3 +131,56 @@ describe('Obras: estados', () => {
     expect(document.body).not.toHaveTextContent('zzz');
   });
 });
+
+// D-12 + mini-mapa (Task 3).
+describe('Obras: selección anidada y mini-mapa', () => {
+  const crumbText = () => screen.getByRole('navigation', { name: 'Ruta' }).textContent;
+
+  it('?sel=path:<uuid> muestra el path con Obras / Obra / Path y Volver a {Obra} sin salir de la página', async () => {
+    const user = userEvent.setup();
+    await open({ url: `/obras/${ID.obA}?sel=path:${ID.pathA}`, uuid: ID.obA });
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Ruta A');
+    expect(crumbText()).toBe('Obras/Obra Aurora/Ruta A');
+    await user.click(screen.getByRole('button', { name: /Volver a Obra Aurora/ }));
+    expect(location.pathname).toBe(`/obras/${ID.obA}`);
+    expect(location.search).toBe('');
+  });
+
+  it('un portal de la lista abre su detalle por setParams (replaceState, sin historial nuevo)', async () => {
+    const user = userEvent.setup();
+    await open({ url: `/obras/${ID.obA}`, uuid: ID.obA });
+    const before = history.length;
+    await user.click(screen.getByRole('button', { name: /Portal A/ }));
+    expect(decodeURIComponent(location.search)).toBe(`?sel=portal:${ID.portalA}`);
+    expect(history.length).toBe(before);
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Portal A');
+  });
+
+  it('un sel de otra obra, inexistente o de otro tipo se ignora y queda el detalle de la obra', async () => {
+    for (const bad of [`path:${ID.pathB}`, 'path:no-existe', `recorrido:${ID.rec1}`, `obra:${ID.obB}`, 'x']) {
+      resetStore();
+      const { unmount } = await open({ url: `/obras/${ID.obA}?sel=${bad}`, uuid: ID.obA });
+      expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Obra Aurora');
+      unmount();
+    }
+  });
+
+  it('el link al recorrido abre el mapa: los recorridos no tienen página (D-10)', async () => {
+    const user = userEvent.setup();
+    await open({ url: `/obras/${ID.obA}`, uuid: ID.obA });
+    await user.click(screen.getAllByRole('button', { name: 'Recorrido Norte' })[0]);
+    expect(location.pathname).toBe('/');
+    expect(new URLSearchParams(location.search).get('sel')).toBe(`recorrido:${ID.rec1}`);
+  });
+
+  it('mini-mapa: role=img "Mapa de {obra}" sólo para obras con cobertura', async () => {
+    const first = await open({ url: `/obras/${ID.obA}`, uuid: ID.obA });
+    expect(screen.getByRole('img', { name: 'Mapa de Obra Aurora' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '© OpenStreetMap contributors' })).toBeInTheDocument();
+    first.unmount();
+    resetStore();
+    const { unmount } = await open({ url: `/obras/${ID.obC}`, uuid: ID.obC });
+    expect(screen.queryByRole('img', { name: /^Mapa de/ })).toBeNull(); // C no tiene cobertura: no hay nada que dibujar
+    unmount();
+  });
+});

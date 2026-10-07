@@ -72,21 +72,23 @@ const ll = (t) => [t.latitude, t.longitude];
 
 // Devuelve los grupos por capa, un índice sel -> capas con estilo propio (para applySelection) y `rescale`
 // (ancho del corredor en px según el zoom; MapView lo llama en zoomend). `zoom` sólo siembra el ancho inicial.
-export function buildLayers(L, model, { obras, onSelect, zoom = 16 }) {
+// `mini` (mini-mapa de la página Obras): mismas capas pero ninguna interactiva ni focuseable.
+export function buildLayers(L, model, { obras, onSelect, zoom = 16, mini = false }) {
   const groups = Object.fromEntries(['cover', 'labels', 'corridor', 'lines', 'gaps', 'circles', 'portals'].map((g) => [g, L.layerGroup()]));
   const index = new Map();
   const routes = []; // paths dibujables: syncCircles los recorre
   const circles = { group: groups.circles, byUuid: new Map(), onSelect, pendingFocus: null };
   const reg = (sel, layer) => (index.has(sel) ? index.get(sel).push(layer) : index.set(sel, [layer]));
   const pick = (sel) => () => onSelect(sel);
+  const wire = mini ? () => {} : makeInteractive;
 
   for (const o of obras) {
     if (!o.cover) continue; // sin cobertura no se dibuja nada de la obra (R2)
     const osel = `obra:${o.uuid}`;
     const rect = L.rectangle([[o.cover.minLat, o.cover.minLon], [o.cover.maxLat, o.cover.maxLon]], {
-      pane: 'cover', className: 'cg-cover', cgKind: 'cover', ...styleFor('cover', 'normal'),
+      pane: 'cover', className: 'cg-cover', cgKind: 'cover', interactive: !mini, ...styleFor('cover', 'normal'),
     });
-    makeInteractive(rect, { label: `Obra ${o.name}`, onSelect: pick(osel) });
+    wire(rect, { label: `Obra ${o.name}`, onSelect: pick(osel) });
     groups.cover.addLayer(rect);
     reg(osel, rect);
 
@@ -105,9 +107,9 @@ export function buildLayers(L, model, { obras, onSelect, zoom = 16 }) {
       routes.push(p);
       if (ts.length === 1) { // un solo trigger: sólo el círculo
         const c = L.circle(ll(ts[0]), {
-          radius: ts[0].radius_meters, pane: 'line', cgKind: 'line', fillColor: C.azure, fillOpacity: 0.1, ...styleFor('line', 'normal'),
+          radius: ts[0].radius_meters, pane: 'line', cgKind: 'line', fillColor: C.azure, fillOpacity: 0.1, interactive: !mini, ...styleFor('line', 'normal'),
         });
-        makeInteractive(c, { label, onSelect: pick(psel) });
+        wire(c, { label, onSelect: pick(psel) });
         groups.lines.addLayer(c);
         reg(psel, c);
         continue;
@@ -127,10 +129,12 @@ export function buildLayers(L, model, { obras, onSelect, zoom = 16 }) {
       const line = L.polyline(pts, { pane: 'line', interactive: false, cgKind: 'line', ...styleFor('line', 'normal') });
       groups.lines.addLayer(line);
       reg(psel, line);
-      // Área de clic de 16 px: la línea visible no es interactiva.
-      const hit = L.polyline(pts, { pane: 'line', weight: 16, opacity: 0 });
-      makeInteractive(hit, { label, onSelect: pick(psel) });
-      groups.lines.addLayer(hit);
+      if (!mini) {
+        // Área de clic de 16 px: la línea visible no es interactiva.
+        const hit = L.polyline(pts, { pane: 'line', weight: 16, opacity: 0 });
+        makeInteractive(hit, { label, onSelect: pick(psel) });
+        groups.lines.addLayer(hit);
+      }
       for (const g of p.gaps) {
         groups.gaps.addLayer(L.polyline([pts[g.from], pts[g.to]], { pane: 'gap', interactive: false, color: C.ambar, weight: 2.5, dashArray: '4 4' }));
       }
@@ -142,9 +146,12 @@ export function buildLayers(L, model, { obras, onSelect, zoom = 16 }) {
       const sel = `portal:${p.uuid}`;
       const circle = L.circle(ll(t), { radius: t.radius_meters, pane: 'portals', interactive: false, cgKind: 'portal', ...styleFor('portal', 'normal') });
       const dot = L.circleMarker(ll(t), { pane: 'portals', interactive: false, cgKind: 'dot', stroke: false, fillColor: C.mint, fillOpacity: 1, ...styleFor('dot', 'normal') });
-      const hit = L.marker(ll(t), { icon: L.divIcon({ html: '', className: 'portal-hit', iconSize: [44, 44] }), keyboard: true });
-      makeInteractive(hit, { label: `Portal ${p.name}, radio ${meters(t.radius_meters)}`, onSelect: pick(sel) });
-      groups.portals.addLayer(circle).addLayer(dot).addLayer(hit);
+      groups.portals.addLayer(circle).addLayer(dot);
+      if (!mini) {
+        const hit = L.marker(ll(t), { icon: L.divIcon({ html: '', className: 'portal-hit', iconSize: [44, 44] }), keyboard: true });
+        makeInteractive(hit, { label: `Portal ${p.name}, radio ${meters(t.radius_meters)}`, onSelect: pick(sel) });
+        groups.portals.addLayer(hit);
+      }
       reg(sel, circle);
       reg(sel, dot);
     }

@@ -31,6 +31,11 @@
 .detpane .crumbs { margin: 0 0 var(--sp-4); }
 
 a.row { text-decoration: none; }
+/* Mini-mapa del detalle (D-08): 240 px, sin interacción; MapView lo llena (.mapbox es absolute). */
+.minimap {
+  position: relative; height: 240px; margin: 0 0 var(--sp-5); overflow: hidden;
+  border-radius: var(--r-md); border: 1px solid var(--border-hairline);
+}
 /* Filas esqueleto (cargando): sin shimmer, sin interacción. */
 .ent.skel { background: var(--surface-raised); border-color: transparent; pointer-events: none; }
 .notfound { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-4); }

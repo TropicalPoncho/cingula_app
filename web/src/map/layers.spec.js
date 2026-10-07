@@ -314,3 +314,17 @@ describe('encuadre', () => {
     expect(targetBounds(L, m, `path:${ID.pathA}`).isValid()).toBe(true);
   });
 });
+
+describe('modo mini (mini-mapa de Obras)', () => {
+  it('mismas capas que el mapa grande pero ninguna interactiva ni con área de clic, y el índice de selección se conserva', () => {
+    const m = modelOf();
+    const big = build(m, [obra(m, ID.obA)]);
+    const mini = build(m, [obra(m, ID.obA)], { mini: true });
+    const all = (b) => Object.values(b.groups).flatMap((g) => g.getLayers());
+    expect(all(mini).some((l) => l.options.cgKind === 'cover' && l.options.interactive !== false)).toBe(false);
+    expect(layersOf(mini, 'portals').filter((l) => l.options.icon?.options.className === 'portal-hit')).toHaveLength(0);
+    expect(layersOf(big, 'portals').filter((l) => l.options.icon?.options.className === 'portal-hit')).toHaveLength(1);
+    expect(layersOf(mini, 'lines').filter((l) => l.options.weight === 16)).toHaveLength(0); // sin área de clic de 16 px
+    expect(size(mini.index)).toBe(size(big.index));
+  });
+});
