@@ -124,13 +124,14 @@ export default function MapPage() {
         onClose={close}
       />
       <div className="mapwrap" onFocus={rememberFocus}>
-        <MapView
-          model={model} obras={obras} capas={capas} modo={modo} sel={sel}
-          fitKey={ready ? `rec:${recVal}` : null} fitTarget={fitTarget} onSelect={select}
-        />
+        {/* El menú va ANTES del mapa en el DOM: es el primer control del mapa en el orden de Tab (UI-SPEC). */}
         <MapBar
           recorridos={model.recorridos} rec={recVal} hasSinRecorrido={hasSinRecorrido}
           capas={capas} modo={modo} onRec={onRec} onCapas={setCapas} onModo={(m) => setParams({ modo: m === 'circ' ? 'circ' : null })} disabled={!ready}
+        />
+        <MapView
+          model={model} obras={obras} capas={capas} modo={modo} sel={sel}
+          fitKey={ready ? `rec:${recVal}` : null} fitTarget={fitTarget} onSelect={select}
         />
         <MapOverlay counts={counts} total={model.counts.obras} />
       </div>

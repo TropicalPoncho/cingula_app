@@ -42,25 +42,42 @@
 .mapview .leaflet-interactive:focus-visible { outline: none; stroke: var(--text-primary); stroke-width: 3.5px; stroke-opacity: 1; }
 .mapview .portal-hit:focus-visible { box-shadow: var(--glow-focus); }
 
-/* Barra de controles (prototipo `.mapbar .mcard .chk .sw`, tipografía y espaciado normalizados al DS). */
-.mapbar {
-  position: absolute; top: var(--sp-4); left: var(--sp-4); right: var(--sp-4); display: flex; flex-wrap: wrap;
-  gap: var(--sp-3); align-items: stretch; pointer-events: none; /* [ASUNCIÓN OI-05] envuelve entre 900 y 1199 px */
+/* Menú de capas y filtros (D-22): un botón de 44 px arriba a la izquierda + chip del recorrido activo + tarjeta no modal.
+   `.mapbar` cubre el área del mapa sólo para posicionar (no captura el puntero); la tarjeta vive dentro del mapa, nunca bajo el panel. */
+.mapbar { position: absolute; inset: 0; pointer-events: none; }
+.mfilt { position: absolute; top: var(--sp-4); left: var(--sp-4); right: var(--sp-4); display: flex; align-items: center; gap: var(--sp-2); pointer-events: none; }
+.mfilt > * { pointer-events: auto; }
+.mbtn, .mchip {
+  min-height: var(--touch-min); border-radius: var(--r-pill); background: var(--surface-veil); backdrop-filter: var(--backdrop-veil);
+  border: 1px solid var(--border-hairline); color: var(--text-primary);
 }
-.mapbar > * { pointer-events: auto; }
-.mcard {
-  display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); min-width: 0; padding: var(--sp-2) var(--sp-4);
-  border-radius: var(--r-lg); background: var(--surface-veil); backdrop-filter: var(--backdrop-veil); border: 1px solid var(--border-hairline);
+.mbtn { display: flex; align-items: center; justify-content: center; flex: none; width: var(--touch-min); padding: 0; cursor: pointer; }
+.mbtn:hover, .mbtn[aria-expanded="true"] { background: var(--surface-raised); }
+.mchip { display: flex; align-items: center; min-width: 0; padding-left: var(--sp-4); font-size: var(--fs-sm); }
+.mchip-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mchip-x {
+  display: flex; align-items: center; justify-content: center; flex: none; width: var(--touch-min); height: var(--touch-min);
+  border: 0; background: transparent; color: var(--text-secondary); cursor: pointer;
 }
-.mlbl { font-size: var(--fs-xs); color: var(--text-secondary); }
+.mchip-x:hover { color: var(--text-primary); }
+.mmenu {
+  pointer-events: auto; position: absolute; top: calc(var(--sp-4) + var(--touch-min) + var(--sp-2)); left: var(--sp-4); width: 320px; max-width: calc(100% - 2 * var(--sp-4));
+  max-height: calc(100vh - 140px); overflow-y: auto; padding: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-4);
+  border-radius: var(--r-lg); background: var(--surface-card); border: 1px solid var(--border-hairline); box-shadow: var(--shadow-raised);
+}
+.mgrp { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-2); min-width: 0; }
 .chk { display: flex; align-items: center; gap: var(--sp-2); min-height: var(--touch-min); cursor: pointer; font-size: var(--fs-sm); }
 .chk input { width: 18px; height: 18px; accent-color: var(--c-mint); }
 .sw { width: 18px; height: 0; border-top: 2px solid; flex: none; }
-/* El selector recorta nombres largos sin romper la barra. */
-.mcard .sel { max-width: 260px; min-width: 0; text-overflow: ellipsis; }
+.mmenu .sel { width: 100%; text-overflow: ellipsis; } /* recorta nombres largos sin romper la tarjeta */
+/* [DEFAULT, se suma a OI-05] < 900 px: tarjeta de ancho completo que termina antes de la hoja inferior (55 vh) y scrollea por dentro. */
+@media (max-width: 899px) {
+  .mmenu { position: fixed; left: var(--sp-2); right: var(--sp-2); top: 124px; width: auto; max-width: none; max-height: calc(45vh - 132px); z-index: 30; }
+}
 
-/* Velo, leyenda y barra por encima del mapa (el mapa queda en z-index 0). */
-.mapwrap .mapstate, .mapwrap .legend, .mapwrap .mapbar { z-index: 3; }
+/* Velo y leyenda por encima del mapa (z-index 0); el menú por encima del velo: sus controles deshabilitados se ven aunque no haya datos. */
+.mapwrap .mapstate, .mapwrap .legend { z-index: 3; }
+.mapwrap .mapbar { z-index: 4; }
 /* La leyenda no tapa la atribución ni el zoom: se corta antes y no envuelve. */
 .mapwrap .legend { max-width: calc(100% - 260px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Pista del modo Círculos bajo CIRCLES_MIN_ZOOM: mismo estilo que la leyenda, apilada encima de ella. */

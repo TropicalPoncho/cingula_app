@@ -6,6 +6,12 @@ import { ID } from '../src/test/fixtures.js';
 import { mockApi, KEY } from './mock-api.js';
 
 const panel = (page) => page.getByRole('complementary', { name: 'Detalle del elemento seleccionado' });
+// Los filtros viven en la tarjeta `Capas y filtros` (D-22): se abre sólo si hace falta.
+async function menu(page) {
+  const b = page.getByRole('button', { name: 'Capas y filtros' });
+  if ((await b.getAttribute('aria-expanded')) === 'false') await b.click();
+  return page.getByRole('dialog', { name: 'Capas y filtros' });
+}
 
 test('recorrido completo: acceso, mapa, filtro, obra, path, trigger, Obras, Artistas y salir (sin violaciones de CSP)', async ({ page }) => {
   const csp = [];
@@ -32,7 +38,7 @@ test('recorrido completo: acceso, mapa, filtro, obra, path, trigger, Obras, Arti
   await expect(page.locator('path.cg-cover')).toHaveCount(2);
 
   // 3. Filtro de recorrido: abre su panel con créditos
-  await page.getByRole('combobox', { name: 'Recorrido' }).selectOption(ID.rec1);
+  await (await menu(page)).getByRole('combobox', { name: 'Recorrido' }).selectOption(ID.rec1);
   await expect(panel(page).getByRole('heading', { name: 'Recorrido Norte' })).toBeVisible();
   await expect(panel(page).getByText('Créditos', { exact: true })).toBeVisible();
 
@@ -47,7 +53,7 @@ test('recorrido completo: acceso, mapa, filtro, obra, path, trigger, Obras, Arti
   await expect(p.getByText('Audio del path')).toBeVisible();
 
   // 5. Trigger 001 (círculo del mapa) y Siguiente
-  await page.getByRole('button', { name: 'Círculos' }).click();
+  await (await menu(page)).getByRole('button', { name: 'Círculos' }).click();
   await page.getByRole('button', { name: 'Trigger 1 de 32, radio 12 m' }).dispatchEvent('click');
   await expect(p.getByRole('heading', { name: 'Trigger 001' })).toBeVisible();
   await p.getByRole('button', { name: /Siguiente/ }).click();

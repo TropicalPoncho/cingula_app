@@ -2,36 +2,21 @@ import { useEffect, useRef, useState } from 'react';
 import { TriangleAlert, RefreshCw } from 'lucide-react';
 import { useStore, refresh, retryNow } from '../data/store.js';
 import { pillState } from './syncState.js';
+import { usePopover } from './usePopover.js';
 
 const DOT = { mint: 'var(--c-mint)', ambar: 'var(--c-ambar)', ink: 'var(--ink-200)' };
 
 // Estado de sync del header (WEB-07, D-13): la pill dice la verdad aunque el popover esté cerrado.
 export default function SyncPill() {
   const snap = useStore();
-  const [open, setOpen] = useState(false);
+  const { open, setOpen, wrap, button: pill } = usePopover();
   const [now, setNow] = useState(Date.now);
-  const wrap = useRef(null);
-  const pill = useRef(null);
   const seenError = useRef(null);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 30_000); // la hora relativa se recalcula cada 30 s
     return () => clearInterval(id);
   }, []);
-
-  // Esc o clic afuera cierran el popover (no modal) y devuelven el foco a la pill.
-  useEffect(() => {
-    if (!open) return;
-    const close = () => { setOpen(false); pill.current.focus(); };
-    const onKey = (e) => e.key === 'Escape' && close();
-    const onDown = (e) => !wrap.current.contains(e.target) && close();
-    document.addEventListener('keydown', onKey);
-    document.addEventListener('pointerdown', onDown);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.removeEventListener('pointerdown', onDown);
-    };
-  }, [open]);
 
   const v = pillState(snap, now, snap.online);
   const lastError = snap.errors.at(-1)?.at ?? null;
