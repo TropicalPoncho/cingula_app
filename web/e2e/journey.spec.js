@@ -74,6 +74,9 @@ test('recorrido completo: acceso, mapa, filtro, obra, path, trigger, Obras, Arti
   await expect(page).toHaveURL(/\/acceso$/);
   expect(await page.evaluate(() => sessionStorage.length)).toBe(0);
 
-  expect(csp, 'violaciones de CSP').toEqual([]);
+  // Los Previews de Vercel inyectan su widget de feedback (vercel.live); la CSP lo bloquea a propósito y en
+  // Production no existe. Cualquier otra violación sí hace fallar el recorrido.
+  const propias = csp.filter((v) => !/vercel\.live/.test(v));
+  expect(propias, 'violaciones de CSP').toEqual([]);
   expect(errors, 'errores no capturados').toEqual([]);
 });
