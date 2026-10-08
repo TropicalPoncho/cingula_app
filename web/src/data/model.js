@@ -1,5 +1,5 @@
 // Lista blanca (H3), merge por uuid (WEB-08) y modelo derivado puro. Sin DOM, sin Leaflet.
-import { findGaps, haversineM, median, medianRadius } from './geometry.js';
+import { circlesOutline, findGaps, haversineM, median, medianRadius } from './geometry.js';
 
 // Columnas que la SPA lee. share_token, owner_id, user_id, checksum y el texto de storage_key
 // no se copian (storage_key sólo deriva `has_file`).
@@ -113,6 +113,8 @@ export function buildModel(tables) {
     (p.kind === 'route' ? obra.routes : p.kind === 'portal' ? obra.portals : []).push(path);
     paths.set(path.uuid, path);
   }
+  // D-20: contorno = unión de los círculos de los triggers de las rutas + el trigger de cada portal (un portal es un solo círculo, OI-01c).
+  for (const o of obras.values()) o.outline = circlesOutline([...o.routes.flatMap((p) => p.triggers), ...o.portals.flatMap((p) => (p.trigger ? [p.trigger] : []))]);
   for (const [pu, rows] of trigRows) if (!paths.has(pu)) rows.forEach(() => drop('triggers'));
 
   const seen = new Set();

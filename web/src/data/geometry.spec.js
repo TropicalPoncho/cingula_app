@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { haversineM, medianRadius, findGaps, runs, corridorPx } from './geometry.js';
+import { describe, it, expect, vi } from 'vitest';
+import polygonClipping from 'polygon-clipping';
+import { haversineM, medianRadius, findGaps, runs, corridorPx, circlesOutline, OUTLINE_VERTICES } from './geometry.js';
 
 const at = (lon, r = 12) => ({ latitude: 0, longitude: lon, radius_meters: r });
 const M = 1 / 111195; // grados de lon por metro en el ecuador
@@ -38,5 +39,54 @@ describe('geometry', () => {
 
   it('corridorPx(12, -42, 16) ≈ 13,5 (±0,1)', () => {
     expect(Math.abs(corridorPx(12, -42, 16) - 13.5)).toBeLessThan(0.1);
+  });
+});
+
+describe('circlesOutline (D-20)', () => {
+  const MLAT = 1 / 111195; // grados de latitud por metro
+  const c = (eastM, r = 12, lat = 0) => ({ latitude: lat, longitude: eastM * M, radius_meters: r });
+
+  it('sin círculos -> null', () => {
+    expect(circlesOutline([])).toBeNull();
+  });
+
+  it('un círculo: 1 polígono de OUTLINE_VERTICES vértices y bounds que contienen centro ± r (circunscrito)', () => {
+    const o = circlesOutline([c(0)]);
+    expect(o.polygons).toHaveLength(1);
+    expect(o.polygons[0]).toHaveLength(1); // sin agujeros
+    expect(o.polygons[0][0]).toHaveLength(OUTLINE_VERTICES);
+    expect(o.bounds.minLat).toBeLessThanOrEqual(-12 * MLAT);
+    expect(o.bounds.maxLat).toBeGreaterThanOrEqual(12 * MLAT);
+    expect(o.bounds.minLon).toBeLessThanOrEqual(-12 * M);
+    expect(o.bounds.maxLon).toBeGreaterThanOrEqual(12 * M);
+    // y no se pasa más de ~1 % del radio
+    expect(o.bounds.maxLat).toBeLessThan(12.2 * MLAT);
+  });
+
+  it('3 círculos solapados -> 1 polígono; con un hueco de 40 m > 12 + 12 -> 2 polígonos', () => {
+    expect(circlesOutline([c(0), c(10), c(20)]).polygons).toHaveLength(1);
+    const ts = [...Array.from({ length: 16 }, (_, i) => c(i * 10)), ...Array.from({ length: 16 }, (_, i) => c(190 + i * 10))];
+    expect(circlesOutline(ts).polygons).toHaveLength(2);
+  });
+
+  it('100 círculos encadenados -> 1 polígono (bajo el timeout por defecto)', () => {
+    const o = circlesOutline(Array.from({ length: 100 }, (_, i) => c(i * 10)));
+    expect(o.polygons).toHaveLength(1);
+  });
+
+  it('radio <= 0 y coordenadas no finitas se ignoran; si todos lo son -> null', () => {
+    expect(circlesOutline([c(0, 0), c(10, -5), { latitude: NaN, longitude: 0, radius_meters: 12 }, { latitude: 0, longitude: Infinity, radius_meters: 12 }])).toBeNull();
+    expect(circlesOutline([c(0, 0), c(0)]).polygons).toHaveLength(1);
+  });
+
+  it('si la unión lanza, devuelve los círculos sin unir en vez de propagar el error', () => {
+    const spy = vi.spyOn(polygonClipping, 'union').mockImplementation(() => { throw new Error('boom'); });
+    try {
+      const o = circlesOutline([c(0), c(10), c(200)]);
+      expect(o.polygons).toHaveLength(3);
+      expect(o.bounds.maxLon).toBeGreaterThan(200 * M);
+    } finally {
+      spy.mockRestore();
+    }
   });
 });

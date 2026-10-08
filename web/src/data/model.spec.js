@@ -130,6 +130,16 @@ describe('buildModel', () => {
     expect(obra.get(ID.obA).maxRadius).toBe(15);
   });
 
+  it('outline (D-20): A = 3 anillos (2 tramos + portal), B = 1, C = null', () => {
+    const o = (id) => obra.get(id).outline;
+    expect(o(ID.obA).polygons).toHaveLength(3);
+    expect(o(ID.obB).polygons).toHaveLength(1);
+    expect(o(ID.obC)).toBeNull();
+    const b = o(ID.obA).bounds;
+    expect(b.minLat).toBeLessThan(b.maxLat);
+    expect(b.minLon).toBeLessThan(b.maxLon);
+  });
+
   it('créditos del recorrido 1 = unión sin duplicados, ordenada, de los artistas de A y B; cada artista conoce sus obras', () => {
     const r1 = recorrido.get(ID.rec1);
     expect(r1.obras.map((o) => o.uuid)).toEqual([ID.obA, ID.obB].sort((a, b) => obra.get(a).name.localeCompare(obra.get(b).name, 'es')));
