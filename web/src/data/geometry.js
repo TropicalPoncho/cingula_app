@@ -58,14 +58,14 @@ export const OUTLINE_VERTICES = 24;
 
 // Unión de círculos `{ latitude, longitude, radius_meters }` -> { polygons: MultiPolygon [lat, lon] (orden de Leaflet), bounds } | null.
 // Radio <= 0 o coordenadas no finitas se ignoran. Se calcula una vez por pull (buildModel), nunca por frame.
-export function circlesOutline(circles, vertices = OUTLINE_VERTICES) {
+export function circlesOutline(circles) {
   const rings = [];
   for (const c of circles) {
     if (!Number.isFinite(c.latitude) || !Number.isFinite(c.longitude) || !(c.radius_meters > 0)) continue;
-    const dLat = ((c.radius_meters / Math.cos(Math.PI / vertices)) * 180) / (Math.PI * R);
+    const dLat = ((c.radius_meters / Math.cos(Math.PI / OUTLINE_VERTICES)) * 180) / (Math.PI * R);
     const dLon = dLat / Math.cos(rad(c.latitude));
-    rings.push(Array.from({ length: vertices }, (_, k) => {
-      const a = (2 * Math.PI * k) / vertices;
+    rings.push(Array.from({ length: OUTLINE_VERTICES }, (_, k) => {
+      const a = (2 * Math.PI * k) / OUTLINE_VERTICES;
       return [c.longitude + dLon * Math.cos(a), c.latitude + dLat * Math.sin(a)]; // [x, y] = [lon, lat]
     }));
   }
