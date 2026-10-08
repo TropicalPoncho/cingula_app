@@ -117,6 +117,8 @@ Ninguna superficie nueva. T-12-35 mitigada (chequeo K con grep y suite verde); T
 
 ## PENDIENTE — Task 3 (compuerta humana, `gate="blocking-human"`)
 
+**Task 3 pending — run AFTER 12-11 and 12-12** (planes post-UAT D-20..D-23, agregados 2026-10-08). Incluir en la UAT los ítems manuales (g)-(j) que 12-12 agrega a `12-VALIDATION.md`.
+
 Checklist exacto de la compuerta (el ejecutor que la retome hace 1-4 antes de pausar y 5 al reanudar):
 
 1. `git push origin ws/web` (nunca `main`) y esperar el Preview **Ready**.
