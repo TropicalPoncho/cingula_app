@@ -134,3 +134,32 @@ test('trigger: nota fija, Siguiente cambia al trigger vecino y Volver a lleva al
   await p.getByRole('button', { name: /Volver a Ruta A/ }).click();
   await expect(p.getByRole('heading', { name: 'Ruta A' })).toBeVisible();
 });
+
+// D-23: etiquetas de fact sin superposición y Volver como flecha en la fila del tipo (panel compacto de 380 px).
+test('path compacto: Volver es una flecha de 44 px junto a la etiqueta PATH; ninguna etiqueta de fact desborda', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`/?sel=path:${ID.pathA}`);
+  const p = panel(page);
+  await expect(p.getByRole('heading', { name: 'Ruta A' })).toBeVisible();
+  expect((await p.boundingBox()).width).toBeCloseTo(380, 0);
+
+  const back = p.getByRole('button', { name: 'Volver a Obra Aurora' });
+  await expect(back).toHaveAttribute('title', 'Volver a Obra Aurora');
+  const b = await back.boundingBox();
+  expect(b.width).toBeGreaterThanOrEqual(43.5);
+  expect(b.height).toBeGreaterThanOrEqual(43.5);
+  const tipo = await p.locator('.phead .lbl').boundingBox();
+  expect(Math.abs(b.y + b.height / 2 - (tipo.y + tipo.height / 2))).toBeLessThanOrEqual(12);
+  await expect(p.locator('.fact dt', { hasText: /^Tipo$/ })).toBeVisible();
+  await expect(p.locator('.fact dt', { hasText: /^Tolerancia$/ })).toBeVisible();
+
+  const desborda = () => p.locator('.fact dt').evaluateAll((els) => els.filter((e) => e.scrollWidth > e.clientWidth).length);
+  expect(await desborda()).toBe(0);
+  // Una palabra larga sin cortes se parte dentro de su columna en vez de pisar el valor.
+  await p.locator('.fact dt').first().evaluate((e) => { e.textContent = 'x'.repeat(40); });
+  expect(await desborda()).toBe(0);
+  expect(await p.locator('.pbody').evaluate((e) => e.scrollWidth <= e.clientWidth)).toBe(true);
+
+  await page.goto(`/?sel=path:${ID.pathA}&x=1`);
+  await expect(p.getByRole('button', { name: 'Volver a Obra Aurora' })).toBeVisible();
+});

@@ -92,14 +92,19 @@ export default function EntityDetail({ view, expanded, onSelect, onExpand }) {
   const note = view.note && <p className="dim note">{view.note}</p>;
   return (
     <>
-      <span className="lbl">{view.typeLabel}</span>
+      <div className="phead">
+        {view.back && (
+          <button
+            type="button" className="ib" aria-label={`Volver a ${view.back.label}`} title={`Volver a ${view.back.label}`}
+            onClick={() => onSelect(view.back.sel)}
+          >
+            <ArrowLeft size={20} aria-hidden="true" />
+          </button>
+        )}
+        <span className="lbl">{view.typeLabel}</span>
+      </div>
       <h2 className={expanded ? 'dtitle' : 'ptitle'} title={view.title}>{view.title}</h2>
       <p className="sub">{view.subtitle}</p>
-      {view.back && (
-        <button type="button" className="btn back" onClick={() => onSelect(view.back.sel)}>
-          <ArrowLeft size={16} aria-hidden="true" /> Volver a {view.back.label}
-        </button>
-      )}
       {expanded ? (
         <div className="dgrid">
           <div>

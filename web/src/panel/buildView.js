@@ -187,8 +187,8 @@ function pathView(p, origin) {
     back: { label: o.name, sel: sel('obra', o) },
     facts: [
       { label: 'Obra', links: [link(o.name, sel('obra', o))] },
-      { label: 'kind', value: p.kind, mono: true },
-      { label: 'tolerance_meters', value: p.tolerance_meters == null ? '—' : m(p.tolerance_meters), mono: true },
+      { label: 'Tipo', value: p.kind, mono: true },
+      { label: 'Tolerancia', value: p.tolerance_meters == null ? '—' : m(p.tolerance_meters), mono: true },
       { label: 'Grabación de origen', value: p.grabacion?.title ?? '—' },
       { label: 'Triggers', value: triggersFact },
       p.gaps.length

@@ -150,8 +150,8 @@ describe('buildView path', () => {
   it('path: facts de la ruta de 32 triggers con hueco', () => {
     expect(v).toMatchObject({ type: 'path', typeLabel: 'PATH', title: 'Ruta A', subtitle: 'Obra Aurora · Recorrido Norte' });
     expect(fact(v, 'Obra').links).toEqual([{ label: 'Obra Aurora', sel: `obra:${ID.obA}` }]);
-    expect(fact(v, 'kind')).toMatchObject({ value: 'route', mono: true });
-    expect(fact(v, 'tolerance_meters')).toMatchObject({ value: '5 m', mono: true });
+    expect(fact(v, 'Tipo')).toMatchObject({ value: 'route', mono: true });
+    expect(fact(v, 'Tolerancia')).toMatchObject({ value: '5 m', mono: true });
     expect(fact(v, 'Grabación de origen').value).toBe('—');
     expect(fact(v, 'Triggers').value).toBe('32 · radio 12 m · cada ≈ 10 m');
     expect(fact(v, 'Huecos')).toMatchObject({ value: '1 hueco', dot: 'var(--c-ambar)' });

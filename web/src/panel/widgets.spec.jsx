@@ -117,6 +117,35 @@ describe('EntityDetail: path y trigger', () => {
     expect(screen.getByRole('button', { name: /Siguiente/ })).toBeInTheDocument();
   });
 
+  it('Volver (D-23): un botón de sólo flecha en la fila de la etiqueta de tipo, en path, portal y trigger; recorrido y obra no lo tienen', async () => {
+    const onSelect = vi.fn();
+    const casos = [
+      [`path:${ID.pathA}`, 'PATH', 'Volver a Obra Aurora', `obra:${ID.obA}`],
+      [`portal:${ID.portalA}`, 'PORTAL', 'Volver a Obra Aurora', `obra:${ID.obA}`],
+      [`trigger:${ID.trA(0)}`, 'TRIGGER', 'Volver a Ruta A', `path:${ID.pathA}`],
+    ];
+    for (const [sel, tipo, name, back] of casos) {
+      for (const expanded of [false, true]) {
+        const { container, unmount } = render(<EntityDetail view={view(sel)} expanded={expanded} onSelect={onSelect} onExpand={noop} />);
+        const b = screen.getByRole('button', { name });
+        expect(b).toHaveAttribute('title', name);
+        expect(b.textContent).toBe(''); // sólo el ícono
+        const fila = container.querySelector('.phead');
+        expect(fila).toContainElement(b);
+        expect(within(fila).getByText(tipo)).toBeInTheDocument();
+        onSelect.mockClear();
+        await userEvent.setup().click(b);
+        expect(onSelect).toHaveBeenCalledWith(back);
+        unmount();
+      }
+    }
+    for (const sel of [`recorrido:${ID.rec1}`, `obra:${ID.obA}`]) {
+      const { unmount } = render(<EntityDetail view={view(sel)} expanded={false} onSelect={noop} onExpand={noop} />);
+      expect(screen.queryByRole('button', { name: /^Volver a/ })).toBeNull();
+      unmount();
+    }
+  });
+
   it('el HTML de un nombre de portal es texto (T-12-24)', () => {
     const v = view(`path:${ID.pathA}`);
     v.table = { ...v.table, rows: [{ ...v.table.rows[0], name: '<img src=x onerror=alert(1)>' }] };
