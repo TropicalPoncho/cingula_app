@@ -4,12 +4,12 @@ milestone: v1.0
 milestone_name: (Web de gestión, lectura)
 current_phase: 12
 current_phase_name: Web de lectura
-current_plan: 12-10
+current_plan: 12-12
 status: executing
-stopped_at: "12-10 tasks 1-2 done (E2E journey, ponytail audit); Task 3 human gate pending (push ws/web, Preview UAT, phone push, merge to main)"
+stopped_at: "Completed 12-11 (contorno de obra por union de circulos, etiquetas por zoom); next 12-12, then 12-10 Task 3 gate"
 last_updated: "2026-10-08T04:00:00.000Z"
 last_activity: 2026-10-06
-last_activity_desc: "12-10 parcial: faltan push, UAT en Preview y merge (compuerta humana)"
+last_activity_desc: "12-11 completo (D-20, D-21); sigue 12-12 (menu de filtros, panel) y la compuerta de 12-10"
 state_head: 39a4ecb1e32b626bdeca5ed5aed7c5ccea6e1a71
 progress:
   total_phases: 4
