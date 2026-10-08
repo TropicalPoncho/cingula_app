@@ -48,7 +48,9 @@ describe('buildView obra', () => {
       { label: 'Bruno Mayo', href: `/artistas/${ID.arB}` },
     ]);
     expect(fact(v, 'Cobertura').value).toMatch(/^\d+ × \d+ m$/);
-    expect(fact(v, 'Cobertura').title).toBe('Extensión entre los centros de los triggers (no incluye el radio).');
+    expect(fact(v, 'Cobertura').title).toBe('Ancho × alto del contorno: incluye el radio de los triggers.');
+    // los centros extremos de la Ruta A distan 340 m: el ancho del contorno les suma el radio (12 m) a cada lado
+    expect(Number(fact(v, 'Cobertura').value.split(' ')[0])).toBeGreaterThanOrEqual(364);
     expect(fact(v, 'Paths').value).toBe('1');
     expect(fact(v, 'Portales').value).toBe('1');
     expect(v.note).toBeNull();

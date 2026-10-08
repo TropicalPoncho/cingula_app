@@ -11,6 +11,10 @@ describe('contrato con el servidor (reemplaza el tipado, D-19)', () => {
     }
   });
 
+  it('la lista blanca de obras son 4 columnas, sin la caja del servidor (D-20)', () => {
+    expect(USED_COLUMNS.obras).toEqual(['uuid', 'name', 'recorrido_uuid', 'visibility']);
+  });
+
   it('las columnas sensibles no están en la lista blanca (storage_key sólo deriva has_file)', () => {
     const used = Object.entries(USED_COLUMNS).flatMap(([t, cs]) => cs.map((c) => `${t}.${c}`));
     for (const s of SENSITIVE) {
@@ -123,11 +127,10 @@ describe('buildModel', () => {
   it('obra C: sin recorrido, sin cobertura, 0 triggers; el HTML llega como texto', () => {
     const c = obra.get(ID.obC);
     expect(c.recorrido).toBeNull();
-    expect(c.cover).toBeNull();
+    expect(c.outline).toBeNull();
     expect(c.routes[0].triggers).toEqual([]);
     expect(c.name).toBe(HTML_NAME);
-    expect(obra.get(ID.obA).cover).toMatchObject({ lat: expect.any(Number), minLat: expect.any(Number) });
-    expect(obra.get(ID.obA).maxRadius).toBe(15);
+    for (const k of ['cover', 'maxRadius']) expect(obra.get(ID.obA)).not.toHaveProperty(k);
   });
 
   it('outline (D-20): A = 3 anillos (2 tramos + portal), B = 1, C = null', () => {

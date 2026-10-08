@@ -7,10 +7,7 @@ export const USED_COLUMNS = {
   recorridos: ['uuid', 'name', 'description'],
   audios: ['uuid', 'kind', 'title', 'description', 'duration_seconds', 'storage_key'],
   artistas: ['uuid', 'name', 'bio'],
-  obras: [
-    'uuid', 'name', 'recorrido_uuid', 'visibility', 'cover_lat', 'cover_lon',
-    'cover_min_lat', 'cover_max_lat', 'cover_min_lon', 'cover_max_lon',
-  ],
+  obras: ['uuid', 'name', 'recorrido_uuid', 'visibility'], // D-20: la caja cover_* del servidor ya no se lee
   obra_artistas: ['uuid', 'obra_uuid', 'artista_uuid'],
   paths: ['uuid', 'obra_uuid', 'kind', 'name', 'audio_uuid', 'grabacion_uuid', 'tolerance_meters'],
   triggers: [
@@ -53,7 +50,6 @@ export function applyRows(tables, rows) {
 const byName = (a, b) => a.name.localeCompare(b.name, 'es');
 const byPositionThenUuid = (a, b) => (a.position ?? 0) - (b.position ?? 0) || (a.uuid < b.uuid ? -1 : a.uuid > b.uuid ? 1 : 0);
 const push = (m, k, v) => (m.has(k) ? m.get(k).push(v) : m.set(k, [v]));
-const COVER = ['cover_lat', 'cover_lon', 'cover_min_lat', 'cover_max_lat', 'cover_min_lon', 'cover_max_lon'];
 
 // Modelo de vista: puro, se calcula una vez por pull. Las referencias entre entidades son objetos
 // (obra.recorrido, path.obra, ...): el modelo es un grafo en memoria, no se serializa.
@@ -73,10 +69,7 @@ export function buildModel(tables) {
       name: o.name,
       visibility: o.visibility, // enums fuera del CHECK se conservan crudos (OI-04)
       recorrido: recorridos.get(o.recorrido_uuid) ?? null, // desconocido -> sin recorrido
-      cover: COVER.some((c) => o[c] == null)
-        ? null
-        : { lat: o.cover_lat, lon: o.cover_lon, minLat: o.cover_min_lat, maxLat: o.cover_max_lat, minLon: o.cover_min_lon, maxLon: o.cover_max_lon },
-      artistas: [], routes: [], portals: [], maxRadius: 0,
+      artistas: [], routes: [], portals: [], outline: null, // outline: se llena después de armar los paths (D-20)
     });
   }
 
@@ -109,7 +102,6 @@ export function buildModel(tables) {
       path.trigger = path.triggers[0] ?? null;
       path.description = rows[0]?.description ?? null;
     }
-    for (const t of path.triggers) obra.maxRadius = Math.max(obra.maxRadius, t.radius_meters);
     (p.kind === 'route' ? obra.routes : p.kind === 'portal' ? obra.portals : []).push(path);
     paths.set(path.uuid, path);
   }

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { ID } from '../src/test/fixtures.js';
+import { ID, LONG_NAME } from '../src/test/fixtures.js';
 import { mockApi, loginAs } from './mock-api.js';
 
 const panel = (page) => page.getByRole('complementary', { name: 'Detalle del elemento seleccionado' });
@@ -10,13 +10,21 @@ test.beforeEach(async ({ page }) => {
   await loginAs(page);
 });
 
-test('dibuja una cobertura por obra con cobertura (C sin cobertura y D borrada no) y atribuye a OSM', async ({ page }) => {
+test('dibuja un contorno por obra con triggers (C sin triggers y D borrada no) y atribuye a OSM', async ({ page }) => {
   await page.goto('/');
   await expect(covers(page)).toHaveCount(2);
   await expect(page.getByRole('link', { name: '© OpenStreetMap contributors' })).toBeVisible();
 });
 
-test('auto-encuadre: las coberturas quedan dentro del mapa, con el padding de 70 px', async ({ page }) => {
+test('contorno = unión: A son 3 subtrazos (2 tramos + portal), B uno (ni un rectángulo ni 33 círculos sueltos)', async ({ page }) => {
+  await page.goto('/');
+  await expect(covers(page)).toHaveCount(2);
+  const subpaths = async (name) => ((await page.locator('path.cg-cover').and(page.getByLabel(name, { exact: true })).getAttribute('d')).match(/M/g) ?? []).length;
+  expect(await subpaths('Obra Obra Aurora')).toBe(3);
+  expect(await subpaths(`Obra ${LONG_NAME}`)).toBe(1);
+});
+
+test('auto-encuadre: los contornos quedan dentro del mapa, con el padding de 70 px', async ({ page }) => {
   await page.goto('/');
   await expect(covers(page)).toHaveCount(2);
   const view = await page.locator('.mapview').boundingBox();
@@ -29,8 +37,7 @@ test('auto-encuadre: las coberturas quedan dentro del mapa, con el padding de 70
 test('clic en una cobertura abre el panel de la obra; expandir no rompe el mapa', async ({ page }) => {
   await page.goto('/');
   await expect(covers(page)).toHaveCount(2);
-  // Las fixtures A y B tienen el mismo bbox (B encima): el clic se despacha sobre el nodo de A.
-  await page.getByRole('button', { name: 'Obra Obra Aurora' }).dispatchEvent('click');
+    await page.getByRole('button', { name: 'Obra Obra Aurora' }).dispatchEvent('click');
   await expect(panel(page).getByRole('heading', { name: 'Obra Aurora' })).toBeVisible();
   expect(new URL(page.url()).searchParams.get('sel')).toBe(`obra:${ID.obA}`);
 
@@ -96,7 +103,7 @@ test('elegir un recorrido filtra y abre su panel con créditos; Todos lo cierra'
   await expect(legend(page)).toContainText('3 obras');
 });
 
-test('Sin recorrido: leyenda de 1 obra (C, sin cobertura) y ningún rectángulo, sin panel', async ({ page }) => {
+test('Sin recorrido: leyenda de 1 obra (C, sin triggers) y ningún contorno, sin panel', async ({ page }) => {
   await page.goto('/');
   await expect(covers(page)).toHaveCount(2);
   await recSelect(page).selectOption('none');
@@ -118,7 +125,7 @@ test('elegir una obra del recorrido filtrado no cambia el filtro; un rec descono
   await expect(legend(page)).toContainText('3 obras');
 });
 
-test('apagar Cobertura quita rectángulos y etiquetas; volver a prenderla los trae de vuelta', async ({ page }) => {
+test('apagar Cobertura quita contornos y etiquetas; volver a prenderla los trae de vuelta', async ({ page }) => {
   await page.goto('/');
   await expect(covers(page)).toHaveCount(2);
   const chk = page.getByRole('checkbox', { name: 'Cobertura' });

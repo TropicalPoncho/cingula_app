@@ -4,19 +4,19 @@ import { emptyTables, applyRows, buildModel } from '../data/model.js';
 import { corridorPx } from '../data/geometry.js';
 import { makeRows, ID, HTML_NAME } from '../test/fixtures.js';
 import {
-  buildLayers, styleFor, applySelection, coverBounds, targetBounds, syncCircles, clearCircles, CIRCLES_MIN_ZOOM, CIRCLES_MAX,
+  buildLayers, styleFor, applySelection, outlineBounds, targetBounds, syncCircles, clearCircles, CIRCLES_MIN_ZOOM, CIRCLES_MAX,
 } from './layers.js';
 
-// Modelo de las fixtures; `tweak` edita las filas antes de armarlo (p. ej. darle cobertura a la obra C).
+// Modelo de las fixtures; `tweak` edita las filas antes de armarlo (p. ej. darle un trigger vivo a la obra C).
 function modelOf(tweak) {
   const rows = makeRows();
   tweak?.(rows);
   return buildModel(applyRows(emptyTables(), rows).tables);
 }
-const withCoverOnC = (rows) => {
-  const a = rows.find((r) => r.payload.uuid === ID.obA).payload;
-  const c = rows.find((r) => r.payload.uuid === ID.obC).payload;
-  for (const k of Object.keys(a)) if (k.startsWith('cover_')) c[k] = a[k];
+// La obra C no tiene triggers vivos (=> sin contorno): este tweak le agrega uno a su Ruta C.
+const withTriggerOnC = (rows) => {
+  const t = rows.find((r) => r.payload.uuid === ID.trB(0)).payload;
+  rows.push({ table: 'triggers', change_seq: '999', payload: { ...t, uuid: 'trg-C-0', path_uuid: ID.pathC, position: 0 } });
 };
 const noop = () => {};
 const build = (model, obras, extra = {}) => buildLayers(L, model, { obras, onSelect: noop, ...extra });
@@ -25,16 +25,16 @@ const obra = (m, id) => m.byId.obra.get(id);
 const size = (index) => [...index.values()].reduce((n, ls) => n + ls.length, 0);
 
 describe('etiquetas de obra (T-12-25)', () => {
-  it('una por obra con cobertura, con el nombre como textContent', () => {
+  it('una por obra con contorno, con el nombre como textContent', () => {
     const m = modelOf();
     const b = build(m, m.obras);
-    expect(layersOf(b, 'labels')).toHaveLength(2); // A y B; C sin cobertura; D borrada
+    expect(layersOf(b, 'labels')).toHaveLength(2); // A y B; C sin triggers; D borrada
     const names = layersOf(b, 'labels').map((l) => l.options.icon.createIcon().textContent).sort();
     expect(names).toEqual(['Obra Aurora', m.obras.find((o) => o.uuid === ID.obB).name].sort());
   });
 
   it('un nombre con HTML se ve como texto y no crea ningún img', () => {
-    const m = modelOf(withCoverOnC);
+    const m = modelOf(withTriggerOnC);
     const b = build(m, [obra(m, ID.obC)]);
     const icon = layersOf(b, 'labels')[0].options.icon.createIcon();
     expect(icon.textContent).toBe(HTML_NAME);
@@ -77,10 +77,18 @@ describe('path de 32 triggers con 1 hueco', () => {
 
 describe('datos feos', () => {
   it('path con 0 triggers: no produce capas', () => {
-    const m = modelOf(withCoverOnC); // la ruta C no tiene triggers
+    const m = modelOf(withTriggerOnC);
+    m.byId.path.get(ID.pathC).triggers = []; // C conserva su contorno (ya calculado) pero la ruta queda vacía
     const b = build(m, [obra(m, ID.obC)]);
     for (const g of ['corridor', 'lines', 'gaps', 'portals']) expect(layersOf(b, g)).toHaveLength(0);
     expect(b.index.has(`path:${ID.pathC}`)).toBe(false);
+  });
+
+  it('obra sin contorno (sin triggers vivos): no se dibuja nada de ella', () => {
+    const m = modelOf();
+    const b = build(m, [obra(m, ID.obC)]);
+    for (const g of Object.keys(b.groups)) expect(layersOf(b, g)).toHaveLength(0);
+    expect(b.index.size).toBe(0);
   });
 
   it('path con 1 trigger: sólo el círculo en metros', () => {
@@ -299,19 +307,40 @@ describe('modo Círculos (R6, R9)', () => {
   });
 });
 
+describe('contorno de obra (D-20)', () => {
+  it('una capa cg-cover L.Polygon por obra con contorno, con los estilos de styleFor("cover")', () => {
+    const m = modelOf();
+    const b = build(m, m.obras);
+    const covers = layersOf(b, 'cover');
+    expect(covers).toHaveLength(2); // A y B; C sin triggers; D borrada
+    for (const l of covers) {
+      expect(l).toBeInstanceOf(L.Polygon);
+      expect(l.options).toMatchObject({ className: 'cg-cover', cgKind: 'cover', pane: 'cover', ...styleFor('cover', 'normal') });
+    }
+    const a = covers.find((l) => b.index.get(`obra:${ID.obA}`).includes(l));
+    expect(a.getLatLngs()).toHaveLength(3); // dos tramos + portal
+  });
+});
+
 describe('encuadre', () => {
   const m = modelOf();
-  it('la unión de coberturas se amplía por el mayor radio de los triggers (H4)', () => {
+  it('outlineBounds contiene los círculos completos de A (el contorno ya incluye el radio, H4)', () => {
     const o = obra(m, ID.obA);
-    const b = coverBounds(L, [o]);
-    expect(b.getSouth()).toBeLessThan(o.cover.minLat);
-    expect(b.getEast()).toBeGreaterThan(o.cover.maxLon);
+    const b = outlineBounds(L, [o]);
+    const first = o.routes[0].triggers[0];
+    const last = o.routes[0].triggers.at(-1);
+    const dLat = 12 / 111195;
+    expect(b.getSouth()).toBeLessThanOrEqual(first.latitude - dLat);
+    expect(b.getNorth()).toBeGreaterThanOrEqual(o.portals[0].trigger.latitude + 15 / 111195);
+    expect(b.getWest()).toBeLessThan(first.longitude);
+    expect(b.getEast()).toBeGreaterThan(last.longitude);
   });
-  it('sin coberturas no hay bounds; un sel inexistente tampoco', () => {
-    expect(coverBounds(L, [obra(m, ID.obC)])).toBeNull();
+  it('sin contornos no hay bounds; un sel inexistente tampoco', () => {
+    expect(outlineBounds(L, [obra(m, ID.obC)])).toBeNull();
     expect(targetBounds(L, m, 'obra:no-existe')).toBeNull();
     expect(targetBounds(L, m, null)).toBeNull();
     expect(targetBounds(L, m, `path:${ID.pathA}`).isValid()).toBe(true);
+    expect(targetBounds(L, m, `obra:${ID.obA}`).isValid()).toBe(true);
   });
 });
 

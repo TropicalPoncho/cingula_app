@@ -83,19 +83,21 @@ export function buildLayers(L, model, { obras, onSelect, zoom = 16, mini = false
   const wire = mini ? () => {} : makeInteractive;
 
   for (const o of obras) {
-    if (!o.cover) continue; // sin cobertura no se dibuja nada de la obra (R2)
+    if (!o.outline) continue; // sin triggers vivos no hay contorno ni nada que dibujar (D-20)
     const osel = `obra:${o.uuid}`;
-    const rect = L.rectangle([[o.cover.minLat, o.cover.minLon], [o.cover.maxLat, o.cover.maxLon]], {
+    // Un solo trazo SVG por obra: la unión de los círculos de sus triggers (partes y agujeros incluidos).
+    const poly = L.polygon(o.outline.polygons, {
       pane: 'cover', className: 'cg-cover', cgKind: 'cover', interactive: !mini, ...styleFor('cover', 'normal'),
     });
-    wire(rect, { label: `Obra ${o.name}`, onSelect: pick(osel) });
-    groups.cover.addLayer(rect);
-    reg(osel, rect);
+    wire(poly, { label: `Obra ${o.name}`, onSelect: pick(osel) });
+    groups.cover.addLayer(poly);
+    reg(osel, poly);
 
     // Etiqueta: nodo DOM con textContent, nunca HTML (T-12-25).
     const span = document.createElement('span');
     span.textContent = o.name;
-    groups.labels.addLayer(L.marker([o.cover.lat, o.cover.lon], {
+    const { minLat, maxLat, minLon, maxLon } = o.outline.bounds;
+    groups.labels.addLayer(L.marker([(minLat + maxLat) / 2, (minLon + maxLon) / 2], {
       icon: L.divIcon({ html: span, className: 'obra-label', iconSize: null }), interactive: false, keyboard: false,
     }));
 
@@ -273,28 +275,28 @@ export function syncGroups(map, groups, capas, circulos = false) {
   }
 }
 
-// Unión de las coberturas, ampliada por el mayor radio de trigger de cada obra (H4: el círculo sobresale del bbox).
-export function coverBounds(L, obras) {
+// Unión de los bounds de los contornos de las obras (null si ninguna tiene). El contorno ya incluye el radio de
+// los triggers (D-20, cierra H4): no hace falta agrandar nada.
+export function outlineBounds(L, obras) {
   let b = null;
   for (const o of obras) {
-    if (!o.cover) continue;
-    const dLat = o.maxRadius / 111320;
-    const dLon = o.maxRadius / (111320 * Math.cos((o.cover.lat * Math.PI) / 180));
-    const ob = L.latLngBounds([o.cover.minLat - dLat, o.cover.minLon - dLon], [o.cover.maxLat + dLat, o.cover.maxLon + dLon]);
+    if (!o.outline) continue;
+    const { minLat, maxLat, minLon, maxLon } = o.outline.bounds;
+    const ob = L.latLngBounds([minLat, minLon], [maxLat, maxLon]);
     b = b ? b.extend(ob) : ob;
   }
   return b;
 }
 
-// Encuadre de un elemento elegido desde el panel (no desde el mapa): obra/recorrido por cobertura,
+// Encuadre de un elemento elegido desde el panel (no desde el mapa): obra/recorrido por contorno,
 // path/portal/trigger por sus triggers. null = nada que encuadrar.
 export function targetBounds(L, model, sel) {
   const i = sel?.indexOf(':') ?? -1;
   if (i < 0) return null;
   const type = sel.slice(0, i);
   const id = sel.slice(i + 1);
-  if (type === 'obra') return coverBounds(L, [model.byId.obra.get(id)].filter(Boolean));
-  if (type === 'recorrido') return coverBounds(L, model.byId.recorrido.get(id)?.obras ?? []);
+  if (type === 'obra') return outlineBounds(L, [model.byId.obra.get(id)].filter(Boolean));
+  if (type === 'recorrido') return outlineBounds(L, model.byId.recorrido.get(id)?.obras ?? []);
   const ts = type === 'trigger' ? [model.byId.trigger.get(id)] : type === 'path' || type === 'portal' ? (model.byId.path.get(id)?.triggers ?? []) : [];
   const pts = ts.filter(Boolean).map((t) => [t.latitude, t.longitude]);
   return pts.length ? L.latLngBounds(pts) : null;

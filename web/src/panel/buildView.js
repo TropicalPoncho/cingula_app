@@ -32,7 +32,7 @@ export const visOf = (v) => (Object.hasOwn(VIS, v ?? '') ? VIS[v] : { label: v ?
 
 const NO_COVER = 'Sin cobertura todavía';
 const NO_COVER_NOTE = 'La obra no tiene triggers, así que no hay dónde dibujarla.';
-const COVER_HINT = 'Extensión entre los centros de los triggers (no incluye el radio).';
+const COVER_HINT = 'Ancho × alto del contorno: incluye el radio de los triggers.';
 
 const num = (n) => String(+Number(n).toFixed(1));
 const m = (n) => `${num(n)} m`;
@@ -59,10 +59,10 @@ const portalRow = (p) => ({
   sel: sel('portal', p),
 });
 
-// Cobertura = caja entre los centros de los triggers (R2/H4), en metros.
+// Cobertura = ancho × alto de los bounds del contorno (D-20; ya incluyen el radio de los triggers), en metros.
 function coverage(o) {
-  if (!o.cover) return null;
-  const { minLat, maxLat, minLon, maxLon } = o.cover;
+  if (!o.outline) return null;
+  const { minLat, maxLat, minLon, maxLon } = o.outline.bounds;
   const lat = (minLat + maxLat) / 2;
   const w = haversineM({ latitude: lat, longitude: minLon }, { latitude: lat, longitude: maxLon });
   const h = haversineM({ latitude: minLat, longitude: minLon }, { latitude: maxLat, longitude: minLon });

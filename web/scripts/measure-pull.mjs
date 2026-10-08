@@ -76,7 +76,6 @@ export function summarize({ rows, pages, model, tables }) {
     paths_con_position_repetida: repeated,
     paths_con_position_con_saltos: jumps,
     obras_con_triggers_vivos: obras.filter((o) => trigsOf(o) > 0).length,
-    obras_con_triggers_y_cobertura_null: obras.filter((o) => trigsOf(o) > 0 && !o.cover).length,
     portales_con_mas_de_un_trigger: portals.filter((p) => p.triggers.length > 1).length,
     audios_usados_por_mas_de_un_path: [...audioUse.values()].filter((n) => n > 1).length,
     huerfanos: model.orphans,

@@ -3,10 +3,10 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './map.css';
 import {
-  PANES, CIRCLES_MIN_ZOOM, buildLayers, applySelection, syncGroups, syncCircles, clearCircles, coverBounds, targetBounds,
+  PANES, CIRCLES_MIN_ZOOM, buildLayers, applySelection, syncGroups, syncCircles, clearCircles, outlineBounds, targetBounds,
 } from './layers.js';
 
-// Único centro fijo permitido (D-02): sólo cuando ninguna obra visible tiene cobertura.
+// Único centro fijo permitido (D-02): sólo cuando ninguna obra visible tiene contorno.
 const FALLBACK = { center: [-42.08, -71.62], zoom: 11 };
 const TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'; // un solo host oficial: sin subdominios ni prefetch (política OSM)
 
@@ -134,7 +134,7 @@ export default function MapView({ model, obras, capas, modo = 'corr', sel, fitKe
   useEffect(() => {
     if (fitKey == null || lastFit.current === fitKey) return;
     lastFit.current = fitKey;
-    requestFit(coverBounds(L, obras));
+    requestFit(outlineBounds(L, obras));
     // ponytail: sólo `fitKey` re-encuadra; obras/modelo nuevos (refresco) no mueven el mapa
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fitKey]);

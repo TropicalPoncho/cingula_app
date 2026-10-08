@@ -120,7 +120,7 @@ export default function Obras({ uuid }) {
               {uuid && <BackToList href={`/obras${qs}`} />}
               <Crumbs crumbs={view.crumbs} onSelect={onSelect} />
               <EntityDetail view={view} expanded onSelect={onSelect} onExpand={noop} />
-              {current.cover && (
+              {current.outline && (
                 <>
                   <h3 className="lbl sect">Mapa</h3>
                   <div className="minimap">
