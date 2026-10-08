@@ -6,10 +6,10 @@ current_phase: 12
 current_phase_name: Web de lectura
 current_plan: 12-10
 status: executing
-stopped_at: "Completed 12-09 (wave 6); next wave 7 (12-10: e2e, ponytail audit, Preview UAT, merge)"
-last_updated: "2026-10-08T03:00:00.000Z"
+stopped_at: "12-10 tasks 1-2 done (E2E journey, ponytail audit); Task 3 human gate pending (push ws/web, Preview UAT, phone push, merge to main)"
+last_updated: "2026-10-08T04:00:00.000Z"
 last_activity: 2026-10-06
-last_activity_desc: "12-09 completo: Obras y Artistas; falta 12-10"
+last_activity_desc: "12-10 parcial: faltan push, UAT en Preview y merge (compuerta humana)"
 state_head: 39a4ecb1e32b626bdeca5ed5aed7c5ccea6e1a71
 progress:
   total_phases: 4
