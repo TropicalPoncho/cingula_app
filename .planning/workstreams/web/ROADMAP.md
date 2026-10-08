@@ -72,7 +72,7 @@ Plans:
   3. El usuario ve listado y detalle de recorridos (con créditos calculados por unión de los artistas de sus obras), artistas (con sus obras), obras (filtrables por recorrido y visibilidad, con cobertura y paths), paths (kind, audio, grabación de origen, tolerance_meters, triggers en mapa y lista ordenada por position) y audios (metadata y en qué paths se usa cada uno).
   4. El usuario ve el estado de sync de la web (cursor, momento del último pull, errores explícitos) con el mismo criterio de "estado honesto" que el celular, y ninguna vista de la web muestra filas con `deleted_at`.
 
-**Plans**: 9/10 plans executed
+**Plans**: 9/12 plans executed
 Plans:
 - [x] 12-01-PLAN.md — compuerta de paquetes/assets, SPA Vite + Acceso (AUTH-02), `vercel.json` (rewrite /sync primero + fallback SPA + headers) validado en Preview con smoke extendido; ADR de entrega (wave 1)
 - [x] 12-02-PLAN.md — pull paginado todo-o-nada, store con lista blanca (H3) y sin borradas, modelo derivado + geometría, pill de lectura, leyenda del home (wave 2)
@@ -83,7 +83,9 @@ Plans:
 - [x] 12-07-PLAN.md — mapa Leaflet imperativo: capas, corredor y huecos, portales, filtro de recorrido que abre su panel, auto-encuadre (wave 4)
 - [x] 12-08-PLAN.md — modo Círculos con umbral/tope medidos + teclado (roving tabindex, foco) (wave 5)
 - [x] 12-09-PLAN.md — páginas Obras y Artistas, nav, mini-mapa, selección anidada (wave 6)
-- [ ] 12-10-PLAN.md — E2E del recorrido completo (+ CSP en Preview), auditoría ponytail, compuerta humana: UAT + merge + celular (wave 7)
+- [ ] 12-10-PLAN.md — E2E del recorrido completo (+ CSP en Preview), auditoría ponytail, compuerta humana: UAT + merge + celular (wave 7) — Tasks 1-2 hechas; **la compuerta humana (Task 3) corre después de 12-11 y 12-12**
+- [ ] 12-11-PLAN.md — post-UAT: compuerta de legitimidad de `polygon-clipping`, contorno de obra = unión de los círculos de sus triggers (D-20), etiquetas por nivel de zoom (D-21) (wave 8)
+- [ ] 12-12-PLAN.md — post-UAT: filtros del mapa en un menú + chip de recorrido (D-22), panel con Tipo/Tolerancia y Volver de flecha (D-23), enmienda UI-SPEC/VALIDATION/ADR y auditoría ponytail final (wave 9)
 
 **Ponytail audit**: Requerido como último plan/tarea de esta fase, antes de la compuerta humana de cierre — revisar el código nuevo (SPA completa) en busca de sobre-ingeniería (p.ej. estado global innecesario, capas de abstracción sin segundo consumidor) y simplificar antes de dar la fase por cerrada.
 **UI hint**: yes
@@ -112,7 +114,7 @@ Phase 10 y Phase 11 pueden ejecutarse en paralelo (no comparten archivos de nego
 |-------|----------------|--------|-----------|
 | 10. Pull cerrado + Auth dual-key | 4/4 | Complete    | 2026-09-26 |
 | 11. Infra de deploy (mismo proyecto Vercel) | 5/5 | Complete    | 2026-09-29 |
-| 12. Web de lectura | 9/10 | In Progress|  |
+| 12. Web de lectura | 9/12 | In Progress|  |
 | 13. Storage de audio + reproducción en la web | 0/TBD | Not started | - |
 
 ## Backlog
