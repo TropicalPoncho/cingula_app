@@ -3,7 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './map.css';
 import {
-  PANES, CIRCLES_MIN_ZOOM, buildLayers, applySelection, syncGroups, syncCircles, clearCircles, outlineBounds, targetBounds,
+  PANES, CIRCLES_MIN_ZOOM, buildLayers, applySelection, syncGroups, syncLabels, syncCircles, clearCircles, outlineBounds, targetBounds,
 } from './layers.js';
 
 // Único centro fijo permitido (D-02): sólo cuando ninguna obra visible tiene contorno.
@@ -73,6 +73,7 @@ export default function MapView({ model, obras, capas, modo = 'corr', sel, fitKe
     const circ = modoRef.current === 'circ';
     const active = circ && map.getZoom() >= CIRCLES_MIN_ZOOM;
     syncGroups(map, b.groups, capasRef.current, active);
+    syncLabels(b.labels, { zoom: map.getZoom(), capas: capasRef.current, project: (ll) => map.latLngToContainerPoint(ll), size: map.getSize() });
     if (active) syncCircles(b.circles, { L, paths: b.paths, bounds: map.getBounds(), sel: selRef.current });
     else clearCircles(b.circles);
     setLowZoom(circ && !active);

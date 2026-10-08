@@ -2,9 +2,9 @@ import { describe, it, expect, vi } from 'vitest';
 import L from 'leaflet';
 import { emptyTables, applyRows, buildModel } from '../data/model.js';
 import { corridorPx } from '../data/geometry.js';
-import { makeRows, ID, HTML_NAME } from '../test/fixtures.js';
+import { makeRows, ID, HTML_NAME, LONG_NAME } from '../test/fixtures.js';
 import {
-  buildLayers, styleFor, applySelection, outlineBounds, targetBounds, syncCircles, clearCircles, CIRCLES_MIN_ZOOM, CIRCLES_MAX,
+  buildLayers, styleFor, applySelection, outlineBounds, targetBounds, syncCircles, clearCircles, syncLabels, CIRCLES_MIN_ZOOM, CIRCLES_MAX, LABELS_PATH_ZOOM, LABELS_PORTAL_ZOOM,
 } from './layers.js';
 
 // Modelo de las fixtures; `tweak` edita las filas antes de armarlo (p. ej. darle un trigger vivo a la obra C).
@@ -24,22 +24,72 @@ const layersOf = (b, g) => b.groups[g].getLayers();
 const obra = (m, id) => m.byId.obra.get(id);
 const size = (index) => [...index.values()].reduce((n, ls) => n + ls.length, 0);
 
-describe('etiquetas de obra (T-12-25)', () => {
-  it('una por obra con contorno, con el nombre como textContent', () => {
-    const m = modelOf();
-    const b = build(m, m.obras);
-    expect(layersOf(b, 'labels')).toHaveLength(2); // A y B; C sin triggers; D borrada
-    const names = layersOf(b, 'labels').map((l) => l.options.icon.createIcon().textContent).sort();
-    expect(names).toEqual(['Obra Aurora', m.obras.find((o) => o.uuid === ID.obB).name].sort());
+describe('etiquetas por zoom (D-21, T-12-25, T-12-39)', () => {
+  const ALL = { cobertura: true, paths: true, portales: true };
+  const text = (mk) => mk.options.icon.createIcon().textContent;
+  // Proyección falsa lineal (1e5 px por grado: ~0,8 m por px) en un viewport enorme: nada se pisa ni queda afuera.
+  const lin = ([lat, lon]) => ({ x: (lon + 71.7) * 1e5, y: (-42 - lat) * 1e5 });
+  const BIG = { x: 1e7, y: 1e7 };
+  const run = (b, zoom, over = {}) => syncLabels(b.labels, { zoom, capas: ALL, project: lin, size: BIG, ...over });
+  const setup = (tweak) => { const m = modelOf(tweak); return { m, b: build(m, m.obras) }; };
+
+  it('umbrales [DEFAULT] 16 y 17', () => {
+    expect([LABELS_PATH_ZOOM, LABELS_PORTAL_ZOOM]).toEqual([16, 17]);
+    expect(LABELS_PATH_ZOOM).toBe(CIRCLES_MIN_ZOOM);
+  });
+
+  it('candidatos: uno por obra con contorno, por path con triggers y por portal con trigger; textContent + aria-hidden, sin teclado ni interacción', () => {
+    const { m, b } = setup();
+    const by = (lv) => b.labels.cands.filter((c) => c.level === lv);
+    expect(by('obra').map((c) => text(c.marker)).sort()).toEqual(['Obra Aurora', obra(m, ID.obB).name].sort()); // C sin triggers; D borrada
+    expect(by('path').map((c) => text(c.marker)).sort()).toEqual(['Ruta A', 'Ruta B']);
+    expect(by('portal').map((c) => text(c.marker))).toEqual(['Portal A']);
+    for (const { marker } of b.labels.cands) {
+      expect(marker.options).toMatchObject({ interactive: false, keyboard: false });
+      expect(marker.options.icon.createIcon().querySelector('span').getAttribute('aria-hidden')).toBe('true');
+    }
+    // path = trigger del medio (32 triggers -> índice 15)
+    const a = by('path').find((c) => text(c.marker) === 'Ruta A');
+    expect(a.latlng).toEqual([obra(m, ID.obA).routes[0].triggers[15].latitude, obra(m, ID.obA).routes[0].triggers[15].longitude]);
   });
 
   it('un nombre con HTML se ve como texto y no crea ningún img', () => {
-    const m = modelOf(withTriggerOnC);
-    const b = build(m, [obra(m, ID.obC)]);
-    const icon = layersOf(b, 'labels')[0].options.icon.createIcon();
-    expect(icon.textContent).toBe(HTML_NAME);
+    const { m, b } = setup(withTriggerOnC);
+    const c = b.labels.cands.find((x) => x.level === 'obra' && x.marker.options.icon.createIcon().textContent === HTML_NAME);
+    const icon = c.marker.options.icon.createIcon();
     expect(icon.querySelector('img')).toBeNull();
     expect(icon.children).toHaveLength(1); // sólo el span
+    expect(m.byId.obra.get(ID.obC).outline).not.toBeNull();
+  });
+
+  it('zoom 15: sólo obras; 16: sólo paths; 17: paths + portales; nunca obra y path juntos', () => {
+    const { b } = setup();
+    const names = (zoom) => run(b, zoom).map(text).sort();
+    expect(names(15)).toEqual(['Obra Aurora', LONG_NAME].sort());
+    expect(names(16)).toEqual(['Ruta A', 'Ruta B']);
+    expect(names(17)).toEqual(['Portal A', 'Ruta A', 'Ruta B']);
+    expect(b.groups.labels.getLayers()).toHaveLength(3); // el grupo refleja la última elección (diff)
+    expect(names(14)).toEqual(['Obra Aurora', LONG_NAME].sort());
+    expect(b.groups.labels.getLayers()).toHaveLength(2);
+  });
+
+  it('respeta la casilla de cada nivel: Paths apagada a z16 -> ninguna; Cobertura apagada a z15 -> ninguna; Portales apagada a z17 -> sin portal', () => {
+    const { b } = setup();
+    expect(run(b, 16, { capas: { ...ALL, paths: false } })).toEqual([]);
+    expect(run(b, 15, { capas: { ...ALL, cobertura: false } })).toEqual([]);
+    expect(run(b, 17, { capas: { ...ALL, portales: false } }).map(text).sort()).toEqual(['Ruta A', 'Ruta B']);
+    expect(b.groups.labels.getLayers()).toHaveLength(2);
+  });
+
+  it('superposición: cajas que se pisan -> queda sólo la primera (orden del modelo); separadas -> ambas; fuera del viewport -> ninguna', () => {
+    const { m, b } = setup();
+    const first = text(b.labels.cands.find((c) => c.level === 'obra').marker);
+    expect(first).toBe('Obra Aurora');
+    expect(run(b, 15, { project: () => ({ x: 50, y: 50 }), size: { x: 400, y: 400 } }).map(text)).toEqual(['Obra Aurora']);
+    expect(run(b, 15)).toHaveLength(2);
+    expect(run(b, 15, { project: () => ({ x: -10, y: 50 }), size: { x: 400, y: 400 } })).toEqual([]);
+    expect(b.groups.labels.getLayers()).toHaveLength(0);
+    expect(m.obras).toHaveLength(3);
   });
 });
 

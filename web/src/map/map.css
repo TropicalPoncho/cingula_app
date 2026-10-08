@@ -23,13 +23,17 @@
 }
 .mapview.leaflet-container .leaflet-bar a:hover { background: var(--surface-raised); }
 
-/* Etiqueta de obra: centrada en la cobertura, no envuelve y no captura el puntero. */
-.obra-label { width: 0; height: 0; pointer-events: none; }
-.obra-label span {
+/* Etiquetas por zoom (D-21): ancladas a un punto, no envuelven, recortadas a 200 px con elipsis y sin capturar el puntero. */
+.map-label { width: 0; height: 0; pointer-events: none; }
+.map-label span {
   display: inline-block; transform: translate(-50%, -50%); white-space: nowrap; pointer-events: none;
-  font-family: var(--font-display); font-size: var(--fs-xs); font-weight: 400; text-transform: uppercase;
-  letter-spacing: .12em; color: rgba(244, 241, 247, .85); text-shadow: 0 0 4px var(--surface-sunken), 0 0 8px var(--surface-sunken);
+  max-width: 200px; overflow: hidden; text-overflow: ellipsis;
+  font-family: var(--font-display); font-size: var(--fs-xs); font-weight: 400;
+  text-shadow: 0 0 4px var(--surface-sunken), 0 0 8px var(--surface-sunken);
 }
+.obra-label span { text-transform: uppercase; letter-spacing: .12em; color: rgba(244, 241, 247, .85); }
+.path-label span { color: var(--azure-soft); }
+.portal-label span { color: var(--c-mint); transform: translate(-50%, calc(-100% - 8px)); }
 
 /* Objetivo de teclado/clic del portal: 44 px transparentes sobre el círculo en metros. */
 .portal-hit { background: transparent; border-radius: 50%; cursor: pointer; }

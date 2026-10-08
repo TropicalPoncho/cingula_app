@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { ID, LONG_NAME } from '../src/test/fixtures.js';
+import { ID, LONG_NAME, makeRows } from '../src/test/fixtures.js';
 import { mockApi, loginAs } from './mock-api.js';
 
 const panel = (page) => page.getByRole('complementary', { name: 'Detalle del elemento seleccionado' });
@@ -49,12 +49,49 @@ test('clic en una cobertura abre el panel de la obra; expandir no rompe el mapa'
   expect(box.width).toBeGreaterThan(0);
 });
 
-test('capas: corredor por tramo, un hueco ámbar punteado y etiquetas de obra', async ({ page }) => {
+test('capas: corredor por tramo y un hueco ámbar punteado', async ({ page }) => {
   await page.goto('/');
   await expect(covers(page)).toHaveCount(2);
   await expect(page.locator('path[stroke-dasharray="4 4"]')).toHaveCount(1); // el hueco de la ruta A
-  await expect(page.locator('.obra-label')).toHaveCount(2);
+});
+
+test('etiquetas por zoom: de cerca paths, de lejos obras, nunca juntas; sin puntero, sin lector y sin tab stops', async ({ page }) => {
+  await page.goto('/');
+  await expect(covers(page)).toHaveCount(2);
+  // Encuadre inicial (zoom alto): paths y portal, ninguna obra.
+  await expect(page.locator('.path-label span', { hasText: 'Ruta A' })).toBeVisible();
+  await expect(page.locator('.obra-label')).toHaveCount(0);
+
+  const out = page.getByRole('button', { name: 'Zoom out' });
+  for (let i = 0; i < 6 && (await page.locator('.obra-label').count()) === 0; i++) {
+    expect(await page.locator('.obra-label').count() * await page.locator('.path-label').count()).toBe(0);
+    await out.click();
+    await page.waitForTimeout(400); // Leaflet ignora el siguiente clic mientras anima el zoom
+  }
+  await expect(page.locator('.obra-label span').first()).toBeVisible();
+  await expect(page.locator('.path-label')).toHaveCount(0);
+  await expect(page.locator('.portal-label')).toHaveCount(0);
   await expect(page.locator('.obra-label span', { hasText: 'Obra Aurora' })).toBeVisible();
+
+  // Accesibilidad: ninguna etiqueta captura el puntero, se anuncia ni es focuseable.
+  const span = page.locator('.map-label span').first();
+  expect(await span.evaluate((e) => getComputedStyle(e).pointerEvents)).toBe('none');
+  await expect(span).toHaveAttribute('aria-hidden', 'true');
+  await expect(page.locator('.map-label[tabindex], .map-label [tabindex]')).toHaveCount(0);
+});
+
+test('etiqueta larga recortada: 200 px de ancho máximo con elipsis', async ({ page }) => {
+  const rows = makeRows();
+  rows.find((r) => r.payload.uuid === ID.pathA).payload.name = LONG_NAME;
+  await page.unrouteAll();
+  await mockApi(page, { rows });
+  await page.goto('/');
+  const span = page.locator('.path-label span', { hasText: LONG_NAME.slice(0, 20) });
+  await expect(span).toBeVisible();
+  const m = await span.evaluate((e) => ({ w: e.getBoundingClientRect().width, ov: getComputedStyle(e).textOverflow, sw: e.scrollWidth, cw: e.clientWidth }));
+  expect(m.w).toBeLessThanOrEqual(200.5);
+  expect(m.ov).toBe('ellipsis');
+  expect(m.sw).toBeGreaterThan(m.cw); // el texto está de verdad recortado
 });
 
 test('teclado: Enter abre el panel de una obra, de un path y de un portal', async ({ page }) => {
@@ -125,18 +162,19 @@ test('elegir una obra del recorrido filtrado no cambia el filtro; un rec descono
   await expect(legend(page)).toContainText('3 obras');
 });
 
-test('apagar Cobertura quita contornos y etiquetas; volver a prenderla los trae de vuelta', async ({ page }) => {
+test('apagar Cobertura quita contornos; apagar Paths quita sus etiquetas; volver a prenderlas las trae de vuelta', async ({ page }) => {
   await page.goto('/');
   await expect(covers(page)).toHaveCount(2);
+  await expect(page.locator('.path-label')).not.toHaveCount(0);
   const chk = page.getByRole('checkbox', { name: 'Cobertura' });
   await chk.uncheck();
   await expect(covers(page)).toHaveCount(0);
-  await expect(page.locator('.obra-label')).toHaveCount(0);
   await expect(page.locator('path[stroke-dasharray="4 4"]')).toHaveCount(1); // Paths sigue prendida
   await chk.check();
   await expect(covers(page)).toHaveCount(2);
   await page.getByRole('checkbox', { name: 'Paths' }).uncheck();
   await expect(page.locator('path[stroke-dasharray="4 4"]')).toHaveCount(0);
+  await expect(page.locator('.path-label')).toHaveCount(0);
 });
 
 test('sin obras en el servidor: velo vacío y el selector sólo ofrece Todos', async ({ page }) => {

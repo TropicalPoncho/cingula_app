@@ -42,7 +42,7 @@ test('abrir la obra A muestra su detalle completo y conserva los filtros', async
   await expect(d.getByRole('heading', { name: 'Obra Aurora' })).toBeVisible();
   await expect(d.getByRole('navigation', { name: 'Ruta' })).toContainText('Obras');
   await expect(d.getByRole('link', { name: 'Obras', exact: true })).toBeVisible();
-  await expect(d.getByText('Ruta A')).toBeVisible();
+  await expect(d.getByRole('button', { name: /^Ruta A/ })).toBeVisible();
 });
 
 test('deep link /obras/<uuid A> carga directo', async ({ page }) => {

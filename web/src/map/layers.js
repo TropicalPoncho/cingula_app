@@ -12,6 +12,11 @@ const C = { text: '#f4f1f7', mint: '#8ae2c8', azure: '#578ccb', azureSoft: '#a8c
 export const CIRCLES_MIN_ZOOM = 16;
 export const CIRCLES_MAX = 600;
 
+// Etiquetas por nivel de zoom (D-21). [DEFAULT sin validar]: 16 = mismo umbral que los círculos (a ese zoom ya se
+// distinguen, OI-02); portales un nivel más cerca. Se validan en la compuerta humana de 12-10.
+export const LABELS_PATH_ZOOM = 16;
+export const LABELS_PORTAL_ZOOM = 17;
+
 // zIndex de las panes propias (de abajo hacia arriba). markerPane (600) queda para etiquetas y objetivos.
 export const PANES = { cover: 410, corridor: 420, line: 430, gap: 440, circles: 450, portals: 460 };
 
@@ -81,6 +86,18 @@ export function buildLayers(L, model, { obras, onSelect, zoom = 16, mini = false
   const reg = (sel, layer) => (index.has(sel) ? index.get(sel).push(layer) : index.set(sel, [layer]));
   const pick = (sel) => () => onSelect(sel);
   const wire = mini ? () => {} : makeInteractive;
+  // Candidatos de etiqueta; syncLabels decide cuáles se ven. Nodo DOM con textContent, nunca HTML (T-12-25, T-12-39);
+  // ni interactivas ni de teclado ni anunciadas: no agregan tab stops ni ruido a lectores de pantalla.
+  const labels = { group: groups.labels, cands: [] };
+  const addLabel = (level, name, latlng) => {
+    const span = document.createElement('span');
+    span.textContent = name;
+    span.setAttribute('aria-hidden', 'true');
+    const marker = L.marker(latlng, {
+      icon: L.divIcon({ html: span, className: `map-label ${level}-label`, iconSize: null }), interactive: false, keyboard: false,
+    });
+    labels.cands.push({ marker, level, latlng, w: Math.min(200, name.length * 9) });
+  };
 
   for (const o of obras) {
     if (!o.outline) continue; // sin triggers vivos no hay contorno ni nada que dibujar (D-20)
@@ -93,13 +110,8 @@ export function buildLayers(L, model, { obras, onSelect, zoom = 16, mini = false
     groups.cover.addLayer(poly);
     reg(osel, poly);
 
-    // Etiqueta: nodo DOM con textContent, nunca HTML (T-12-25).
-    const span = document.createElement('span');
-    span.textContent = o.name;
     const { minLat, maxLat, minLon, maxLon } = o.outline.bounds;
-    groups.labels.addLayer(L.marker([(minLat + maxLat) / 2, (minLon + maxLon) / 2], {
-      icon: L.divIcon({ html: span, className: 'obra-label', iconSize: null }), interactive: false, keyboard: false,
-    }));
+    addLabel('obra', o.name, [(minLat + maxLat) / 2, (minLon + maxLon) / 2]);
 
     for (const p of o.routes) {
       const ts = p.triggers;
@@ -107,6 +119,7 @@ export function buildLayers(L, model, { obras, onSelect, zoom = 16, mini = false
       const psel = `path:${p.uuid}`;
       const label = `Path ${p.name}`;
       routes.push(p);
+      addLabel('path', p.name, ll(ts[Math.floor((ts.length - 1) / 2)]));
       if (ts.length === 1) { // un solo trigger: sólo el círculo
         const c = L.circle(ll(ts[0]), {
           radius: ts[0].radius_meters, pane: 'line', cgKind: 'line', fillColor: C.azure, fillOpacity: 0.1, interactive: !mini, ...styleFor('line', 'normal'),
@@ -146,6 +159,7 @@ export function buildLayers(L, model, { obras, onSelect, zoom = 16, mini = false
       const t = p.trigger;
       if (!t) continue; // portal sin trigger: ni se dibuja ni cuenta
       const sel = `portal:${p.uuid}`;
+      addLabel('portal', p.name, ll(t));
       const circle = L.circle(ll(t), { radius: t.radius_meters, pane: 'portals', interactive: false, cgKind: 'portal', ...styleFor('portal', 'normal') });
       const dot = L.circleMarker(ll(t), { pane: 'portals', interactive: false, cgKind: 'dot', stroke: false, fillColor: C.mint, fillOpacity: 1, ...styleFor('dot', 'normal') });
       groups.portals.addLayer(circle).addLayer(dot);
@@ -160,7 +174,7 @@ export function buildLayers(L, model, { obras, onSelect, zoom = 16, mini = false
   }
 
   const rescale = (z) => groups.corridor.eachLayer((l) => l.setStyle({ weight: corridorPx(l.options.cgRadius, l.options.cgLat, z) }));
-  return { groups, index, rescale, circles, paths: routes };
+  return { groups, index, rescale, circles, labels, paths: routes };
 }
 
 const ARROWS = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 };
@@ -264,15 +278,51 @@ export function applySelection(index, sel, model) {
 }
 
 // Cada grupo pertenece a una casilla de capas; apagar una quita el grupo del mapa sin tocar el índice.
-const CAPA_OF = { cover: 'cobertura', labels: 'cobertura', corridor: 'paths', lines: 'paths', gaps: 'paths', circles: 'paths', portals: 'portales' };
+// `labels` queda siempre en el mapa: su visibilidad por casilla y por zoom la decide syncLabels.
+const CAPA_OF = { cover: 'cobertura', corridor: 'paths', lines: 'paths', gaps: 'paths', circles: 'paths', portals: 'portales' };
 
 // `circulos` = modo Círculos con zoom suficiente: el corredor se oculta y entran los círculos (línea, huecos y portales siguen).
 export function syncGroups(map, groups, capas, circulos = false) {
   for (const [name, g] of Object.entries(groups)) {
-    const on = capas[CAPA_OF[name]] && (name === 'corridor' ? !circulos : name === 'circles' ? circulos : true);
+    const on = name === 'labels' || capas[CAPA_OF[name]] && (name === 'corridor' ? !circulos : name === 'circles' ? circulos : true);
     if (on) map.addLayer(g);
     else map.removeLayer(g);
   }
+}
+
+const LABEL_H = 18; // alto estimado de una etiqueta en px
+const LABEL_GAP = 4;
+
+// Etiquetas por nivel de zoom (D-21): obras de lejos (casilla Cobertura); de cerca paths (casilla Paths) y, un nivel más
+// cerca, también portales (casilla Portales). Nunca conviven obra y path. Greedy simple: se conserva una etiqueta sólo si
+// su caja estimada no pisa a ninguna ya conservada (orden del modelo). `project` = latlng -> punto de contenedor.
+// ponytail: ancho estimado por cantidad de caracteres, sin medir el DOM, O(n²) sobre ≤ 160 candidatos reales (74 obras, 85 paths);
+// upgrade = medir con getBoundingClientRect o un índice espacial si el catálogo crece.
+export function syncLabels(state, { zoom, capas, project, size }) {
+  const near = zoom >= LABELS_PATH_ZOOM;
+  const shown = {
+    obra: !near && capas.cobertura,
+    path: near && capas.paths,
+    portal: zoom >= LABELS_PORTAL_ZOOM && capas.portales,
+  };
+  const boxes = [];
+  const chosen = new Set();
+  for (const c of state.cands) {
+    if (!shown[c.level]) continue;
+    const { x, y } = project(c.latlng);
+    if (x < 0 || y < 0 || x > size.x || y > size.y) continue;
+    const dy = c.level === 'portal' ? -(LABEL_H / 2 + 8) : 0; // como su CSS: sobre el punto
+    const box = { l: x - c.w / 2 - LABEL_GAP, r: x + c.w / 2 + LABEL_GAP, t: y + dy - LABEL_H / 2 - LABEL_GAP, b: y + dy + LABEL_H / 2 + LABEL_GAP };
+    if (boxes.some((o) => box.l < o.r && box.r > o.l && box.t < o.b && box.b > o.t)) continue;
+    boxes.push(box);
+    chosen.add(c.marker);
+  }
+  for (const { marker } of state.cands) {
+    const has = state.group.hasLayer(marker);
+    if (chosen.has(marker) && !has) state.group.addLayer(marker);
+    else if (!chosen.has(marker) && has) state.group.removeLayer(marker);
+  }
+  return [...chosen];
 }
 
 // Unión de los bounds de los contornos de las obras (null si ninguna tiene). El contorno ya incluye el radio de
