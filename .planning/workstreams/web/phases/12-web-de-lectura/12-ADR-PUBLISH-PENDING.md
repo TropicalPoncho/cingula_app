@@ -1,4 +1,4 @@
-# PENDIENTE DE PUBLICAR EN NOTION — ADR "Entrega de la SPA en el mismo proyecto Vercel" + nota para ADR-005
+# PENDIENTE DE PUBLICAR EN NOTION — 2 ADRs ("Entrega de la SPA en el mismo proyecto Vercel" y "Cobertura de obra calculada en la web") + nota para ADR-005
 
 > Estado de publicación: **NO publicado**. La sesión de 12-10 no tenía herramientas de Notion. El orquestador lo publica
 > (skill `gestion-notion-rama`: Documentos de Proyecto, tipo "Desarrollo técnico", relacionado a Cíngula App) cuando el
@@ -106,6 +106,56 @@ sequenceDiagram
   SPA->>SS: clearKey()
   SPA->>SPA: navigate('/acceso')
 ```
+
+---
+
+## ADR-0XX — Cobertura de obra calculada en la web como unión de los círculos de sus triggers
+
+### Decisión (va primero)
+
+El contorno de una obra en el mapa lo **calcula el cliente**: la unión exacta de los círculos (centro `latitude/longitude`, `radius_meters`) de los triggers de sus paths `route` y del trigger de cada portal, con `polygon-clipping@0.15.7` (una sola llamada, `union`, aislada en `web/src/data/geometry.js` → `circlesOutline`). Se calcula **una vez por pull** en `buildModel` (`obra.outline = { polygons, bounds }`, `polygons` en orden `[lat, lon]` de Leaflet) y alimenta el dibujo (`L.polygon`), el auto-ajuste (`outlineBounds`), el hecho "Cobertura" del panel (ancho × alto de los bounds, que ya incluyen el radio) y el mini-mapa de Obras. Cada círculo se discretiza como polígono **circunscrito** de 24 lados (error hacia afuera ≈ 0,9 % del radio). Si la unión lanza, **respaldo**: un polígono por círculo sin unir (costuras visibles; nunca pantalla en blanco; probado con un spy). Obra sin triggers: sin contorno.
+
+**La web deja de leer las seis columnas `cover_*` de `obras`** (lista blanca `USED_COLUMNS.obras` = `uuid, name, recorrido_uuid, visibility`). **El servidor las conserva** (`web/schema.sql`, índice por bbox en `:127`) y `web/api/_lib/cover.js` sigue escribiéndolas: `web/api` no cambió en toda la Fase 12.
+
+```mermaid
+flowchart LR
+  P["GET /sync/pull (filas)"] --> M["buildModel (model.js)"]
+  M -->|"triggers de paths route + trigger de cada portal"| G["circlesOutline (geometry.js)<br/>24 vértices circunscritos"]
+  G -->|"polygonClipping.union"| U["MultiPolygon [lat, lon] + bounds"]
+  G -.->|"si lanza"| F["respaldo: un polígono por círculo"]
+  U --> O["obra.outline"]
+  F --> O
+  O --> L["layers.js: L.polygon + etiqueta"]
+  O --> B["outlineBounds: auto-ajuste"]
+  O --> V["buildView: Cobertura (ancho × alto)"]
+  O --> N["Obras: mini-mapa"]
+```
+
+### Estado
+
+Aceptado, pendiente de la compuerta humana 12-10-03 (aspecto del contorno de las 74 obras reales y costo de la unión con datos reales, ítem manual (h) de `12-VALIDATION.md`). Se publica en Notion junto al ADR anterior en el paso 11 de la compuerta. Actualizar este estado al cerrar la compuerta.
+
+### Por qué
+
+D-20 (usuario, UAT en el Preview): la línea blanca de la obra debe rodear toda la zona donde algún trigger se activa, siguiendo las curvas. La caja del servidor (a) excluía el radio de los triggers (H4) y (b) era NULL en 3 de 74 obras con triggers (medición de 12-03). El contorno sale de los mismos triggers que ya trae el pull: ninguna columna nueva y ningún cambio de `web/api` ni del contrato de pull de la Fase 10.
+
+### Alternativas descartadas
+
+| Alternativa | Por qué no |
+|-------------|------------|
+| Mantener el rectángulo `cover_*` del servidor | No incluye el radio (H4); NULL en 3 de 74 obras con triggers; no sigue las curvas pedidas en D-20 |
+| Casco convexo de los triggers | Rellena concavidades y huecos de la obra que el usuario quiere ver |
+| Truco SVG (trazo ancho + relleno) | No da un contorno real: no sirve para encuadre ni para la medida de "Cobertura" |
+| Calcular el contorno en el servidor | Cambia `web/api` y el contrato del pull de la Fase 10; la escritura ya existente (`cover.js`) es de bbox, no de contorno |
+| `polyclip-ts` en lugar de `polygon-clipping` | API-compatible y más reciente, pero la compuerta de paquetes (12-11 Task 1) aprobó `polygon-clipping`; queda como alternativa si éste se rompe |
+
+### Consecuencias y riesgos
+
+- **Dependencia nueva con mantenimiento bajo:** `polygon-clipping@0.15.7` (MIT, ~1,03 M descargas/semana, sin scripts de instalación) sin releases desde 2023-12-18, más las transitivas `robust-predicates@3.0.3` y `splaytree@3.2.3`. D-20 decía "sin dependencias": era falso. Va como `devDependency` exacta (13 en total; `dependencies` sigue siendo sólo `@neondatabase/serverless`) y con un único importador (`geometry.js`). Si deja de funcionar con una versión nueva de Node/Vite: cambiar a `polyclip-ts` (OI-12 de la UI-SPEC).
+- **Costo en el bundle:** JS 427,38 → 455,99 kB (+28,6 kB), gzip 131,28 → 140,53 kB (+9,3 kB) (12-11-SUMMARY).
+- **Trabajo muerto en el servidor:** `web/api/_lib/cover.js` sigue calculando y escribiendo `cover_*` en cada push aunque nadie las lea; quitarlo es un cambio de `web/api` fuera de la Fase 12.
+- **Reconsiderar** si una fase de edición necesita el contorno en el servidor (p. ej. consultas espaciales o publicar el contorno a otro cliente): habría que mover el cálculo al servidor y versionar el contrato del pull.
+- Costo de cómputo acotado por datos reales (máx 35 triggers por obra); la unión de 100 círculos encadenados corre bajo el timeout por defecto de Vitest (test de 12-11). Se calcula por pull, nunca por frame.
 
 ---
 
