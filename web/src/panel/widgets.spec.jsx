@@ -130,7 +130,7 @@ describe('EntityDetail: path y trigger', () => {
         const b = screen.getByRole('button', { name });
         expect(b).toHaveAttribute('title', name);
         expect(b.textContent).toBe(''); // sólo el ícono
-        const fila = container.querySelector('.phead');
+        const fila = container.querySelector('.trow');
         expect(fila).toContainElement(b);
         expect(within(fila).getByText(tipo)).toBeInTheDocument();
         onSelect.mockClear();

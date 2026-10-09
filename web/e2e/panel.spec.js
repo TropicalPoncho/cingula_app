@@ -148,7 +148,7 @@ test('path compacto: Volver es una flecha de 44 px junto a la etiqueta PATH; nin
   const b = await back.boundingBox();
   expect(b.width).toBeGreaterThanOrEqual(43.5);
   expect(b.height).toBeGreaterThanOrEqual(43.5);
-  const tipo = await p.locator('.phead .lbl').boundingBox();
+  const tipo = await p.locator('.trow .lbl').boundingBox();
   expect(Math.abs(b.y + b.height / 2 - (tipo.y + tipo.height / 2))).toBeLessThanOrEqual(12);
   await expect(p.locator('.fact dt', { hasText: /^Tipo$/ })).toBeVisible();
   await expect(p.locator('.fact dt', { hasText: /^Tolerancia$/ })).toBeVisible();

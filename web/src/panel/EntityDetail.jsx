@@ -92,7 +92,7 @@ export default function EntityDetail({ view, expanded, onSelect, onExpand }) {
   const note = view.note && <p className="dim note">{view.note}</p>;
   return (
     <>
-      <div className="phead">
+      <div className="trow">
         {view.back && (
           <button
             type="button" className="ib" aria-label={`Volver a ${view.back.label}`} title={`Volver a ${view.back.label}`}

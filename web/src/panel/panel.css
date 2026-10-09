@@ -41,7 +41,7 @@
 .sub { margin: 0 0 var(--sp-5); color: var(--text-secondary); overflow-wrap: anywhere; }
 .desc { margin: 0 0 var(--sp-5); overflow-wrap: anywhere; }
 /* Cabecera del contenido (D-23): la flecha de volver (si hay) y la etiqueta de tipo en una fila. */
-.phead { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.trow { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
 .full { width: 100%; }
 
 .facts { margin: 0 0 var(--sp-5); }
